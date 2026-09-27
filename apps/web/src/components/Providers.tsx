@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from '../context/AuthContext';
@@ -213,6 +214,27 @@ export function Providers({ children }: { children: React.ReactNode }) {
     initDownloads();
   }, [initDownloads]);
 
+function ClientPortalToaster() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  if (!mounted || typeof document === 'undefined') return null;
+  return createPortal(
+    <Toaster
+      position="bottom-right"
+      toastOptions={{
+        style: {
+          background: '#1A1A1A',
+          color: '#F5F5F0',
+          border: '1px solid #2A2A28',
+        },
+      }}
+    />,
+    document.body
+  );
+}
+
   return (
     <AppErrorBoundary>
       <QueryClientProvider client={queryClient}>
@@ -220,16 +242,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           <AuthInit>
             <CapacitorNativeInit />
             {children}
-            <Toaster
-              position="bottom-right"
-              toastOptions={{
-                style: {
-                  background: '#1A1A1A',
-                  color: '#F5F5F0',
-                  border: '1px solid #2A2A28',
-                },
-              }}
-            />
+            <ClientPortalToaster />
           </AuthInit>
         </AuthProvider>
       </QueryClientProvider>

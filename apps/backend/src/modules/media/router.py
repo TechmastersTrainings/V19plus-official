@@ -61,7 +61,7 @@ async def upload_direct_file(
     }
 
 
-@router.get("/stream/{filename}")
+@router.api_route("/stream/{filename}", methods=["GET", "HEAD"])
 async def stream_video_file(filename: str, request: Request):
     """
     Stream uploaded video files directly with HTTP Range (byte-range) support

@@ -51,6 +51,9 @@ export const metadata = {
     statusBarStyle: 'black-translucent',
     title: 'V19Plus',
   },
+  other: {
+    'mobile-web-app-capable': 'yes',
+  },
   icons: {
     icon: '/logo-icon.png',
     shortcut: '/favicon.ico',
