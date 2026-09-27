@@ -137,7 +137,7 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
 
       // 3. Initiate native download
       const filename = `downloads/${id}.mp4`;
-      await Filesystem.downloadFile({
+      await (Filesystem as any).downloadFile({
         url,
         path: filename,
         directory: Directory.Data,

@@ -26,6 +26,7 @@ class TokenResponse(BaseModel):
     refresh_token: str
     token_type: str = "bearer"
     expires_in_seconds: int = 900 # 15 minutes
+    user: Optional['UserResponse'] = None
 
 
 class ProfileResponse(BaseModel):

@@ -5,37 +5,35 @@ import { useQuery } from '@tanstack/react-query';
 import { useContent } from '../../../../hooks/useContent';
 import dynamic from 'next/dynamic';
 
-const VideoPlayer = dynamic(() => import('../../../../components/player/VideoPlayer').then(mod => mod.VideoPlayer), {
-  loading: () => (
-    <div className="w-full h-screen bg-black flex items-center justify-center">
-      <div className="w-12 h-12 border-4 border-white/10 border-t-white rounded-full animate-spin" />
-    </div>
-  ),
-  ssr: false,
-});
+const VideoPlayer = dynamic(
+  () => import('../../../../components/player/VideoPlayer').then((mod) => mod.VideoPlayer),
+  {
+    loading: () => (
+      <div className="w-full h-screen bg-black flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-white/10 border-t-white rounded-full animate-spin" />
+      </div>
+    ),
+    ssr: false,
+  }
+);
+
 import { historyApi } from '../../../../api/history';
 import { useAuthStore } from '../../../../store/authStore';
-
-interface Season {
-  id: string;
-  number: number;
-  title?: string;
-  episodes: Episode[];
-}
 
 interface Episode {
   id: string;
   number: number;
   title: string;
   duration: number;
-  videoUrl: string;
+  duration_seconds?: number;
+  videoUrl?: string;
 }
 
 export default function WatchPage({ params }: { params: { slug: string } }) {
   const searchParams = useSearchParams();
   const slug = params?.slug || '';
   const episodeId = searchParams.get('episode') || undefined;
-  const isAuthenticated = useAuthStore((s: { isAuthenticated: boolean }) => s.isAuthenticated);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const { data: content, isLoading } = useContent(slug || '');
 
   const { data: savedProgress } = useQuery({
@@ -76,7 +74,16 @@ export default function WatchPage({ params }: { params: { slug: string } }) {
     );
   }
 
-  const allEpisodes: Episode[] = content.seasons?.flatMap((s: Season) => s.episodes) || [];
+  const allEpisodes: Episode[] =
+    content.seasons?.flatMap((s: any) =>
+      (s.episodes || []).map((ep: any) => ({
+        ...ep,
+        number: ep.episode_number ?? ep.number ?? 1,
+        duration: ep.duration ?? (ep.duration_seconds ? ep.duration_seconds / 60 : 0),
+        duration_seconds: ep.duration_seconds,
+      }))
+    ) || [];
+
   const activeEpisodeId = episodeId || allEpisodes[0]?.id;
   const currentIndex = allEpisodes.findIndex((e: Episode) => e.id === activeEpisodeId);
 
@@ -90,13 +97,16 @@ export default function WatchPage({ params }: { params: { slug: string } }) {
 
   const totalSeconds = (() => {
     const ep = allEpisodes.find((e: Episode) => e.id === activeEpisodeId);
-    const mins = ep?.duration || content.duration || 0;
-    return mins * 60;
+    if (ep?.duration_seconds) return ep.duration_seconds;
+    if (ep?.duration) return ep.duration * 60;
+    if ((content as any)?.duration_seconds) return (content as any).duration_seconds;
+    if (content.duration) return content.duration * 60;
+    return 0;
   })();
 
   const resumeSeconds =
     savedProgress && !savedProgress.completed && savedProgress.progress > 0
-      ? (savedProgress.progress / 100) * totalSeconds
+      ? (savedProgress as any).progressSeconds ?? (savedProgress.progress / 100) * totalSeconds
       : 0;
 
   return (

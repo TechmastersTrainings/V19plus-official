@@ -1,7 +1,12 @@
+import inspect
 import math
+import os
+import re
+import shutil
 import uuid
-from typing import List, Optional
-from fastapi import APIRouter, Depends, Query, status
+from typing import Any
+from fastapi import APIRouter, Depends, Query, status, File, UploadFile, Request, HTTPException
+from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.config import settings
 from src.database import get_db_session
@@ -19,11 +24,86 @@ from src.modules.media.service import MediaStorageService
 from src.modules.video_jobs.models import JobStatus, VideoJob
 from src.modules.content.models import Content, ContentStatus, Episode
 
-router = APIRouter(prefix="/media", tags=["Media Ingestion (Direct R2 Multipart)"])
+router = APIRouter(prefix="/media", tags=["Media Ingestion (Direct & Multipart)"])
+
+# Local persistent media storage for uploads from Mac / External HDD
+MEDIA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../media_storage"))
+os.makedirs(MEDIA_DIR, exist_ok=True)
 
 # Standard part size: 64MB (67,108,864 bytes).
-# Supports up to 640 GB with S3's 10,000 part limit.
 CHUNK_SIZE_BYTES = 64 * 1024 * 1024
+
+
+@router.post("/upload/file")
+async def upload_direct_file(
+    file: UploadFile = File(...),
+):
+    """
+    Directly ingest and store a video file from local storage or external HDD.
+    Saves to media_storage and makes it immediately streamable in the player.
+    """
+    clean_name = re.sub(r"[^\w\.-]", "_", file.filename)
+    unique_key = f"{uuid.uuid4().hex[:8]}_{clean_name}"
+    target_path = os.path.join(MEDIA_DIR, unique_key)
+
+    with open(target_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    file_size = os.path.getsize(target_path)
+    stream_url = f"http://127.0.0.1:8001/api/media/stream/{unique_key}"
+
+    return {
+        "storage_key": unique_key,
+        "filename": file.filename,
+        "file_size_bytes": file_size,
+        "stream_url": stream_url,
+        "content_type": file.content_type or "video/mp4",
+    }
+
+
+@router.get("/stream/{filename}")
+async def stream_video_file(filename: str, request: Request):
+    """
+    Stream uploaded video files directly with HTTP Range (byte-range) support
+    for smooth scrubbing, seeking, and instant playback in HTML5 video & HLS players.
+    """
+    clean_filename = os.path.basename(filename)
+    file_path = os.path.join(MEDIA_DIR, clean_filename)
+
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Media file not found on disk.")
+
+    file_size = os.path.getsize(file_path)
+    range_header = request.headers.get("range")
+
+    if range_header:
+        parts = range_header.replace("bytes=", "").split("-")
+        start = int(parts[0])
+        end = int(parts[1]) if (len(parts) > 1 and parts[1]) else file_size - 1
+        end = min(end, file_size - 1)
+        chunk_size = (end - start) + 1
+
+        def iterfile():
+            with open(file_path, "rb") as f:
+                f.seek(start)
+                bytes_left = chunk_size
+                while bytes_left > 0:
+                    read_bytes = min(bytes_left, 1024 * 1024)
+                    data = f.read(read_bytes)
+                    if not data:
+                        break
+                    bytes_left -= len(data)
+                    yield data
+
+        headers = {
+            "Content-Range": f"bytes {start}-{end}/{file_size}",
+            "Accept-Ranges": "bytes",
+            "Content-Length": str(chunk_size),
+            "Content-Type": "video/mp4",
+        }
+        return StreamingResponse(iterfile(), status_code=206, headers=headers)
+
+    return FileResponse(file_path, media_type="video/mp4", headers={"Accept-Ranges": "bytes"})
 
 
 @router.post(
@@ -134,14 +214,13 @@ async def complete_upload(
     await db.refresh(job)
 
     # 5. Dispatch task to Render Video Worker via ARQ / Redis
-    redis = get_redis_client()
-    if redis:
+    redis_client: Any = get_redis_client()
+    if redis_client:
         try:
-            # Enqueue task for ARQ video worker
-            from arq import create_pool
-            from arq.connections import RedisSettings
             # Push job ID to worker queue
-            await redis.lpush("v19plus:video_jobs", str(job.id))
+            queue_task: Any = redis_client.lpush("v19plus:video_jobs", str(job.id))
+            if inspect.isawaitable(queue_task):
+                await queue_task
         except Exception:
             pass
 

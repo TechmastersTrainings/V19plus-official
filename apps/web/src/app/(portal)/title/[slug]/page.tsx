@@ -196,7 +196,7 @@ export default function TitleDetailPage() {
           <section className="mb-12">
             <h2 className="text-xl font-extrabold text-n-white mb-6 uppercase tracking-wider" style={{ fontFamily: "'Big Shoulders Display', sans-serif" }}>Cast</h2>
             <div className="flex gap-6 overflow-x-auto scrollbar-hide pb-2">
-              {content.cast.map((member) => (
+              {content.cast.map((member: any) => (
                 <div
                   key={member.id}
                   className="flex-shrink-0 text-center w-20 block"
@@ -229,7 +229,7 @@ export default function TitleDetailPage() {
 
               {/* Season Selection Pills/Tabs */}
               <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
-                {content.seasons.map((season, idx) => (
+                {content.seasons.map((season: any, idx: number) => (
                   <button
                     key={season.id || idx}
                     onClick={() => setActiveSeason(idx)}
@@ -248,7 +248,7 @@ export default function TitleDetailPage() {
             {/* Episode Grid / List */}
             {currentSeason?.episodes && currentSeason.episodes.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {currentSeason.episodes.map((ep, epIdx) => (
+                {currentSeason.episodes.map((ep: any, epIdx: number) => (
                   <Link
                     key={ep.id || epIdx}
                     href={`/watch/${content.slug}?episode=${ep.id}`}

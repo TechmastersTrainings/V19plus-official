@@ -58,7 +58,7 @@ export default function LegalPage({ params }: { params: { slug: string } }) {
             <ul className="list-disc list-inside space-y-2 mb-6">
               <li><strong>Personal Identifiers:</strong> Account email address, user display name, profile avatars, and encrypted authentication tokens.</li>
               <li><strong>App Activity & Streaming Data:</strong> Video watch history, playback progress timestamps, watchlists, search queries, favorite titles, and user profile preferences.</li>
-              <li><strong>Device & Network Identifiers:</strong> IP address, device model, operating system version, browser type, unique device identifiers, and Firebase Cloud Messaging push notification tokens.</li>
+              <li><strong>Device & Network Identifiers:</strong> IP address, device model, operating system version, browser type, unique device identifiers, and push notification tokens.</li>
               <li><strong>Diagnostics & Performance:</strong> Video buffer rates, playback error logs, system performance metrics, and crash telemetry.</li>
               <li><strong>Financial & Subscription Information:</strong> Active plan status, renewal dates, and payment history handled securely via Stripe or Google Play Billing. (We never store raw credit card numbers on our servers).</li>
             </ul>
@@ -80,12 +80,12 @@ export default function LegalPage({ params }: { params: { slug: string } }) {
               We partner with industry-leading enterprise cloud providers to host our data securely. We <strong>do NOT sell, rent, or trade</strong> your personal information to data brokers or third-party advertisers:
             </p>
             <ul className="list-disc list-inside space-y-2 mb-6">
-              <li><strong>Google Firebase (Google Cloud Platform):</strong>
+              <li><strong>Cloud Database & Storage Infrastructure:</strong>
                 <ul className="list-circle list-inside ml-6 mt-1 space-y-1 text-n-text/80">
-                  <li><em>Firestore Database:</em> Primary database storing account records, watch history, subscriptions, and watchlists.</li>
-                  <li><em>Firebase Authentication:</em> Identity verification, secure password hashing, and Google OAuth single sign-on.</li>
-                  <li><em>Firebase Cloud Storage:</em> Secure media asset, poster image, and video stream distribution.</li>
-                  <li><em>Firebase Push Notifications (FCM):</em> Opt-in service notifications.</li>
+                  <li><em>PostgreSQL Database:</em> Primary database storing account records, watch history, subscriptions, and watchlists.</li>
+                  <li><em>Secure Authentication:</em> Identity verification, secure password hashing, and token-based session management.</li>
+                  <li><em>Cloud Storage & CDN:</em> Secure media asset, poster image, and video stream distribution.</li>
+                  <li><em>Push Notifications:</em> Opt-in service notifications.</li>
                 </ul>
               </li>
               <li><strong>Stripe & Google Play Billing:</strong> Secure PCI-DSS compliant subscription payment processing.</li>
@@ -97,7 +97,7 @@ export default function LegalPage({ params }: { params: { slug: string } }) {
             </p>
             <ul className="list-disc list-inside space-y-2 mb-6">
               <li><strong>Data in Transit:</strong> All communications between the V19Plus app and our servers are encrypted using Transport Layer Security (TLS 1.3 / HTTPS).</li>
-              <li><strong>Data at Rest:</strong> Database records and media assets stored within Firebase Cloud infrastructure are encrypted at rest using AES-256 standard encryption.</li>
+              <li><strong>Data at Rest:</strong> Database records and media assets stored within secure cloud infrastructure are encrypted at rest using AES-256 standard encryption.</li>
             </ul>
 
             <h2 className="text-xl font-bold text-white mb-4 mt-6">5. Google Play Account Deletion & Data Retention</h2>
@@ -105,8 +105,8 @@ export default function LegalPage({ params }: { params: { slug: string } }) {
               In accordance with Google Play Developer Policy and user privacy regulations, you have full control over your personal data and account lifecycle:
             </p>
             <ul className="list-disc list-inside space-y-2 mb-6">
-              <li><strong>How to Delete Your Account:</strong> You can submit an account deletion request at any time directly through our web portal at <a href="/delete-account" className="text-n-red hover:underline font-semibold">https://v19plus-web.web.app/delete-account</a> or by emailing <a href="mailto:privacy@v19plus.app" className="text-n-red hover:underline font-semibold">privacy@v19plus.app</a>.</li>
-              <li><strong>What is Erased:</strong> Upon verification, your account record, email address, profile names, watch history, watchlists, payment metadata, and push notification tokens will be permanently deleted from our active Firebase Firestore database and Firebase Authentication service.</li>
+              <li><strong>How to Delete Your Account:</strong> You can submit an account deletion request at any time directly through our web portal at <a href="/delete-account" className="text-n-red hover:underline font-semibold">/delete-account</a> or by emailing <a href="mailto:privacy@v19plus.app" className="text-n-red hover:underline font-semibold">privacy@v19plus.app</a>.</li>
+              <li><strong>What is Erased:</strong> Upon verification, your account record, email address, profile names, watch history, watchlists, payment metadata, and push notification tokens will be permanently deleted from our active database and authentication service.</li>
               <li><strong>Retention Timeline:</strong> Active account data deletion is completed within <strong>7 business days</strong>. Any residual encrypted backup snapshots are automatically purged within 30 days.</li>
             </ul>
 
@@ -200,7 +200,7 @@ export default function LegalPage({ params }: { params: { slug: string } }) {
             </p>
             <h2 className="text-xl font-bold text-white mb-4 mt-6">2. Types of Cookies We Use</h2>
             <ul className="list-disc list-inside space-y-2 mb-6">
-              <li><strong>Essential Cookies:</strong> Critical for core application functionalities, such as maintaining user authentication sessions (Firebase Auth) and active profile states.</li>
+              <li><strong>Essential Cookies:</strong> Critical for core application functionalities, such as maintaining user authentication sessions and active profile states.</li>
               <li><strong>Preference Cookies:</strong> Used to store settings like video playback quality, audio volume, and theme modes.</li>
               <li><strong>Analytics Cookies:</strong> Help us aggregate user patterns and monitor website performance to optimize streaming load speeds.</li>
             </ul>

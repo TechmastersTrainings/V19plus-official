@@ -1,9 +1,10 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '../../store/authStore';
-import { useIsAndroidApp } from './Footer';
+import { useIsAndroidApp } from './useIsAndroidApp';
 import { Home, Film, Tv, Search, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -11,6 +12,13 @@ export function BottomNav() {
   const pathname = usePathname();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isAndroidApp = useIsAndroidApp();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isAuth = mounted && isAuthenticated;
 
   // ONLY render when inside the Android App container
   if (!isAndroidApp) return null;
@@ -46,7 +54,7 @@ export function BottomNav() {
       icon: Search,
     },
     {
-      to: isAuthenticated ? '/settings' : '/login',
+      to: isAuth ? '/settings' : '/login',
       label: 'Profile',
       icon: User,
     },

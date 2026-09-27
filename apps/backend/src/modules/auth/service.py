@@ -49,7 +49,11 @@ class AuthService:
         return user
 
     async def authenticate(self, req: LoginRequest) -> TokenResponse:
-        stmt = select(User).where(User.email == req.email.lower().strip())
+        stmt = (
+            select(User)
+            .options(selectinload(User.profiles))
+            .where(User.email == req.email.lower().strip())
+        )
         res = await self.db.execute(stmt)
         user = res.scalar_one_or_none()
 
@@ -79,6 +83,7 @@ class AuthService:
             access_token=access_token,
             refresh_token=refresh_token,
             expires_in_seconds=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            user=UserResponse.model_validate(user),
         )
 
     async def refresh_tokens(self, refresh_token_str: str, device_id: str) -> TokenResponse:

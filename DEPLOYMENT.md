@@ -1,91 +1,80 @@
-# 100% Pure Firebase Deployment Guide
+# V19Plus Production Deployment Guide
 
-This guide details how to deploy the entire V19+ platform (Frontend, Admin CMS, Database, Object Storage, and Authentication) using a unified **Firebase Architecture**. 
-The NestJS API backend remains on Render and connects to Firebase as a secure administrator.
-
-## Architecture Stack
-
-| Layer | Platform | URL example |
-|-------|----------|-------------|
-| Database | **Firebase Firestore** | — |
-| Object Storage | **Firebase Cloud Storage** | — |
-| Authentication | **Firebase Auth (Google OAuth)** | — |
-| Consumer app | **Firebase Hosting** | `https://v19plus-web.web.app` |
-| Admin CMS | **Firebase Hosting** | `https://v19plus-admin.web.app` |
-| API Backend | **Render** | `https://v19plus-api.onrender.com` |
+This guide details how to deploy the entire V19+ platform (Backend API, Frontend Web, Admin CMS, PostgreSQL Database, Object Storage, and Authentication) using a unified cloud architecture.
 
 ---
 
-## Step 1 — Firebase Project Setup
+## Architecture Overview
 
-1. Go to [Firebase Console](https://console.firebase.google.com/) → **Add project**.
-2. **Enable Services:**
-   - **Authentication:** Enable Google Sign-In.
-   - **Firestore Database:** Create database (Start in Production mode).
-   - **Storage:** Create Cloud Storage bucket.
-3. **Generate Admin Credentials:**
-   - Go to **Project Settings → Service accounts**.
-   - Click **Generate new private key** and save the JSON file.
-   - Encode this JSON file to Base64 (e.g., `base64 -w 0 path/to/serviceAccountKey.json`). This will be used as `FIREBASE_SERVICE_ACCOUNT_BASE64` on Render.
-4. **Get Client Configuration:**
-   - Go to **Project Settings → General**.
-   - Add a Web App to get your `firebaseConfig` object (apiKey, authDomain, etc.).
+| Component | Production Host / Provider | URL / Endpoint |
+|-----------|----------------------------|----------------|
+| **Database** | Managed PostgreSQL (Render / Supabase / AWS RDS) | `postgresql://...` |
+| **Redis Cache** | Managed Redis (Render / Upstash / AWS ElastiCache) | `redis://...` |
+| **Backend API** | Render / AWS ECS (FastAPI + Uvicorn) | `https://v19plus-api.onrender.com` |
+| **Object Storage** | Cloudflare R2 / AWS S3 (Signed Media Delivery) | `https://stream.v19plus.com` |
+| **Consumer Web App** | Vercel | `https://v19plus-web.vercel.app` |
+| **Admin CMS** | Vercel | `https://v19plus-admin.vercel.app` |
+| **Android App** | Google Play Store / Capacitor Android Bundle | Native App (`com.v19plus.app`) |
 
 ---
 
-## Step 2 — Deploy Backend API (Render)
+## Step 1 — Database & Cache Setup
 
-1. Push your repository to **GitHub**.
-2. Go to [Render](https://render.com) → **New → Blueprint** and select your repo.
-3. Add the following **Environment Variables** in Render:
-
-```env
-FIREBASE_SERVICE_ACCOUNT_BASE64=<your base64 encoded json>
-FIREBASE_PROJECT_ID=<your firebase project id>
-FRONTEND_URL=https://v19plus-web.web.app
-ADMIN_URL=https://v19plus-admin.web.app
-```
-4. Verify the API is awake: `https://YOUR-API.onrender.com/api/health`
+1. Provision a PostgreSQL 16+ database instance.
+2. Provision a Redis 7+ instance.
+3. Configure connection strings in your backend environment variables:
+   ```env
+   DATABASE_URL=postgresql+asyncpg://<user>:<password>@<host>:<port>/<dbname>
+   DATABASE_SYNC_URL=postgresql://<user>:<password>@<host>:<port>/<dbname>
+   REDIS_URL=redis://<user>:<password>@<host>:<port>/0
+   ```
 
 ---
 
-## Step 3 — Deploy Next.js Frontends (Firebase Hosting)
+## Step 2 — Backend API Deployment (Render / Docker)
 
-Firebase Hosting now supports Server-Side Rendered (SSR) Next.js apps via the experimental **Web Frameworks** integration.
+1. Connect your GitHub repository to Render as a Web Service pointing to `apps/backend/Dockerfile`.
+2. Configure environment variables:
+   - `ENVIRONMENT=production`
+   - `JWT_ACCESS_SECRET=<generate secure 64-char key>`
+   - `JWT_REFRESH_SECRET=<generate secure 64-char key>`
+   - `PLAYBACK_TOKEN_SECRET=<generate secure 64-char key>`
+   - `DATABASE_URL`
+   - `DATABASE_SYNC_URL`
+   - `REDIS_URL`
+   - `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_STREAMING_BUCKET`
+   - `ALLOWED_ORIGINS=https://v19plus-web.vercel.app,https://v19plus-admin.vercel.app,capacitor://localhost`
 
-1. **Install Firebase CLI:**
-```bash
-npm install -g firebase-tools
-```
+---
 
-2. **Login to Firebase:**
-```bash
-firebase login
-```
+## Step 3 — Deploy Next.js Frontends (Vercel)
 
-3. **Set your Project ID:**
-Make sure your `.firebaserc` file points to your actual Firebase project ID, or run:
-```bash
-firebase use --add
-```
+1. **Consumer Web App (`apps/web`):**
+   - Root directory: `apps/web`
+   - Build command: `npm run build`
+   - Output directory: `.next`
+   - Environment variables:
+     - `NEXT_PUBLIC_API_URL=https://v19plus-api.onrender.com/api`
 
-4. **Add Environment Variables:**
-In both `apps/web/.env.production` and `apps/admin/.env.production`, set your client variables:
-```env
-NEXT_PUBLIC_FIREBASE_API_KEY=xxx
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=xxx
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=xxx
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=xxx
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=xxx
-NEXT_PUBLIC_FIREBASE_APP_ID=xxx
-BACKEND_URL=https://YOUR-API.onrender.com
-NEXT_PUBLIC_API_URL=/api
-```
+2. **Admin CMS (`apps/admin`):**
+   - Root directory: `apps/admin`
+   - Build command: `npm run build`
+   - Output directory: `.next`
+   - Environment variables:
+     - `NEXT_PUBLIC_API_URL=https://v19plus-api.onrender.com/api`
 
-5. **Deploy:**
-```bash
-# This will build and deploy both apps automatically
-firebase deploy --only hosting
-```
+---
 
-Your apps will now be live at your Firebase project URLs!
+## Step 4 — Android Mobile Build (Capacitor)
+
+1. Synchronize web assets with the native Android project:
+   ```bash
+   cd apps/web
+   npx cap sync android
+   ```
+2. Open in Android Studio or compile with Gradle:
+   ```bash
+   cd android
+   ./gradlew assembleRelease bundleRelease
+   ```
+3. Sign and publish the generated AAB artifact to the Google Play Console.

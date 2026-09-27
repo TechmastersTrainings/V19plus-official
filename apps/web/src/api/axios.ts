@@ -1,13 +1,15 @@
-import axios from 'axios';
+import axios, { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { Capacitor } from '@capacitor/core';
 import { useAuthStore, getDeviceInfo } from '../store/authStore';
-import { auth } from '../utils/firebase';
 
-const getBaseURL = () => {
+export const getBaseURL = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
   if (Capacitor.isNativePlatform()) {
     return 'https://v19plus-api.onrender.com/api';
   }
-  return process.env.NEXT_PUBLIC_API_URL || '/api';
+  return 'http://127.0.0.1:8001/api';
 };
 
 const api = axios.create({
@@ -17,26 +19,14 @@ const api = axios.create({
   timeout: 15000,
 });
 
-api.interceptors.request.use(async (config) => {
-  try {
-    if (typeof window !== 'undefined') {
-      let fbUser = auth.currentUser;
-      if (!fbUser && auth.authStateReady) {
-        await auth.authStateReady();
-        fbUser = auth.currentUser;
-      }
-      if (fbUser) {
-        const token = await fbUser.getIdToken();
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-          return config;
-        }
-      }
-    }
-  } catch (e) {}
+api.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
+  let token = useAuthStore.getState().accessToken;
+  if (!token && typeof window !== 'undefined') {
+    token = localStorage.getItem('v19_access_token');
+  }
 
-  const token = useAuthStore.getState().accessToken;
   if (token) {
+    config.headers = config.headers || {};
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
@@ -55,19 +45,16 @@ const processQueue = (error: unknown, token: string | null = null) => {
 
 const isAuthEndpoint = (url?: string) =>
   !!url && (
+    url.includes('/auth/login') ||
+    url.includes('/auth/signup') ||
     url.includes('/auth/refresh') ||
-    url.includes('/auth/google') ||
     url.includes('/auth/logout') ||
-    url.includes('/admin/auth/login') ||
-    url.includes('/auth/admin-login') ||
-    url.includes('/auth/google/url') ||
-    url.includes('/auth/google/callback') ||
-    url.includes('/auth/google/status')
+    url.includes('/auth/check-email')
   );
 
 api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
+  (response: AxiosResponse) => response,
+  async (error: any) => {
     const originalRequest = error.config;
 
     if (originalRequest && error.response?.status === 429) {
@@ -80,7 +67,7 @@ api.interceptors.response.use(
       }
     }
 
-    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint(originalRequest.url)) {
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint(originalRequest?.url)) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -94,15 +81,43 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        if (typeof window !== 'undefined' && auth.currentUser) {
-          const freshToken = await auth.currentUser.getIdToken(true);
-          useAuthStore.getState().setAccessToken(freshToken);
-          processQueue(null, freshToken);
-          originalRequest.headers.Authorization = `Bearer ${freshToken}`;
-          return api(originalRequest);
+        const refreshToken =
+          useAuthStore.getState().refreshToken ||
+          (typeof window !== 'undefined' ? localStorage.getItem('v19_refresh_token') : null);
+
+        if (!refreshToken) {
+          throw new Error('No refresh token available');
         }
+
+        const deviceInfo = getDeviceInfo();
+        const response = await axios.post(
+          `${getBaseURL()}/auth/refresh`,
+          {
+            refresh_token: refreshToken,
+            device_id: deviceInfo?.deviceId || 'web_browser',
+          },
+          { withCredentials: true }
+        );
+
+        const newAccessToken = response.data.access_token;
+        const newRefreshToken = response.data.refresh_token;
+
+        useAuthStore.getState().setAccessToken(newAccessToken);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('v19_access_token', newAccessToken);
+          if (newRefreshToken) {
+            localStorage.setItem('v19_refresh_token', newRefreshToken);
+          }
+          const sec = window.location.protocol === 'https:' ? '; Secure' : '';
+          document.cookie = `accessToken=${newAccessToken}; path=/; max-age=86400; SameSite=Lax${sec}`;
+        }
+
+        processQueue(null, newAccessToken);
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        return api(originalRequest);
       } catch (refreshError: any) {
         processQueue(refreshError, null);
+        useAuthStore.getState().logout();
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

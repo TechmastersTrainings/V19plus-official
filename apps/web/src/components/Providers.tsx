@@ -64,17 +64,13 @@ function AuthInit({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const getSocketUrl = () => {
-      const processEnv: any = typeof process !== 'undefined' ? process.env : {};
-      if (processEnv.NEXT_PUBLIC_SOCKET_URL) return processEnv.NEXT_PUBLIC_SOCKET_URL;
-      const isNative = typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.();
-      if (isNative || processEnv.NODE_ENV === 'production') {
-        return 'https://v19plus-api.onrender.com';
-      }
-      return 'http://localhost:4000';
-    };
+    const processEnv: any = typeof process !== 'undefined' ? process.env : {};
+    const socketUrl = processEnv.NEXT_PUBLIC_SOCKET_URL;
+    if (!socketUrl) {
+      // Socket server not configured in this environment; do not attempt connection
+      return;
+    }
 
-    const socketUrl = getSocketUrl();
     socket = io(socketUrl, {
       auth: { token: accessToken },
       transports: ['websocket', 'polling'],

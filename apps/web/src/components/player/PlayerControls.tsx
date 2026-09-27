@@ -18,6 +18,7 @@ interface PlayerControlsProps {
   onNextEpisode?: () => void;
   showNext?: boolean;
   onPiP?: () => void;
+  spriteVttUrl?: string | null;
   // Per-instance state overrides for multi-player isolation
   isPlaying?: boolean;
   progress?: number;
@@ -44,6 +45,7 @@ export function PlayerControls({
   onNextEpisode,
   showNext,
   onPiP,
+  spriteVttUrl,
   isPlaying: propIsPlaying,
   progress: propProgress,
   volume: propVolume,
@@ -145,13 +147,32 @@ export function PlayerControls({
             style={{ left: `${pct}%` }}
           />
 
-          {/* Hover Time Tooltip */}
+          {/* Hover Time Tooltip & Sprite Preview */}
           {hoverTime !== null && (
             <div
-              className="absolute -top-9 -translate-x-1/2 bg-[#14110D]/95 border border-white/10 text-white text-xs font-mono font-bold px-2.5 py-1 rounded-lg pointer-events-none shadow-xl backdrop-blur-md"
+              className={`absolute -translate-x-1/2 bg-[#14110D]/95 border border-white/20 text-white text-xs font-mono font-bold px-2 py-1.5 rounded-lg pointer-events-none shadow-2xl backdrop-blur-md flex flex-col items-center gap-1.5 z-30 ${
+                spriteVttUrl ? '-top-32' : '-top-9'
+              }`}
               style={{ left: `${(hoverTime / duration) * 100}%` }}
             >
-              {formatTime(hoverTime)}
+              {spriteVttUrl && (() => {
+                const spriteImg = spriteVttUrl.replace(/thumbnails\.vtt(\?.*)?$/, 'sprite.jpg$1');
+                const idx = Math.max(0, Math.floor(hoverTime / 5));
+                const col = idx % 10;
+                const row = Math.floor(idx / 10);
+                const scale = 140 / 160;
+                return (
+                  <div
+                    className="w-[140px] h-[78px] rounded border border-white/10 overflow-hidden bg-black"
+                    style={{
+                      backgroundImage: `url(${spriteImg})`,
+                      backgroundPosition: `-${col * 160 * scale}px -${row * 90 * scale}px`,
+                      backgroundSize: `${1600 * scale}px auto`,
+                    }}
+                  />
+                );
+              })()}
+              <span>{formatTime(hoverTime)}</span>
             </div>
           )}
         </div>

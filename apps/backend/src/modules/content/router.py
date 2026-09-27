@@ -11,6 +11,7 @@ from src.modules.content.schemas import (
     ContentUpdate,
     EpisodeCreate,
     EpisodeResponse,
+    GenreResponse,
     SeasonCreate,
     SeasonResponse,
 )
@@ -35,6 +36,26 @@ async def list_content(
     )
 
 
+@router.get("/genres", response_model=List[GenreResponse])
+async def list_genres(db: AsyncSession = Depends(get_db_session)):
+    service = ContentService(db)
+    return await service.list_genres()
+
+
+@router.get("/admin/all", response_model=List[ContentResponse], dependencies=[Depends(require_admin)])
+async def list_all_content_admin(
+    type: Optional[ContentType] = Query(None, description="Filter by content type"),
+    genre: Optional[str] = Query(None, description="Filter by genre slug"),
+    page: int = Query(1, ge=1),
+    limit: int = Query(50, ge=1, le=100),
+    db: AsyncSession = Depends(get_db_session),
+):
+    service = ContentService(db)
+    return await service.list_content(
+        content_type=type, genre_slug=genre, only_published=False, page=page, limit=limit
+    )
+
+
 @router.get("/featured", response_model=List[ContentResponse])
 async def get_featured(db: AsyncSession = Depends(get_db_session)):
     service = ContentService(db)
@@ -50,18 +71,7 @@ async def get_trending(db: AsyncSession = Depends(get_db_session)):
 @router.get("/originals", response_model=List[ContentResponse])
 async def get_originals(db: AsyncSession = Depends(get_db_session)):
     service = ContentService(db)
-    from sqlalchemy import select, desc
-    from src.modules.content.models import Content, ContentStatus
-    from sqlalchemy.orm import selectinload
-    stmt = (
-        select(Content)
-        .options(selectinload(Content.genres))
-        .where(Content.is_original.is_(True), Content.is_published.is_(True), Content.status == ContentStatus.PUBLISHED)
-        .order_by(desc(Content.created_at))
-        .limit(20)
-    )
-    res = await db.execute(stmt)
-    return list(res.scalars().all())
+    return await service.get_originals()
 
 
 @router.get("/slug/{slug}", response_model=ContentResponse)

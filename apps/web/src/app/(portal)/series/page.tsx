@@ -52,7 +52,7 @@ export default function WebSeriesPage() {
   );
 
   const rawItems = ((data?.items || []) as Content[]).filter(
-    (item) => item.type === 'SERIES'
+    (item: any) => item && (item.type === 'SERIES' || item.content_type === 'SERIES')
   );
 
   const filteredAndSortedItems = useMemo(() => {
@@ -82,17 +82,21 @@ export default function WebSeriesPage() {
   }, [rawItems, selectedLanguage, sortBy]);
 
   return (
-    <div className="min-h-screen bg-[#0A0806] pt-24 pb-28 px-4 sm:px-8 md:px-16 animate-fade-in relative">
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1
-            className="text-3xl sm:text-4xl md:text-5xl font-black text-white uppercase tracking-tight"
-            style={{ fontFamily: "'Big Shoulders Display', sans-serif" }}
-          >
-            Web Series
-          </h1>
-        </div>
+    <div className="min-h-screen bg-[#070605] pt-24 pb-20 select-none animate-fade-in">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Page Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-5 rounded-full bg-[#FF5C00]" />
+              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                Series & Documentaries
+              </h1>
+            </div>
+            <p className="text-xs text-[#8C8478] mt-1 ml-3.5">
+              Episodic masterclasses and multi-part recorded series
+            </p>
+          </div>
 
         {/* Filter & Sort Controls */}
         <div className="flex flex-wrap items-center gap-3">
@@ -154,22 +158,23 @@ export default function WebSeriesPage() {
 
       {/* Series Grid */}
       {isLoading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
           {Array.from({ length: 12 }).map((_, i) => (
-            <Skeleton key={i} className="aspect-[2/3] rounded-2xl bg-white/5" />
+            <Skeleton key={i} className="aspect-[2/3] rounded-xl bg-white/5" />
           ))}
         </div>
       ) : filteredAndSortedItems.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
           {filteredAndSortedItems.map((item) => (
-            <ContentCard key={item.id} content={item as any} size="lg" />
+            <ContentCard key={item.id} content={item as any} size="md" />
           ))}
         </div>
       ) : (
-        <div className="text-center py-24 text-sm text-[#8C8478]">
-          No web series found.
+        <div className="text-center py-20 text-xs text-[#8C8478] bg-[#12100E] rounded-xl border border-white/5">
+          No series titles found matching your selection.
         </div>
       )}
+      </div>
     </div>
   );
 }

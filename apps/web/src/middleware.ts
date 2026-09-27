@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 
 /**
  * Middleware: Allow requests through to the Next.js client application
- * where Firebase client-side authentication observer (browserLocalPersistence)
+ * where client-side authentication observer
  * manages session restoration and client route protection.
  */
 export function middleware(request: NextRequest) {

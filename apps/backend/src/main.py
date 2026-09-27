@@ -13,6 +13,9 @@ from src.modules.media.router import router as media_router
 from src.modules.streaming.router import router as streaming_router
 from src.modules.payments.router import router as payments_router
 from src.modules.video_jobs.router import router as video_jobs_router
+from src.modules.content.search_router import router as search_router
+from src.modules.streaming.watchlist_router import router as watchlist_router
+from src.modules.content.settings_router import router as settings_router
 
 logging.basicConfig(
     level=logging.INFO if not settings.DEBUG else logging.DEBUG,
@@ -81,6 +84,9 @@ app.include_router(media_router, prefix="/api")
 app.include_router(streaming_router, prefix="/api")
 app.include_router(payments_router, prefix="/api")
 app.include_router(video_jobs_router, prefix="/api")
+app.include_router(search_router, prefix="/api")
+app.include_router(watchlist_router, prefix="/api")
+app.include_router(settings_router, prefix="/api")
 
 
 @app.get("/", tags=["Root"])

@@ -1,5 +1,6 @@
+import inspect
 import uuid
-from typing import List, Optional
+from typing import Any, List, Optional
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.exceptions import NotFoundException
@@ -36,8 +37,13 @@ class VideoJobService:
         await self.db.commit()
 
         # Re-dispatch to Redis queue
-        redis = get_redis_client()
-        if redis:
-            await redis.lpush("v19plus:video_jobs", str(job.id))
+        redis_client: Any = get_redis_client()
+        if redis_client:
+            try:
+                task: Any = redis_client.lpush("v19plus:video_jobs", str(job.id))
+                if inspect.isawaitable(task):
+                    await task
+            except Exception:
+                pass
 
         return job

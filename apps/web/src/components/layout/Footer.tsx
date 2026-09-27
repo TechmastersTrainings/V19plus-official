@@ -1,41 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Capacitor } from '@capacitor/core';
-import { useSiteSettings } from '../../hooks/useSiteSettings';
+import React from 'react';
+import Link from 'next/link';
+import { ShieldCheck, Cpu, HardDrive, Sparkles, Globe, Film, Play } from 'lucide-react';
+import { useIsAndroidApp } from './useIsAndroidApp';
 
-export function useIsAndroidApp() {
-  const [isApp, setIsApp] = useState(false);
-
-  useEffect(() => {
-    // Check Capacitor native platform or Android webview user-agent
-    const isNative = Capacitor.isNativePlatform();
-    const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
-    const isAndroidWV = /wv|Android.*Version\/[\d.]+.*Chrome\/[\d.]+/i.test(ua);
-    setIsApp(isNative || isAndroidWV);
-  }, []);
-
-  return isApp;
-}
-
-const FOOTER_LINKS = [
-  { label: 'Audio Description', href: '#' },
-  { label: 'Help Center', href: '/support' },
-  { label: 'Gift Cards', href: '#' },
-  { label: 'Media Center', href: '#' },
-  { label: 'Investor Relations', href: '#' },
-  { label: 'Jobs', href: '#' },
-  { label: 'Terms of Use', href: '/legal/terms' },
-  { label: 'Privacy Policy', href: '/legal/privacy' },
-  { label: 'Refund Policy', href: '/legal/refund' },
-  { label: 'Cookie Preferences', href: '/legal/cookies' },
-  { label: 'Corporate Information', href: '/about' },
-  { label: 'Contact Us', href: '/support' },
-];
+export { useIsAndroidApp };
 
 export function Footer() {
-  const { data: settings } = useSiteSettings();
-  const siteName = settings?.siteName || 'V19Plus';
   const isAndroidApp = useIsAndroidApp();
 
   // Hide footer completely when running inside the Android app
@@ -44,50 +16,155 @@ export function Footer() {
   }
 
   return (
-    <footer className="mt-16 bg-n-bg border-t border-n-divider py-14 px-4 md:px-16">
-      <div className="max-w-6xl mx-auto">
-        {/* Social icons */}
-        <div className="flex gap-4 mb-6">
-          {[
-            { label: 'Facebook', path: 'M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z' },
-            { label: 'Instagram', path: 'M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z M4 6a2 2 0 100-4 2 2 0 000 4z' },
-            { label: 'YouTube', path: 'M22.54 6.42a2.78 2.78 0 00-1.94-1.96C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 00-1.94 1.96A29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.4 19.54C5.12 20 12 20 12 20s6.88 0 8.6-.46a2.78 2.78 0 001.94-1.96A29 29 0 0023 12a29 29 0 00-.46-5.58z M9.75 15.02l5.75-3.02-5.75-3.02v6.04z' },
-          ].map((social) => (
-            <a
-              key={social.label}
-              href="#"
-              aria-label={social.label}
-              className="w-9 h-9 flex items-center justify-center border border-n-divider rounded text-n-muted hover:text-n-text hover:border-n-muted transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={social.path} />
-              </svg>
-            </a>
-          ))}
+    <footer className="mt-12 border-t border-white/5 bg-[#070605] text-[#A49C90] pt-10 pb-14 px-4 sm:px-6 lg:px-8 select-none">
+      <div className="max-w-7xl mx-auto">
+        {/* Top: Brand & Platform Mission */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 pb-12 border-b border-white/5">
+          <div className="lg:col-span-5 space-y-4">
+            <Link href="/" className="inline-flex items-center gap-3 group">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF5C00] to-[#E04800] shadow-[0_0_20px_rgba(255,92,0,0.4)] flex items-center justify-center group-hover:scale-105 transition-transform">
+                <Play className="w-5 h-5 fill-white text-white ml-0.5" />
+              </div>
+              <span className="font-black text-2xl tracking-tight text-white">
+                V19<span className="text-[#FF5C00]">Plus</span>
+              </span>
+            </Link>
+            <p className="text-xs sm:text-sm text-gray-400 leading-relaxed max-w-md">
+              V19plus is an original master-grade video streaming platform engineered for hosting and streaming
+              high-fidelity feature cinema, recorded masterclasses, and in-depth documentaries in true 4K Ultra HD with
+              Dolby Atmos® audio.
+            </p>
+            {/* Tech badges */}
+            <div className="flex flex-wrap gap-2 pt-2">
+              <span className="px-2.5 py-1 rounded-md bg-[#14100D] border border-white/10 text-[11px] font-semibold text-gray-300 flex items-center gap-1.5">
+                <Cpu className="w-3 h-3 text-[#FF5C00]" /> Multi-Bitrate HLS
+              </span>
+              <span className="px-2.5 py-1 rounded-md bg-[#14100D] border border-white/10 text-[11px] font-semibold text-gray-300 flex items-center gap-1.5">
+                <HardDrive className="w-3 h-3 text-[#FF8A00]" /> 100GB+ Ingestion
+              </span>
+              <span className="px-2.5 py-1 rounded-md bg-[#14100D] border border-white/10 text-[11px] font-semibold text-gray-300 flex items-center gap-1.5">
+                <Globe className="w-3 h-3 text-emerald-400" /> Singapore Edge
+              </span>
+            </div>
+          </div>
+
+          {/* Nav Columns */}
+          <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-8 text-xs">
+            {/* Column 1: Discovery */}
+            <div className="space-y-3">
+              <h4 className="text-[11px] font-black uppercase tracking-wider text-white">
+                Studio Catalog
+              </h4>
+              <ul className="space-y-2.5">
+                <li>
+                  <Link href="/browse" className="hover:text-white transition-colors">
+                    Master Vault
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/browse?genre=knowledge" className="hover:text-white transition-colors">
+                    Masterclasses
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/browse?type=DOCUMENTARY" className="hover:text-white transition-colors">
+                    Documentaries
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/browse?type=MOVIE" className="hover:text-white transition-colors">
+                    Feature Cinema
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/search" className="hover:text-white transition-colors">
+                    Catalog Search
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Column 2: Studio & Technology */}
+            <div className="space-y-3">
+              <h4 className="text-[11px] font-black uppercase tracking-wider text-white">
+                Studio Streaming
+              </h4>
+              <ul className="space-y-2.5">
+                <li>
+                  <Link href="/about" className="hover:text-white transition-colors">
+                    Direct Master Ingest
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/browse" className="hover:text-white transition-colors">
+                    Adaptive 4K UHD
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/about" className="hover:text-white transition-colors">
+                    EBU R128 Loudness
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/login" className="hover:text-white transition-colors">
+                    Sign In
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/support" className="hover:text-white transition-colors">
+                    Technical Support
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Column 3: Platform & Legal */}
+            <div className="space-y-3">
+              <h4 className="text-[11px] font-black uppercase tracking-wider text-white">
+                Engineering & Legal
+              </h4>
+              <ul className="space-y-2.5">
+                <li>
+                  <Link href="/about" className="hover:text-white transition-colors">
+                    Platform Architecture
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/legal/terms" className="hover:text-white transition-colors">
+                    Terms of Service
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/legal/privacy" className="hover:text-white transition-colors">
+                    Privacy Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/legal/refund" className="hover:text-white transition-colors">
+                    Refund & Cancellation
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/support" className="hover:text-white transition-colors">
+                    Support Desk
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          </div>
         </div>
 
-        {/* Links grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-8">
-          {FOOTER_LINKS.map((link) => (
-            <a
-              key={link.label}
-              href={link.href}
-              className="text-xs text-n-muted hover:text-n-text transition-colors py-1"
-            >
-              {link.label}
-            </a>
-          ))}
+        {/* Bottom Strip: Copyright & Specs */}
+        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
+          <p>© 2026 V19plus OTT Platform. All rights reserved. Domain: https://v19plus.com</p>
+          <div className="flex items-center gap-4 text-[11px]">
+            <span>Calibrated EBU R128 Audio</span>
+            <span>•</span>
+            <span>True 4K UHD</span>
+            <span>•</span>
+            <span>Zero-Proxy Cloudflare R2 Ingestion</span>
+          </div>
         </div>
-
-        {/* Service code */}
-        <button className="text-sm text-n-muted border border-n-muted/40 px-4 py-1.5 rounded hover:border-n-text hover:text-n-text transition-colors mb-6">
-          Service Code
-        </button>
-
-        {/* Copyright */}
-        <p className="text-xs text-n-muted">
-          {settings?.footerText || `© ${new Date().getFullYear()} ${siteName}. All rights reserved.`}
-        </p>
       </div>
     </footer>
   );

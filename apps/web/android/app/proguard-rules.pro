@@ -14,11 +14,9 @@
     @android.webkit.JavascriptInterface <methods>;
 }
 
-# Google Sign-In, Firebase, and API client rules
+# Google Sign-In and API client rules
 -keep class com.google.android.gms.** { *; }
 -dontwarn com.google.android.gms.**
--keep class com.google.firebase.** { *; }
--dontwarn com.google.firebase.**
 -keep class com.google.api.client.** { *; }
 
 # Capacitor Native Biometric (@capgo/capacitor-native-biometric)

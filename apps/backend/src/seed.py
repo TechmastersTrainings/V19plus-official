@@ -107,14 +107,14 @@ async def seed():
         await db.commit()
 
         # 3. Seed Default Admin User
-        admin_email = "admin@v19plus.com"
+        admin_email = "support@techmastersinnovations.in"
         res = await db.execute(select(User).where(User.email == admin_email))
         admin = res.scalar_one_or_none()
         if not admin:
             admin = User(
                 email=admin_email,
-                name="V19plus Administrator",
-                hashed_password=hash_password("Admin@V19plus2026"),
+                name="TechMasters Admin",
+                hashed_password=hash_password("Fri10Feb@2023"),
                 role="ADMIN",
                 is_active=True,
                 is_verified=True,
@@ -131,7 +131,7 @@ async def seed():
             )
             db.add(admin_profile)
             await db.commit()
-            logger.info(f"Created default admin account: {admin_email} (Password: Admin@V19plus2026)")
+            logger.info(f"Created default admin account: {admin_email} (Password: Fri10Feb@2023)")
         else:
             logger.info(f"Admin account {admin_email} already exists.")
 

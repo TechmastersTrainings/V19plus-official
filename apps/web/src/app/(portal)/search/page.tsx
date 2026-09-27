@@ -149,21 +149,32 @@ function SearchContent() {
   };
 
   // Dynamic filter pipeline
-  const filtered = results.filter((item) => {
-    if (typeFilter && item.type !== typeFilter) return false;
-    if (selectedGenre && !item.genre?.some((g) => g.toLowerCase() === selectedGenre.toLowerCase())) return false;
-    if (selectedYear) {
+  const filtered = results.filter((item: any) => {
+    const itemType = (item.content_type || item.type || '').toUpperCase();
+    if (typeFilter && itemType !== typeFilter.toUpperCase()) return false;
+
+    if (selectedGenre) {
+      const matchGenre =
+        item.genres?.some((g: any) => (g.name || g.slug || g).toLowerCase() === selectedGenre.toLowerCase()) ||
+        item.genre?.some((g: any) => g.toLowerCase() === selectedGenre.toLowerCase());
+      if (!matchGenre) return false;
+    }
+
+    const year = item.release_year ?? item.releaseYear;
+    if (selectedYear && year) {
       if (selectedYear === 'Older') {
-        if (item.releaseYear && item.releaseYear >= 2022) return false;
+        if (year >= 2022) return false;
       } else {
-        if (item.releaseYear !== parseInt(selectedYear)) return false;
+        if (year !== parseInt(selectedYear)) return false;
       }
     }
     if (selectedRating) {
-      const score = item.imdbScore || 0;
-      if (selectedRating.includes('8.5') && score < 8.5) return false;
-      if (selectedRating.includes('7.5') && score < 7.5) return false;
-      if (selectedRating.includes('6.5') && score < 6.5) return false;
+      const score = item.imdbScore || item.rating || 0;
+      if (typeof score === 'number') {
+        if (selectedRating.includes('8.5') && score < 8.5) return false;
+        if (selectedRating.includes('7.5') && score < 7.5) return false;
+        if (selectedRating.includes('6.5') && score < 6.5) return false;
+      }
     }
     return true;
   });
@@ -171,18 +182,18 @@ function SearchContent() {
   const hasSearched = results.length > 0 || (!!query && !loading);
 
   return (
-    <div className="min-h-screen bg-[#0A0806] pt-24 sm:pt-28 pb-24 md:pb-16 animate-fade-in select-none text-white">
+    <div className="min-h-screen bg-[#070605] pt-24 sm:pt-28 pb-24 md:pb-16 animate-fade-in select-none text-white">
       {/* Search Header Container */}
-      <div className="px-4 sm:px-8 md:px-16 lg:px-20 mb-8 max-w-5xl">
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-2 tracking-tight">
-          Search Cinema
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-white mb-2 tracking-tight">
+          Search Catalog
         </h1>
-        <p className="text-xs sm:text-sm text-[#A49C90] mb-6">
-          Find movies, shows, series, sports events, actors, and genres.
+        <p className="text-xs sm:text-sm text-[#A49C90] mb-5">
+          Find masterclasses, recorded events, documentaries, features, and topics.
         </p>
 
         {/* Input bar */}
-        <div className="relative flex gap-3 max-w-3xl">
+        <div className="relative flex gap-3 max-w-2xl">
           <div className="flex-1 flex items-center gap-3 px-5 py-4 bg-[#14110D]/90 border border-white/10 rounded-2xl focus-within:border-[#FF5C00] focus-within:shadow-[0_0_20px_rgba(255,92,0,0.25)] transition-all backdrop-blur-xl">
             <Search className="w-5 h-5 text-[#8C8478] flex-shrink-0" />
             <input
@@ -242,9 +253,13 @@ function SearchContent() {
                   onClick={() => { setQuery(s.title); performSearch(s.title); }}
                   className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left border-b border-white/5 last:border-0"
                 >
-                  <div className="w-10 h-14 rounded-lg overflow-hidden bg-[#1E1914] flex-shrink-0">
-                    {s.thumbnailUrl && (
-                      <img src={s.thumbnailUrl} alt="" className="w-full h-full object-cover" />
+                  <div className="w-10 h-14 rounded-lg overflow-hidden bg-[#1E1914] flex-shrink-0 flex items-center justify-center">
+                    {(s.thumbnailUrl || (s as any).thumbnail_url) ? (
+                      <img src={s.thumbnailUrl || (s as any).thumbnail_url} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-b from-[#251A10] to-[#0E0C0A] flex items-center justify-center text-[10px] font-black text-[#FF5C00]">
+                        V19+
+                      </div>
                     )}
                   </div>
                   <div>
@@ -323,7 +338,7 @@ function SearchContent() {
 
       {/* Type Filter Pills */}
       {results.length > 0 && (
-        <div className="px-4 sm:px-8 md:px-16 lg:px-20 mb-6 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
           {FILTERS.map((f) => (
             <button
               key={f.value}
@@ -341,7 +356,7 @@ function SearchContent() {
       )}
 
       {/* Main Results or Empty Previews */}
-      <div className="px-4 sm:px-8 md:px-16 lg:px-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {loading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
             {Array.from({ length: 12 }).map((_, i) => (

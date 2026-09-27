@@ -94,8 +94,6 @@ export interface AuthResponse {
 export const authApi = {
   adminLogin: (email: string, password: string) =>
     api.post<AuthResponse>('/auth/login', { email, password }),
-  firebaseLogin: (accessToken: string) =>
-    api.post<AuthResponse>('/auth/firebase', { accessToken }),
   refresh: () => api.post<{ accessToken: string }>('/auth/refresh'),
   me: () => api.get<AuthResponse['user']>('/auth/me'),
   logout: () => api.post('/auth/logout'),

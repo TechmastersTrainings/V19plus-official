@@ -11,7 +11,7 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
   const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
-    // Wait until Firebase authentication state observer finishes restoring the session
+    // Wait until authentication store finishes restoring the session
     if (loading) return;
 
     // 1. If not authenticated, allow landing page and public routes, otherwise redirect to /login
@@ -35,7 +35,7 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
     setAuthorized(true);
   }, [isAuthenticated, user, loading, pathname, router]);
 
-  // While restoring session from Firebase or waiting for router redirection, show sleek loading indicator
+  // While restoring session or waiting for router redirection, show sleek loading indicator
   if (loading || !authorized) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center space-y-4 select-none">

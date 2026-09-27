@@ -28,37 +28,7 @@ import {
 
 const cleanMediaUrl = (url: string) => {
   if (!url) return '';
-  let u = url.trim();
-
-  // 1. Handle gs:// (e.g. gs://v19-plus.firebasestorage.app/uploads/EP-01.mp4)
-  if (u.startsWith('gs://')) {
-    const withoutPrefix = u.replace('gs://', '');
-    const slashIdx = withoutPrefix.indexOf('/');
-    if (slashIdx !== -1) {
-      const bucket = withoutPrefix.substring(0, slashIdx);
-      const filePath = withoutPrefix.substring(slashIdx + 1);
-      return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(filePath)}?alt=media`;
-    }
-  }
-
-  // 2. Handle storage.googleapis.com
-  if (u.includes('storage.googleapis.com/') && !u.includes('firebasestorage.googleapis.com')) {
-    const match = u.match(/^https?:\/\/storage\.googleapis\.com\/([^/]+)\/(.+)$/);
-    if (match) {
-      const bucket = match[1];
-      const filePath = match[2];
-      return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(filePath)}?alt=media`;
-    }
-  }
-
-  // 3. Handle firebasestorage.googleapis.com (ensure alt=media is present)
-  if (u.includes('firebasestorage.googleapis.com')) {
-    if (!u.includes('alt=media')) {
-      u += (u.includes('?') ? '&' : '?') + 'alt=media';
-    }
-  }
-
-  return u;
+  return url.trim();
 };
 
 const toSlug = (str: string) =>

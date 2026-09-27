@@ -65,7 +65,7 @@ export default function DeleteAccountPage() {
             </div>
             <h2 className="text-lg font-bold text-white">Request Received</h2>
             <p className="text-sm text-gray-400 leading-relaxed">
-              Your request to delete the account associated with <strong className="text-white">{email}</strong> has been received. Our support team will process it and purge your account from Firebase Authentication and Firebase Firestore database records within 7 business days.
+              Your request to delete the account associated with <strong className="text-white">{email}</strong> has been received. Our support team will process it and purge your account from all platform database records within 7 business days.
             </p>
             {isAuthenticated && (
               <p className="text-xs text-gray-500 italic">Logging you out in a few seconds...</p>
@@ -78,7 +78,7 @@ export default function DeleteAccountPage() {
               <div className="space-y-1">
                 <p className="font-bold">Warning: This action is permanent</p>
                 <p className="text-gray-400 leading-relaxed">
-                  Deleting your account will permanently erase your watchlists, settings, profile preferences, watch history, and Firebase Firestore database records. Once deleted, this action cannot be undone.
+                  Deleting your account will permanently erase your watchlists, settings, profile preferences, watch history, and database records. Once deleted, this action cannot be undone.
                 </p>
               </div>
             </div>

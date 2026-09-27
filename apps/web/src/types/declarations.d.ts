@@ -3,12 +3,6 @@
 declare var process: {
   env: {
     NODE_ENV?: string;
-    NEXT_PUBLIC_FIREBASE_API_KEY?: string;
-    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN?: string;
-    NEXT_PUBLIC_FIREBASE_PROJECT_ID?: string;
-    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET?: string;
-    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID?: string;
-    NEXT_PUBLIC_FIREBASE_APP_ID?: string;
     NEXT_PUBLIC_SOCKET_URL?: string;
     NEXT_PUBLIC_API_URL?: string;
     [key: string]: string | undefined;
@@ -106,6 +100,7 @@ declare module 'next/navigation' {
   export function useSearchParams(): {
     get(name: string): string | null;
   };
+  export function useParams<T = any>(): T;
 }
 
 declare module 'next/link' {
@@ -142,62 +137,7 @@ declare module 'socket.io-client' {
   export function io(url: string, options?: any): Socket;
 }
 
-declare module 'firebase/app' {
-  export function initializeApp(config: any): any;
-  export function getApps(): any[];
-  export function getApp(): any;
-}
 
-declare module 'firebase/auth' {
-  export interface User {
-    uid: string;
-    email: string | null;
-    phoneNumber: string | null;
-    displayName: string | null;
-    photoURL: string | null;
-    emailVerified: boolean;
-    providerData: any[];
-    getIdToken(forceRefresh?: boolean): Promise<string>;
-    reload(): Promise<void>;
-  }
-  export interface ConfirmationResult {
-    confirm(verificationCode: string): Promise<{ user: User }>;
-  }
-  export class RecaptchaVerifier {
-    constructor(auth: any, container: string | HTMLElement, parameters?: any);
-    clear(): void;
-    render(): Promise<number>;
-  }
-  export class GoogleAuthProvider {
-    setCustomParameters(params: any): void;
-  }
-  export type AuthCredential = any;
-  export const browserLocalPersistence: any;
-  export function getAuth(app?: any): any;
-  export function setPersistence(auth: any, persistence: any): Promise<void>;
-  export function onAuthStateChanged(auth: any, nextOrObserver: (user: User | null) => void, error?: (error: any) => void): () => void;
-  export function signInWithEmailAndPassword(auth: any, email: string, password: string): Promise<{ user: User }>;
-  export function createUserWithEmailAndPassword(auth: any, email: string, password: string): Promise<{ user: User }>;
-  export function signInWithPopup(auth: any, provider: any): Promise<{ user: User }>;
-  export function signInWithPhoneNumber(auth: any, phoneNumber: string, appVerifier: any): Promise<ConfirmationResult>;
-  export function sendPasswordResetEmail(auth: any, email: string): Promise<void>;
-  export function sendEmailVerification(user: User): Promise<void>;
-  export function signOut(auth: any): Promise<void>;
-  export function updateProfile(user: User, profile: { displayName?: string; photoURL?: string }): Promise<void>;
-  export function linkWithCredential(user: User, credential: any): Promise<{ user: User }>;
-}
-
-declare module 'firebase/firestore' {
-  export function getFirestore(app?: any): any;
-  export function doc(firestore: any, ...pathSegments: string[]): any;
-  export function getDoc(reference: any): Promise<{ exists(): boolean; data(): any }>;
-  export function setDoc(reference: any, data: any, options?: { merge?: boolean }): Promise<void>;
-  export function serverTimestamp(): any;
-}
-
-declare module 'firebase/storage' {
-  export function getStorage(app?: any): any;
-}
 
 declare module '@capacitor/core' {
   export const Capacitor: {

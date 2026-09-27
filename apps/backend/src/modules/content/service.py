@@ -66,7 +66,10 @@ class ContentService:
     async def get_featured(self) -> List[Content]:
         stmt = (
             select(Content)
-            .options(selectinload(Content.genres))
+            .options(
+                selectinload(Content.genres),
+                selectinload(Content.seasons).selectinload(Season.episodes),
+            )
             .where(
                 Content.is_published.is_(True),
                 Content.is_featured.is_(True),
@@ -81,8 +84,29 @@ class ContentService:
     async def get_trending(self) -> List[Content]:
         stmt = (
             select(Content)
-            .options(selectinload(Content.genres))
+            .options(
+                selectinload(Content.genres),
+                selectinload(Content.seasons).selectinload(Season.episodes),
+            )
             .where(
+                Content.is_published.is_(True),
+                Content.status == ContentStatus.PUBLISHED,
+            )
+            .order_by(desc(Content.created_at))
+            .limit(20)
+        )
+        res = await self.db.execute(stmt)
+        return list(res.scalars().all())
+
+    async def get_originals(self) -> List[Content]:
+        stmt = (
+            select(Content)
+            .options(
+                selectinload(Content.genres),
+                selectinload(Content.seasons).selectinload(Season.episodes),
+            )
+            .where(
+                Content.is_original.is_(True),
                 Content.is_published.is_(True),
                 Content.status == ContentStatus.PUBLISHED,
             )
@@ -122,6 +146,10 @@ class ContentService:
             raise NotFoundException("Content", content_id)
         return content
 
+    async def list_genres(self) -> List[Genre]:
+        res = await self.db.execute(select(Genre).order_by(Genre.name))
+        return list(res.scalars().all())
+
     async def create_content(self, req: ContentCreate) -> Content:
         base_slug = slugify(req.title)
         slug = base_slug
@@ -134,21 +162,25 @@ class ContentService:
             counter += 1
             slug = f"{base_slug}-{counter}"
 
+        target_status = req.status or (ContentStatus.PUBLISHED if req.is_published else ContentStatus.DRAFT)
         content = Content(
             title=req.title,
             slug=slug,
             description=req.description,
             content_type=req.content_type,
-            status=ContentStatus.DRAFT,
+            status=target_status,
             release_year=req.release_year,
             rating=req.rating,
             duration_seconds=req.duration_seconds,
             thumbnail_url=req.thumbnail_url,
             backdrop_url=req.backdrop_url,
             trailer_url=req.trailer_url,
+            master_storage_key=req.master_storage_key,
+            hls_manifest_key=req.hls_manifest_key,
             is_original=req.is_original,
             is_featured=req.is_featured,
-            is_published=False,
+            is_published=req.is_published,
+            published_at=datetime.now(timezone.utc) if req.is_published else None,
         )
 
         if req.genre_ids:
@@ -171,6 +203,9 @@ class ContentService:
             content.status = ContentStatus.PUBLISHED
             if not content.published_at:
                 content.published_at = datetime.now(timezone.utc)
+        elif req.is_published is False or req.status == ContentStatus.DRAFT:
+            content.is_published = False
+            content.status = req.status or ContentStatus.DRAFT
 
         if req.genre_ids is not None:
             genres_res = await self.db.execute(select(Genre).where(Genre.id.in_(req.genre_ids)))
@@ -210,3 +245,73 @@ class ContentService:
         await self.db.commit()
         await self.db.refresh(episode)
         return episode
+
+    async def search(
+        self,
+        query: str,
+        content_type: Optional[ContentType] = None,
+        genre_slug: Optional[str] = None,
+        limit: int = 50,
+    ) -> List[Content]:
+        from sqlalchemy import or_
+
+        clean_q = query.strip()
+        if not clean_q:
+            return []
+
+        pattern = f"%{clean_q}%"
+        stmt = (
+            select(Content)
+            .distinct()
+            .options(
+                selectinload(Content.genres),
+                selectinload(Content.seasons).selectinload(Season.episodes),
+            )
+            .outerjoin(Content.genres)
+            .where(
+                Content.is_published.is_(True),
+                or_(
+                    Content.title.ilike(pattern),
+                    Content.description.ilike(pattern),
+                    Genre.name.ilike(pattern),
+                ),
+            )
+            .order_by(desc(Content.created_at))
+            .limit(limit)
+        )
+        if content_type:
+            stmt = stmt.where(Content.content_type == content_type)
+        if genre_slug:
+            stmt = stmt.where(Genre.slug == genre_slug)
+
+        res = await self.db.execute(stmt)
+        return list(res.scalars().all())
+
+    async def get_suggestions(self, query: str, limit: int = 6) -> List[dict]:
+        clean_q = query.strip()
+        if not clean_q:
+            return []
+
+        pattern = f"%{clean_q}%"
+        stmt = (
+            select(Content.title, Content.slug, Content.thumbnail_url, Content.content_type)
+            .where(
+                Content.is_published.is_(True),
+                Content.title.ilike(pattern),
+            )
+            .order_by(desc(Content.created_at))
+            .limit(limit)
+        )
+        res = await self.db.execute(stmt)
+        rows = res.all()
+        return [
+            {
+                "title": r[0],
+                "slug": r[1],
+                "thumbnail_url": r[2],
+                "thumbnailUrl": r[2],
+                "type": r[3].value if hasattr(r[3], "value") else str(r[3]),
+            }
+            for r in rows
+        ]
+

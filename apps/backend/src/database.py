@@ -1,17 +1,19 @@
-import uuid
 from datetime import datetime, timezone
 from typing import AsyncGenerator
 from sqlalchemy import DateTime
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
     create_async_engine,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from src.config import settings
 
-# Initialize Async Engine with connection pooling tuned for Render PostgreSQL
+try:
+    from src.config import settings
+except ImportError:
+    from .config import settings
+
+# Initialize Async Engine with connection pooling tuned for Render/local PostgreSQL
 async_engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG and settings.ENVIRONMENT == "development",
@@ -28,6 +30,10 @@ AsyncSessionLocal = async_sessionmaker(
     autocommit=False,
     autoflush=False,
 )
+
+# Standard compatibility aliases
+SessionLocal = AsyncSessionLocal
+engine = async_engine
 
 
 class Base(DeclarativeBase):
@@ -60,3 +66,7 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
             raise
         finally:
             await session.close()
+
+
+# Common alias for FastAPI dependency injection
+get_db = get_db_session

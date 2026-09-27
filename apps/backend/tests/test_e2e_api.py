@@ -79,8 +79,8 @@ async def run_e2e_tests():
 
         # 9. Admin Authentication
         admin_login = {
-            "email": "admin@v19plus.com",
-            "password": "Admin@V19plus2026",
+            "email": "support@techmastersinnovations.in",
+            "password": "Fri10Feb@2023",
             "device_id": "admin_studio_console",
         }
         res = await client.post("/api/auth/login", json=admin_login)

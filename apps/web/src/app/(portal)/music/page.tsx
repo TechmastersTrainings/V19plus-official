@@ -30,16 +30,11 @@ export default function MusicPage() {
   const [sortBy, setSortBy] = useState('newest');
 
   const { data, isLoading } = useBrowse(
-    'MUSIC',
+    'EVENT',
     selectedCategory === 'All Music' ? undefined : selectedCategory
   );
 
-  const rawItems = ((data?.items || []) as Content[]).filter(
-    (item: any) =>
-      item.type === 'MUSIC' ||
-      (Array.isArray(item.genre) && item.genre.some((g: string) => g.toLowerCase().includes('music'))) ||
-      (Array.isArray(item.tags) && item.tags.some((t: string) => t.toLowerCase().includes('music')))
-  );
+  const rawItems = ((data?.items || []) as Content[]);
 
   const filteredAndSortedItems = useMemo(() => {
     let items = [...rawItems];

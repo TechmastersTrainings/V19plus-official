@@ -30,17 +30,11 @@ export default function SportsPage() {
   const [sortBy, setSortBy] = useState('newest');
 
   const { data, isLoading } = useBrowse(
-    'SPORT',
+    'EVENT',
     selectedCategory === 'All Sports' ? undefined : selectedCategory
   );
 
-  const rawItems = ((data?.items || []) as Content[]).filter(
-    (item: any) =>
-      item.type === 'SPORT' ||
-      item.type === 'SPORTS' ||
-      (Array.isArray(item.genre) && item.genre.some((g: string) => g.toLowerCase().includes('sport'))) ||
-      (Array.isArray(item.tags) && item.tags.some((t: string) => t.toLowerCase().includes('sport')))
-  );
+  const rawItems = ((data?.items || []) as Content[]);
 
   const filteredAndSortedItems = useMemo(() => {
     let items = [...rawItems];

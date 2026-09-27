@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { auth } from '../utils/firebase';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || '/api',
@@ -13,16 +12,6 @@ export function setAdminToken(token: string | null) {
 }
 
 api.interceptors.request.use(async (config) => {
-  if (typeof window !== 'undefined' && auth.currentUser) {
-    try {
-      const token = await auth.currentUser.getIdToken();
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-        return config;
-      }
-    } catch (e) {}
-  }
-
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;
   }
@@ -33,16 +22,12 @@ api.interceptors.response.use(
   (res) => res,
   async (err) => {
     const original = err.config;
-    const isAuthCall = original?.url?.includes('/auth/refresh') || original?.url?.includes('/auth/login') || original?.url?.includes('/auth/firebase');
+    const isAuthCall =
+      original?.url?.includes('/auth/refresh') ||
+      original?.url?.includes('/auth/login');
     if (err.response?.status === 401 && !original._retry && !isAuthCall) {
       original._retry = true;
       try {
-        if (typeof window !== 'undefined' && auth.currentUser) {
-          const freshToken = await auth.currentUser.getIdToken(true);
-          accessToken = freshToken;
-          original.headers.Authorization = `Bearer ${freshToken}`;
-          return api(original);
-        }
         const { data } = await api.post('/auth/refresh');
         accessToken = data.accessToken;
         original.headers.Authorization = `Bearer ${data.accessToken}`;

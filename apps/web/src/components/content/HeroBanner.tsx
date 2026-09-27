@@ -3,9 +3,10 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Content } from '../../api/content';
 import { HeroBannerSkeleton } from '../ui/Skeleton';
-import { Play, Plus, Check, Info, Volume2, VolumeX, Sparkles } from 'lucide-react';
+import { Play, Plus, Check, Info, Sparkles, Volume2, VolumeX } from 'lucide-react';
 import { useWatchlist, useAddToWatchlist, useRemoveFromWatchlist } from '../../hooks/useWatchlist';
 import { useAuthStore } from '../../store/authStore';
+import { useUiStore } from '../../store/uiStore';
 import toast from 'react-hot-toast';
 
 interface HeroBannerProps {
@@ -17,21 +18,22 @@ interface HeroBannerProps {
 
 export function HeroBanner({ content, contents, isLoading, hideContent = false }: HeroBannerProps) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isMuted, setIsMuted] = useState(true);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const openDetail = useUiStore((s) => s.openDetail);
   const { data: watchlist } = useWatchlist();
   const addToWatchlist = useAddToWatchlist();
   const removeFromWatchlist = useRemoveFromWatchlist();
 
   // Combine contents from backend
-  const items: Content[] = contents && contents.length > 0
-    ? contents
-    : (content ? [content] : []);
+  const items: Content[] =
+    contents && contents.length > 0 ? contents : content ? [content] : [];
 
   useEffect(() => {
     if (items.length <= 1) return;
     const interval = setInterval(() => {
       setActiveIndex((prev) => (prev + 1) % items.length);
-    }, 7500); // cycle every 7.5s
+    }, 8500); // 8.5s cinematic cycle
     return () => clearInterval(interval);
   }, [items.length]);
 
@@ -40,7 +42,9 @@ export function HeroBanner({ content, contents, isLoading, hideContent = false }
   const current = items[activeIndex] || items[0];
   if (!current) return null;
 
-  const inList = !!watchlist?.some((item: any) => item.content?.id === current.id || item.id === current.id);
+  const inList = !!watchlist?.some(
+    (item: any) => item.content?.id === current.id || item.id === current.id
+  );
 
   const handleWatchlist = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -61,138 +65,149 @@ export function HeroBanner({ content, contents, isLoading, hideContent = false }
     }
   };
 
+  const handleMoreInfo = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (current?.slug) {
+      openDetail(current.slug);
+    }
+  };
+
+  const backdropSrc =
+    current.backdrop_url ||
+    current.backdropUrl ||
+    current.thumbnail_url ||
+    current.thumbnailUrl ||
+    '';
+
+  const isOriginal = current.is_original ?? current.isOriginal ?? true;
+  const releaseYear = current.release_year ?? current.releaseYear ?? 2026;
+  const rating = current.rating || 'U/A 13+';
+  const durationMins = current.duration
+    ? current.duration
+    : current.duration_seconds
+    ? Math.floor(current.duration_seconds / 60)
+    : 0;
+
+  const genreList =
+    current.genres && current.genres.length > 0
+      ? current.genres.map((g) => g.name)
+      : current.genre || [];
+
   return (
-    <section className="relative w-full h-[85vh] sm:h-[90vh] md:h-screen min-h-[580px] max-h-[1050px] overflow-hidden bg-[#0A0806] select-none">
-      {/* Background Poster / Backdrop Slider */}
+    <section className="relative w-full h-[520px] sm:h-[600px] md:h-[680px] lg:h-[720px] overflow-hidden bg-[#070605] select-none">
+      {/* Background Poster / Backdrop with Ken Burns effect */}
       <div className="absolute inset-0 z-0">
         <AnimatePresence mode="wait">
           <motion.div
             key={current.id || activeIndex}
-            initial={{ opacity: 0, scale: 1.06 }}
+            initial={{ opacity: 0, scale: 1.05 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
             className="w-full h-full relative"
           >
-            <img
-              src={current.backdropUrl || current.thumbnailUrl}
-              alt={current.title}
-              className="w-full h-full object-cover object-top sm:object-center"
-              loading="eager"
-            />
-            {/* Cinematic Vignette Overlays */}
-            {/* Desktop Left-to-Right Dark Gradient */}
-            <div className="hidden md:block absolute inset-0 bg-gradient-to-r from-[#0A0806] via-[#0A0806]/75 to-transparent z-10 w-[70%]" />
-            {/* Mobile Bottom-to-Top High Contrast Vignette */}
-            <div className="md:hidden absolute inset-0 bg-gradient-to-t from-[#0A0806] via-[#0A0806]/85 to-transparent z-10" />
-            {/* All Viewports Bottom Gradient to Seamless Page Blend */}
-            <div className="absolute bottom-0 left-0 right-0 h-72 sm:h-80 bg-gradient-to-t from-[#0A0806] via-[#0A0806]/80 to-transparent z-10" />
-            {/* Top Bar Dark Shadow for Navigation Legibility */}
-            <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-[#0A0806]/90 to-transparent z-10" />
-            {/* Subtle Brand Orange Radial Glow */}
-            <div className="absolute top-1/3 left-10 sm:left-24 w-[350px] h-[350px] rounded-full bg-[#FF5C00]/10 blur-[130px] pointer-events-none z-10" />
+            {backdropSrc ? (
+              <img
+                src={backdropSrc}
+                alt={current.title}
+                className="w-full h-full object-cover object-top sm:object-center transform scale-100 transition-transform duration-[10000ms] hover:scale-105"
+                loading="eager"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-[#1C140C] via-[#100C08] to-[#070605] flex items-center justify-center">
+                <div className="text-center opacity-25 select-none">
+                  <span className="text-7xl font-black text-[#FF5C00]/25 tracking-tighter">
+                    V19+
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Studio Multi-Layered Vignettes */}
+            <div className="hidden md:block absolute inset-0 bg-gradient-to-r from-[#070605] via-[#070605]/85 to-transparent z-10 w-[68%]" />
+            <div className="md:hidden absolute inset-0 bg-gradient-to-t from-[#070605] via-[#070605]/85 to-transparent z-10" />
+            <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[#070605] via-[#070605]/95 to-transparent z-10 pointer-events-none" />
+            <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-[#070605]/90 via-[#070605]/30 to-transparent z-10 pointer-events-none" />
+            <div className="absolute top-1/4 left-8 w-[320px] h-[320px] rounded-full bg-[#FF5C00]/10 blur-[120px] pointer-events-none z-10" />
           </motion.div>
         </AnimatePresence>
       </div>
 
-      {/* Content Overlay */}
+      {/* Content Overlay - Constrained within max-w-7xl */}
       {!hideContent && (
         <div className="absolute inset-0 flex flex-col justify-end z-20 pointer-events-auto">
-          <div className="px-5 sm:px-8 md:px-16 lg:px-20 pb-20 sm:pb-24 md:pb-32 max-w-4xl">
+          <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-16 sm:pb-20 md:pb-24">
             <AnimatePresence mode="wait">
               <motion.div
                 key={current.id || activeIndex}
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 25 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
+                exit={{ opacity: 0, y: -15 }}
                 transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                className="max-w-2xl"
               >
-                {/* Badges / Category Tag */}
-                <div className="flex items-center gap-2.5 mb-3.5 sm:mb-4">
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FF5C00]/15 border border-[#FF5C00]/30 text-[#FF5C00] text-xs font-black tracking-wider uppercase backdrop-blur-md">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    {current.isOriginal ? 'V19Plus Original' : 'Featured Premiere'}
-                  </div>
-                  <span className="hidden sm:inline-block px-2.5 py-0.5 rounded text-[11px] font-bold bg-white/10 text-white/90 border border-white/10 backdrop-blur-md">
-                    4K ULTRA HD
-                  </span>
-                  <span className="hidden sm:inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-white/10 text-white/90 border border-white/10 backdrop-blur-md">
-                    DOLBY ATMOS
-                  </span>
-                </div>
-
                 {/* Main Hero Title */}
-                <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-[1.08] text-white mb-3 sm:mb-4 tracking-tight drop-shadow-2xl">
+                <h1 className="text-3xl sm:text-5xl md:text-6xl font-black leading-tight text-white mb-3 tracking-tight drop-shadow-xl">
                   {current.title}
                 </h1>
 
                 {/* Metadata Row */}
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs sm:text-sm md:text-base mb-4 text-[#C8C2B8] font-medium">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm mb-3.5 text-[#B8B0A2] font-semibold">
                   {current.imdbScore && (
-                    <span className="flex items-center gap-1 text-[#FFB800] font-black bg-[#FFB800]/10 border border-[#FFB800]/20 px-2 py-0.5 rounded">
+                    <span className="flex items-center gap-1 text-[#FFB800] font-black bg-[#FFB800]/15 border border-[#FFB800]/30 px-2 py-0.5 rounded text-xs">
                       ★ {current.imdbScore} IMDb
                     </span>
                   )}
-                  {current.releaseYear && <span className="font-semibold text-white/90">{current.releaseYear}</span>}
-                  {current.rating && (
-                    <span className="border border-white/20 px-2 py-0.5 text-2xs rounded bg-white/5 backdrop-blur-sm text-white font-bold">
-                      {current.rating}
+                  <span className="text-white/95">{releaseYear}</span>
+                  <span className="border border-white/25 px-1.5 py-0.5 text-[10px] rounded bg-white/10 text-white font-bold">
+                    {rating}
+                  </span>
+                  {durationMins > 0 && (
+                    <span className="text-[#9A9284]">
+                      {Math.floor(durationMins / 60)}h {durationMins % 60}m
                     </span>
                   )}
-                  {current.duration && (
-                    <span className="text-[#A49C90]">
-                      {Math.floor(current.duration / 60)}h {current.duration % 60}m
-                    </span>
-                  )}
-                  {current.genre && current.genre.length > 0 && (
-                    <span className="text-[#FF5C00]/90 font-semibold">
-                      · {current.genre.slice(0, 3).join(' · ')}
+                  {genreList.length > 0 && (
+                    <span className="text-[#FF8A00] font-bold">
+                      • {genreList.slice(0, 2).join(' • ')}
                     </span>
                   )}
                 </div>
 
-                {/* Description */}
-                <p className="text-xs sm:text-sm md:text-base text-[#D4CDC3] mb-6 sm:mb-8 line-clamp-2 sm:line-clamp-3 max-w-2xl leading-relaxed font-normal">
+                {/* Description Synopsis */}
+                <p className="text-xs sm:text-sm text-[#D4CDC3] mb-6 line-clamp-2 max-w-xl leading-relaxed drop-shadow-md">
                   {current.description}
                 </p>
 
-                {/* Primary Action Buttons */}
-                <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-                  {/* Watch Now Button (Brand Orange) */}
+                {/* Action Buttons */}
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* Primary Netflix-Style Play Button */}
                   <Link
                     href={`/watch/${current.slug}`}
-                    className="flex items-center justify-center gap-2.5 px-6 sm:px-8 py-3.5 bg-[#FF5C00] hover:bg-[#FF7A00] active:scale-95 text-white font-black rounded-2xl text-sm sm:text-base transition-all duration-300 shadow-[0_0_24px_rgba(255,92,0,0.4)] hover:shadow-[0_0_32px_rgba(255,92,0,0.6)]"
+                    className="flex items-center justify-center gap-2.5 px-7 sm:px-8 py-3 bg-white hover:bg-white/90 active:scale-95 text-black font-black rounded-xl text-sm sm:text-base transition-all duration-200 shadow-[0_4px_25px_rgba(255,255,255,0.25)]"
                   >
-                    <Play className="w-5 h-5 fill-white text-white" />
-                    <span>Watch Now</span>
+                    <Play className="w-5 h-5 fill-black text-black" />
+                    <span>Play</span>
                   </Link>
 
-                  {/* Add to My List Toggle */}
+                  {/* Details / Specs Button */}
                   <button
-                    onClick={handleWatchlist}
-                    className="flex items-center justify-center gap-2 px-5 sm:px-6 py-3.5 bg-white/10 hover:bg-white/20 active:scale-95 text-white font-bold rounded-2xl text-sm sm:text-base backdrop-blur-xl border border-white/15 hover:border-white/30 transition-all duration-300"
+                    onClick={handleMoreInfo}
+                    className="flex items-center justify-center gap-2.5 px-6 sm:px-7 py-3 bg-white/20 hover:bg-white/30 active:scale-95 text-white font-bold rounded-xl text-sm sm:text-base border border-white/20 transition-all backdrop-blur-md shadow-lg"
                   >
-                    {inList ? (
-                      <>
-                        <Check className="w-5 h-5 text-[#FF5C00]" />
-                        <span>In My List</span>
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="w-5 h-5" />
-                        <span>My List</span>
-                      </>
-                    )}
+                    <Info className="w-5 h-5 text-white" />
+                    <span>More Info</span>
                   </button>
 
-                  {/* Details / More Info */}
-                  <Link
-                    href={`/title/${current.slug}`}
-                    className="hidden sm:flex items-center justify-center gap-2 px-5 py-3.5 bg-[#1C1814]/80 hover:bg-[#28221C] active:scale-95 text-[#E0D8CE] hover:text-white font-bold rounded-2xl text-sm sm:text-base backdrop-blur-xl border border-white/10 hover:border-[#FF5C00]/30 transition-all duration-300"
+                  {/* Add to Watchlist Button */}
+                  <button
+                    onClick={handleWatchlist}
+                    className="p-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white transition-all active:scale-95 backdrop-blur-md shadow-lg"
+                    title={inList ? 'Remove from My List' : 'Add to My List'}
+                    aria-label="Add to My List"
                   >
-                    <Info className="w-5 h-5" />
-                    <span>More Info</span>
-                  </Link>
+                    {inList ? <Check className="w-5 h-5 text-[#FF8A00]" /> : <Plus className="w-5 h-5 text-white" />}
+                  </button>
                 </div>
               </motion.div>
             </AnimatePresence>
@@ -200,24 +215,37 @@ export function HeroBanner({ content, contents, isLoading, hideContent = false }
         </div>
       )}
 
-      {/* Carousel Indicator Dots / Pills */}
-      {items.length > 1 && (
-        <div className="absolute bottom-10 sm:bottom-12 right-6 sm:right-12 md:right-20 z-30 flex items-center gap-2 bg-[#0A0806]/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
-          {items.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setActiveIndex(i)}
-              className={`h-1.5 rounded-full transition-all duration-400 ${
-                i === activeIndex
-                  ? 'w-6 bg-[#FF5C00] shadow-[0_0_10px_#FF5C00]'
-                  : 'w-2 bg-white/30 hover:bg-white/60'
-              }`}
-              aria-label={`Slide ${i + 1}`}
-            />
-          ))}
+      {/* Bottom Right Rating & Audio Control */}
+      <div className="absolute bottom-8 sm:bottom-12 right-4 sm:right-8 md:right-12 z-30 flex items-center gap-3">
+        {items.length > 1 && (
+          <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-xl px-3 py-1.5 rounded-full border border-white/10">
+            {items.map((it, i) => (
+              <button
+                key={it.id || i}
+                onClick={() => setActiveIndex(i)}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  i === activeIndex
+                    ? 'w-6 bg-[#FF5C00]'
+                    : 'w-2 bg-white/30 hover:bg-white/60'
+                }`}
+                aria-label={`Slide ${i + 1}: ${it.title}`}
+              />
+            ))}
+          </div>
+        )}
+
+        <button
+          onClick={() => setIsMuted(!isMuted)}
+          className="w-9 h-9 rounded-full border border-white/25 bg-black/40 hover:bg-black/70 text-white flex items-center justify-center backdrop-blur-md transition-all active:scale-95 shadow-lg"
+          aria-label="Toggle Sound"
+        >
+          {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+        </button>
+
+        <div className="px-3 py-1 bg-black/60 border-l-2 border-[#FF5C00] text-xs font-black text-white/95 backdrop-blur-md shadow-lg">
+          {rating}
         </div>
-      )}
+      </div>
     </section>
   );
 }
-

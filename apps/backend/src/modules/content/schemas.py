@@ -54,7 +54,8 @@ class ContentResponse(BaseModel):
     thumbnail_url: Optional[str]
     backdrop_url: Optional[str]
     trailer_url: Optional[str]
-    hls_manifest_key: Optional[str]
+    master_storage_key: Optional[str] = None
+    hls_manifest_key: Optional[str] = None
     is_original: bool
     is_featured: bool
     is_published: bool
@@ -76,8 +77,12 @@ class ContentCreate(BaseModel):
     thumbnail_url: Optional[str] = None
     backdrop_url: Optional[str] = None
     trailer_url: Optional[str] = None
+    master_storage_key: Optional[str] = None
+    hls_manifest_key: Optional[str] = None
     is_original: bool = False
     is_featured: bool = False
+    is_published: bool = True
+    status: Optional[ContentStatus] = None
     genre_ids: List[uuid.UUID] = []
 
 
@@ -94,6 +99,9 @@ class ContentUpdate(BaseModel):
     is_featured: Optional[bool] = None
     is_published: Optional[bool] = None
     status: Optional[ContentStatus] = None
+    master_storage_key: Optional[str] = None
+    hls_manifest_key: Optional[str] = None
+    sprite_vtt_key: Optional[str] = None
     genre_ids: Optional[List[uuid.UUID]] = None
 
 
@@ -108,3 +116,18 @@ class EpisodeCreate(BaseModel):
     description: Optional[str] = None
     duration_seconds: Optional[int] = None
     thumbnail_url: Optional[str] = None
+
+
+class SearchSuggestionResponse(BaseModel):
+    title: str
+    slug: str
+    thumbnail_url: Optional[str] = None
+    thumbnailUrl: Optional[str] = None
+    type: str
+
+
+class SearchResponse(BaseModel):
+    results: List[ContentResponse]
+    query: str
+    total: int
+

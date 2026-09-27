@@ -19,12 +19,10 @@
     "mobile:init": "npm run mobile:init --workspace=apps/web",
     "mobile:sync": "npm run mobile:sync --workspace=apps/web",
     "mobile:android": "npm run cap:android --workspace=apps/web",
-    "build:all": "npm run build && npm run mobile:sync",
-    "deploy:firebase": "firebase deploy --only hosting"
+    "build:all": "npm run build && npm run mobile:sync"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
-    "firebase-tools": "^13.31.0",
     "turbo": "^2.10.2"
   },
   "allowScripts": {
@@ -37,9 +35,5 @@
     "universal-analytics": {
       "uuid": "8.3.2"
     }
-  },
-  "dependencies": {
-    "@firebase/auth": "^1.13.6",
-    "firebase": "^12.19.0"
   }
 }

@@ -5,9 +5,9 @@
 @layer base {
   :root {
     --v-orange: #FF5C00;
-    --v-orange-glow: rgba(255, 92, 0, 0.35);
-    --v-dark: #0A0806;
-    --v-charcoal: #14110D;
+    --v-orange-glow: rgba(255, 92, 0, 0.4);
+    --v-dark: #070605;
+    --v-charcoal: #120F0C;
     --v-surface: #181410;
   }
 
@@ -22,13 +22,13 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
-    background-color: #0A0806;
+    background-color: #070605;
   }
 
   body {
     margin: 0;
     min-height: 100vh;
-    background-color: #0A0806;
+    background-color: #070605;
     color: #FAF6EF;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     overflow-x: hidden;
@@ -173,3 +173,430 @@ select {
   appearance: none;
   -webkit-appearance: none;
 }
+
+/* ==========================================================================
+   Authentic Auth Form Styles (Login & Register)
+   ========================================================================== */
+.auth-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.form-container {
+  width: 100%;
+  max-width: 370px;
+  background-color: #ffffff;
+  box-shadow: rgba(0, 0, 0, 0.45) 0px 15px 35px;
+  border-radius: 14px;
+  box-sizing: border-box;
+  padding: 26px 30px;
+  color: #111111;
+  position: relative;
+  z-index: 10;
+}
+
+.form-container .title {
+  text-align: center;
+  font-family: "Lucida Sans", "Lucida Sans Regular", "Lucida Grande", "Lucida Sans Unicode", Geneva, Verdana, sans-serif;
+  margin: 6px 0 24px 0;
+  font-size: 26px;
+  font-weight: 800;
+  color: #111111;
+  letter-spacing: -0.5px;
+}
+
+.form-container .form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.form-container .input {
+  border-radius: 20px;
+  border: 1px solid #c0c0c0;
+  outline: 0 !important;
+  box-sizing: border-box;
+  padding: 12px 18px;
+  background-color: #ffffff;
+  color: #111111;
+  font-size: 14px;
+  width: 100%;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-container .input:focus {
+  border-color: teal;
+  box-shadow: 0 0 0 2px rgba(0, 128, 128, 0.2);
+}
+
+.form-container .input::placeholder {
+  color: #8c8c8c;
+}
+
+.form-container .page-link {
+  text-decoration: underline;
+  margin: -4px 0 2px 0;
+  text-align: end;
+  color: #747474;
+  text-decoration-color: #747474;
+}
+
+.form-container .page-link-label {
+  cursor: pointer;
+  font-family: "Lucida Sans", "Lucida Sans Regular", "Lucida Grande", "Lucida Sans Unicode", Geneva, Verdana, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  transition: color 0.15s ease;
+}
+
+.form-container .page-link-label:hover {
+  color: #000000;
+}
+
+.form-container .form-btn {
+  padding: 12px 15px;
+  font-family: "Lucida Sans", "Lucida Sans Regular", "Lucida Grande", "Lucida Sans Unicode", Geneva, Verdana, sans-serif;
+  border-radius: 20px;
+  border: 0 !important;
+  outline: 0 !important;
+  background: teal;
+  color: white;
+  cursor: pointer;
+  box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+  font-size: 14px;
+  font-weight: 700;
+  transition: all 0.18s ease;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.form-container .form-btn:hover {
+  background: #006666;
+}
+
+.form-container .form-btn:active {
+  box-shadow: none;
+  transform: scale(0.98);
+}
+
+.form-container .sign-up-label {
+  margin: 0;
+  font-size: 11px;
+  color: #747474;
+  font-family: "Lucida Sans", "Lucida Sans Regular", "Lucida Grande", "Lucida Sans Unicode", Geneva, Verdana, sans-serif;
+  text-align: center;
+}
+
+.form-container .sign-up-link {
+  margin-left: 4px;
+  font-size: 11px;
+  text-decoration: underline;
+  text-decoration-color: teal;
+  color: teal;
+  cursor: pointer;
+  font-weight: 800;
+  font-family: "Lucida Sans", "Lucida Sans Regular", "Lucida Grande", "Lucida Sans Unicode", Geneva, Verdana, sans-serif;
+}
+
+.form-container .buttons-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  margin-top: 18px;
+  gap: 12px;
+}
+
+.form-container .apple-login-button,
+.form-container .google-login-button {
+  border-radius: 20px;
+  box-sizing: border-box;
+  padding: 10px 15px;
+  box-shadow: rgba(0, 0, 0, 0.16) 0px 10px 36px 0px, rgba(0, 0, 0, 0.06) 0px 0px 0px 1px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: "Lucida Sans", "Lucida Sans Regular", "Lucida Grande", "Lucida Sans Unicode", Geneva, Verdana, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  gap: 8px;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+  user-select: none;
+}
+
+.form-container .apple-login-button:active,
+.form-container .google-login-button:active {
+  transform: scale(0.98);
+}
+
+.form-container .apple-login-button {
+  background-color: #000000;
+  color: #ffffff;
+  border: 2px solid #000000;
+}
+
+.form-container .apple-login-button:hover {
+  background-color: #1a1a1a;
+}
+
+.form-container .google-login-button {
+  background-color: #ffffff;
+  color: #111111;
+  border: 2px solid #747474;
+}
+
+.form-container .google-login-button:hover {
+  background-color: #f7f7f7;
+}
+
+.form-container .apple-icon,
+.form-container .google-icon {
+  font-size: 18px;
+  margin-bottom: 1px;
+}
+
+/* ==========================================================================
+   Authentic Glowing Border Card (Uiverse Animated Beam Card - Light Orange & White)
+   ========================================================================== */
+.card,
+.glowing-card {
+  --white: hsl(0, 0%, 100%);
+  --black: hsl(240, 15%, 9%);
+  --paragraph: hsl(0, 0%, 83%);
+  --line: hsl(240, 9%, 17%);
+  --primary: hsl(30, 100%, 65%);
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1rem;
+  width: 19rem;
+  min-width: 19rem;
+  max-width: 19rem;
+  background-color: hsla(240, 15%, 9%, 1);
+  background-image: radial-gradient(
+      at 88% 40%,
+      hsla(240, 15%, 9%, 1) 0px,
+      transparent 85%
+    ),
+    radial-gradient(at 49% 30%, hsla(240, 15%, 9%, 1) 0px, transparent 85%),
+    radial-gradient(at 14% 26%, hsla(240, 15%, 9%, 1) 0px, transparent 85%),
+    radial-gradient(at 0% 64%, hsl(26, 95%, 32%) 0px, transparent 85%),
+    radial-gradient(at 41% 94%, hsl(32, 95%, 42%) 0px, transparent 85%),
+    radial-gradient(at 100% 99%, hsl(28, 90%, 18%) 0px, transparent 85%);
+  border-radius: 1rem;
+  box-shadow: 0px -16px 24px 0px rgba(255, 255, 255, 0.25) inset;
+  box-sizing: border-box;
+  isolation: isolate;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.card:hover,
+.glowing-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0px -16px 24px 0px rgba(255, 255, 255, 0.35) inset,
+              0px 12px 30px 0px rgba(0, 0, 0, 0.6);
+}
+
+.card.theme-cyan,
+.glowing-card.theme-cyan {
+  --primary: hsl(189, 92%, 58%);
+  background-image: radial-gradient(
+      at 88% 40%,
+      hsla(240, 15%, 9%, 1) 0px,
+      transparent 85%
+    ),
+    radial-gradient(at 49% 30%, hsla(240, 15%, 9%, 1) 0px, transparent 85%),
+    radial-gradient(at 14% 26%, hsla(240, 15%, 9%, 1) 0px, transparent 85%),
+    radial-gradient(at 0% 64%, hsl(189, 99%, 26%) 0px, transparent 85%),
+    radial-gradient(at 41% 94%, hsl(189, 97%, 36%) 0px, transparent 85%),
+    radial-gradient(at 100% 99%, hsl(188, 94%, 13%) 0px, transparent 85%);
+}
+
+.card .card__border,
+.glowing-card .card__border {
+  position: absolute;
+  inset: -1.5px;
+  border-radius: inherit;
+  padding: 1.5px;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 10;
+  border: 1px solid rgba(255, 220, 180, 0.18);
+}
+
+.card .card__border::before,
+.glowing-card .card__border::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 300%;
+  height: 300%;
+  transform: translate(-50%, -50%) rotate(0deg);
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 240deg,
+    hsl(25, 100%, 58%) 275deg,
+    hsl(32, 100%, 70%) 305deg,
+    hsl(38, 100%, 82%) 332deg,
+    hsl(45, 100%, 92%) 350deg,
+    hsl(0, 0%, 100%) 360deg
+  );
+  animation: rotateBeam 5s linear infinite;
+  filter: drop-shadow(0 0 6px rgba(255, 235, 205, 0.8));
+}
+
+.card.theme-cyan .card__border::before,
+.glowing-card.theme-cyan .card__border::before {
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 260deg,
+    hsl(189, 100%, 80%) 320deg,
+    hsl(189, 100%, 50%) 360deg
+  );
+}
+
+@keyframes rotateBeam {
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+.card .card_title__container,
+.glowing-card .card_title__container {
+  position: relative;
+  z-index: 2;
+}
+
+.card .card_title__container .card_title,
+.glowing-card .card_title__container .card_title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--white);
+  display: block;
+}
+
+.card .card_title__container .card_paragraph,
+.glowing-card .card_title__container .card_paragraph {
+  margin-top: 0.25rem;
+  font-size: 0.68rem;
+  color: var(--paragraph);
+  line-height: 1.35;
+}
+
+.card .line,
+.glowing-card .line {
+  width: 100%;
+  height: 1px;
+  background-color: var(--line);
+  border: none;
+  margin: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.card .card__list,
+.glowing-card .card__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  position: relative;
+  z-index: 2;
+  flex: 1;
+}
+
+.card .card__list .card__list_item,
+.glowing-card .card__list .card__list_item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.card .card__list .card__list_item .check,
+.glowing-card .card__list .card__list_item .check {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 1rem;
+  height: 1rem;
+  background-color: var(--primary);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.card .card__list .card__list_item .check .check_svg,
+.glowing-card .card__list .card__list_item .check .check_svg {
+  width: 0.75rem;
+  height: 0.75rem;
+  fill: var(--black);
+}
+
+.card .card__list .card__list_item .list_text,
+.glowing-card .card__list .card__list_item .list_text {
+  font-size: 0.75rem;
+  color: var(--white);
+  line-height: 1.3;
+}
+
+.card .button,
+.glowing-card .button {
+  cursor: pointer;
+  padding: 0.55rem 1rem;
+  width: 100%;
+  background-image: linear-gradient(
+    0deg,
+    hsl(26, 100%, 62%),
+    hsl(34, 100%, 48%) 100%
+  );
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--white);
+  border: 0;
+  border-radius: 9999px;
+  box-shadow: inset 0 -2px 25px -4px var(--white);
+  position: relative;
+  z-index: 2;
+  transition: transform 0.15s ease, filter 0.15s ease;
+  text-align: center;
+  display: block;
+}
+
+.card.theme-cyan .button,
+.glowing-card.theme-cyan .button {
+  background-image: linear-gradient(
+    0deg,
+    hsl(189, 92%, 58%),
+    hsl(189, 99%, 26%) 100%
+  );
+}
+
+.card .button:hover,
+.glowing-card .button:hover {
+  filter: brightness(1.15);
+  transform: scale(1.02);
+}
+
+.card .button:active,
+.glowing-card .button:active {
+  transform: scale(0.98);
+}
+
+
