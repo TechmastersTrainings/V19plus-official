@@ -1,0 +1,18 @@
+{
+  "name": "V19Plus",
+  "short_name": "V19Plus",
+  "description": "Stream unlimited movies, TV shows, and documentaries.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#141414",
+  "theme_color": "#FF6B1A",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo-icon.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    }
+  ]
+}

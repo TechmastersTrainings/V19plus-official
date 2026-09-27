@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Network Security Configuration for V19Plus
+  - Trusts system CAs for all secure connections (production API, Firebase, CDNs)
+  - Permits cleartext traffic for HLS/DASH media CDNs, localhost, and dev endpoints
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- Specific domain configurations -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+        <domain includeSubdomains="true">v19plus-api.onrender.com</domain>
+        <domain includeSubdomains="true">v19plus-web.vercel.app</domain>
+        <domain includeSubdomains="true">v19plus-web--v19-plus.asia-southeast1.hosted.app</domain>
+        <domain includeSubdomains="true">v19-plus.firebasestorage.app</domain>
+        <domain includeSubdomains="true">firebaseio.com</domain>
+        <domain includeSubdomains="true">googleapis.com</domain>
+        <domain includeSubdomains="true">amazonaws.com</domain>
+        <domain includeSubdomains="true">cloudfront.net</domain>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </domain-config>
+</network-security-config>

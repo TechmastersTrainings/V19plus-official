@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+Allow: /browse
+Allow: /search
+Allow: /support
+Allow: /delete-account
+Allow: /legal/
+Disallow: /profile
+Disallow: /settings
+Disallow: /watchlist
+Disallow: /downloads
+Disallow: /watch/
+Disallow: /api/
+
+Sitemap: https://v19-plus.web.app/sitemap.xml

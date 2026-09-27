@@ -1,0 +1,63 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+.next/
+
+# Environment files (contain secrets!)
+.env
+.env.local
+# .env.production is intentionally tracked — contains only NEXT_PUBLIC_* keys (no secrets)
+.env.development
+frontend/.env
+backend/.env
+apps/backend/.env
+apps/web/.env
+
+# Database
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+backend/.pgdata/
+
+# Logs
+*.log
+logfile
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+coverage/
+
+# Misc
+*.apk
+*.aab
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg

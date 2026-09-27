@@ -1,0 +1,31 @@
+[
+  {
+    "AllowedOrigins": [
+      "https://v19plus.com",
+      "https://admin.v19plus.com",
+      "https://v19plus-web.vercel.app",
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "capacitor://localhost"
+    ],
+    "AllowedMethods": [
+      "GET",
+      "PUT",
+      "POST",
+      "HEAD",
+      "DELETE"
+    ],
+    "AllowedHeaders": [
+      "*"
+    ],
+    "ExposeHeaders": [
+      "ETag",
+      "Content-Length",
+      "Content-Type",
+      "x-amz-server-side-encryption",
+      "x-amz-request-id",
+      "x-amz-id-2"
+    ],
+    "MaxAgeSeconds": 3600
+  }
+]

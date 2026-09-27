@@ -1,0 +1,49 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'ADMIN' ||
+        request.auth.token.admin == true ||
+        request.auth.token.email == 'v19plus04@gmail.com'
+      );
+    }
+
+    // Series & Episodes rules
+    match /series/{seriesId} {
+      // Normal users can read published series metadata
+      allow read: if true;
+      // Only admins can create, update, or delete series
+      allow create, update, delete: if isAdmin();
+
+      match /episodes/{episodeId} {
+        // Normal users can read episode metadata
+        allow read: if true;
+        // Only admins can create, update, or delete episodes or modify videoUrl values
+        allow create, update, delete: if isAdmin();
+      }
+    }
+
+    // Content catalog fallback rules
+    match /content/{contentId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // User profiles & Watch History rules
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow write: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+    }
+
+    match /watchHistory/{historyId} {
+      allow read, write: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || isAdmin());
+    }
+  }
+}

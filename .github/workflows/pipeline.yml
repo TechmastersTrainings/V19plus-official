@@ -1,0 +1,186 @@
+name: V19Plus Unified CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, production ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate Codebase (CI)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Monorepo Dependencies
+        run: npm ci
+
+      - name: Build Shared Packages
+        run: |
+          echo "Building shared packages..."
+          npm run build --workspace=packages/types --if-present
+          npm run build --workspace=packages/utils --if-present
+          npm run build --workspace=packages/ui --if-present
+
+      - name: Generate Prisma Client (If Schema Present)
+        run: |
+          if [ -f "apps/backend/prisma/schema.prisma" ]; then
+            npx prisma generate --schema=apps/backend/prisma/schema.prisma
+          else
+            echo "No Prisma schema found, skipping prisma generate."
+          fi
+
+      - name: Build Apps Individually
+        run: |
+          npm run build --workspace=apps/web --if-present
+          npm run build --workspace=apps/admin --if-present
+          npm run build --workspace=apps/backend --if-present
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      - name: Check Backend Test Execution
+        run: |
+          HAS_TEST=$(node -e "const pkg = require('./apps/backend/package.json'); console.log(!!(pkg.scripts && pkg.scripts.test));")
+          if [ "$HAS_TEST" = "true" ]; then
+            echo "Running backend tests..."
+            npm run test --workspace=apps/backend
+          else
+            echo "No test script found in apps/backend, skipping tests."
+          fi
+
+  deploy-cloud:
+    name: Deploy to Cloud (CD)
+    needs: validate
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Trigger Render Backend Deployment
+        run: |
+          if [ -n "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" ]; then
+            echo "Triggering Render Backend API deployment..."
+            curl -s -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+          else
+            echo "Warning: RENDER_DEPLOY_HOOK_URL secret is not set. Skipping..."
+          fi
+
+      - name: Trigger Vercel Web Deployment
+        run: |
+          if [ -n "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}" ]; then
+            echo "Triggering Vercel Web Client deployment..."
+            curl -s -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}"
+          else
+            echo "Warning: VERCEL_DEPLOY_HOOK_URL secret is not set. Skipping..."
+          fi
+
+      - name: Trigger Vercel Admin Deployment
+        run: |
+          if [ -n "${{ secrets.VERCEL_ADMIN_DEPLOY_HOOK_URL }}" ]; then
+            echo "Triggering Vercel Admin CMS deployment..."
+            curl -s -X POST "${{ secrets.VERCEL_ADMIN_DEPLOY_HOOK_URL }}"
+          else
+            echo "Warning: VERCEL_ADMIN_DEPLOY_HOOK_URL secret is not set. Skipping..."
+          fi
+
+  build-and-release-android:
+    name: Build & Release Android App (CD)
+    needs: validate
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    env:
+      KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+      PLAY_STORE_JSON_KEY: ${{ secrets.PLAY_STORE_JSON_KEY }}
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Shared Packages
+        run: |
+          echo "Building shared packages..."
+          npm run build --workspace=packages/types --if-present
+          npm run build --workspace=packages/utils --if-present
+          npm run build --workspace=packages/ui --if-present
+
+      - name: Build Apps Individually
+        run: |
+          npm run build --workspace=apps/web --if-present
+          npm run build --workspace=apps/admin --if-present
+          npm run build --workspace=apps/backend --if-present
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+
+      - name: Sync Capacitor Android Config
+        env:
+          CAPACITOR_SERVER_URL: https://v19plus-web.vercel.app
+        run: |
+          cd apps/web
+          npx cap sync android
+
+      - name: Build Android App Bundle and APK
+        run: |
+          cd apps/web/android
+          chmod +x gradlew
+          ./gradlew assembleDebug bundleRelease
+
+      - name: Sign App Bundle
+        if: ${{ env.KEYSTORE_BASE64 != '' }}
+        uses: r0adkll/sign-android-release@v1
+        id: sign_app
+        with:
+          releaseDirectory: apps/web/android/app/build/outputs/bundle/release
+          signingKeyBase64: ${{ secrets.KEYSTORE_BASE64 }}
+          alias: ${{ secrets.KEYSTORE_ALIAS }}
+          keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEYSTORE_PASSWORD }}
+
+      - name: Upload Compiled APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: v19plus-apk
+          path: apps/web/android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
+
+      - name: Upload Compiled AAB
+        if: ${{ env.KEYSTORE_BASE64 != '' && steps.sign_app.outputs.signedReleaseFile != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: v19plus-aab
+          path: ${{ steps.sign_app.outputs.signedReleaseFile }}
+          retention-days: 7
+
+      - name: Upload to Google Play Store (Internal Sharing / Testing)
+        if: ${{ env.PLAY_STORE_JSON_KEY != '' }}
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonRaw: ${{ secrets.PLAY_STORE_JSON_KEY }}
+          packageName: com.v19plus.app
+          releaseFiles: ${{ steps.sign_app.outputs.signedReleaseFile }}
+          track: internal
