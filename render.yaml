@@ -11,7 +11,7 @@ databases:
     databaseName: v19plus_db
     user: v19plus_admin
     region: singapore
-    plan: standard
+    plan: starter
     postgresMajorVersion: "16"
     ipAllowList: [] # Only allow internal network & secure administrative access
 
