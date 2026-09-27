@@ -70,7 +70,7 @@ export function R2DirectVideoUploader({
 
   const uploadChunkWithRetry = async (
     file: File,
-    partNumber: int,
+    partNumber: number,
     url: string,
     onChunkProgress: (loadedDiff: number) => void,
     retries = 3

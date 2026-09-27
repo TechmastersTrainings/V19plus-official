@@ -321,7 +321,7 @@ export default function AdminContent() {
         thumbnailUrl: item.thumbnailUrl,
         backdropUrl: item.backdropUrl,
         trailerUrl: item.trailerUrl || '',
-        status: item.status || 'ONGOING',
+        status: (item.status === 'COMPLETED' ? 'COMPLETED' : 'ONGOING'),
         isOriginal: item.isOriginal || false,
         isFeatured: item.isFeatured,
         isPublished: item.isPublished,

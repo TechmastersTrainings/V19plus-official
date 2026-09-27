@@ -29,10 +29,11 @@ logfile
 .DS_Store
 Thumbs.db
 
-# IDE
+# IDE & Build Caches
 .vscode/
 .idea/
 coverage/
+*.tsbuildinfo
 
 # Misc
 *.apk

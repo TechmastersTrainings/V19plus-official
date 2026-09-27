@@ -45,6 +45,7 @@ export interface AdminEpisode {
   thumbnailUrl?: string;
   videoUrl: string;
   rawVideoUrl?: string;
+  masterStorageKey?: string;
   hlsUrl?: string;
   transcodeStatus?: 'processing' | 'ready' | 'failed' | string;
   isPublished?: boolean;
@@ -136,4 +137,15 @@ export const adminApi = {
   listVideoJobs: () => api.get('/jobs'),
   getVideoJob: (id: string) => api.get(`/jobs/${id}`),
   retryVideoJob: (id: string) => api.post(`/jobs/${id}/retry`),
+  uploadVideo: (formData: FormData, onUploadProgress?: (progressEvent: any) => void) =>
+    api.post('/media/upload/file', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress,
+    }),
+  transcodeFromUrl: (data: { videoUrl: string; contentId: string; episodeId?: string }) =>
+    api.post('/media/transcode', data),
+  migrateVideosToBunny: () =>
+    api.post<{ message: string; queuedCount: number }>('/media/migrate-bunny'),
+  createBunnyVideo: (data: { title: string }) =>
+    api.post<{ videoId: string; libraryId: string; directUploadUrl: string }>('/media/bunny/create', data),
 };
