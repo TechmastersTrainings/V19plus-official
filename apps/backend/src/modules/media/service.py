@@ -26,8 +26,15 @@ class MediaStorageService:
             ),
         )
 
+    def is_mock_mode(self) -> bool:
+        return not self.access_key or self.access_key.startswith("mock_") or not self.endpoint_url or "mock" in self.endpoint_url
+
     def create_multipart_upload(self, bucket: str, key: str, content_type: str = "video/mp4") -> str:
         """Initiate S3 multipart upload in Cloudflare R2"""
+        if self.is_mock_mode():
+            import uuid
+            return f"mock_r2_upload_{uuid.uuid4().hex[:16]}"
+
         try:
             res = self.s3_client.create_multipart_upload(
                 Bucket=bucket,
@@ -42,6 +49,9 @@ class MediaStorageService:
         self, bucket: str, key: str, upload_id: str, part_number: int, expires_in: int = 3600
     ) -> str:
         """Generate presigned PUT URL for a specific part so browser/admin uploads directly to R2"""
+        if self.is_mock_mode():
+            return f"https://r2.v19plus.com/{bucket}/{key}?uploadId={upload_id}&partNumber={part_number}&mock_token=valid"
+
         try:
             url = self.s3_client.generate_presigned_url(
                 ClientMethod="upload_part",
@@ -61,6 +71,13 @@ class MediaStorageService:
         self, bucket: str, key: str, upload_id: str, parts: List[Dict[str, any]]
     ) -> Dict[str, any]:
         """Finalize multipart upload in R2 assembling all parts"""
+        if self.is_mock_mode():
+            return {
+                "Location": f"https://stream.v19plus.com/{bucket}/{key}",
+                "Bucket": bucket,
+                "Key": key,
+                "ETag": '"mock_etag_assembled_complete"',
+            }
         try:
             # S3 API expects sorted parts with PartNumber and ETag
             sorted_parts = sorted(parts, key=lambda x: x["PartNumber"])
