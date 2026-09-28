@@ -74,6 +74,7 @@ class Settings(BaseSettings):
         "http://localhost:3000",
         "http://localhost:3001",
         "https://v19plus.com",
+        "https://www.v19plus.com",
         "https://admin.v19plus.com",
         "capacitor://localhost",
     ]
