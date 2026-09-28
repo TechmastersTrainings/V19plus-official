@@ -71,4 +71,140 @@ export const mediaApi = {
       },
     });
   },
+
+  uploadChunkedFile: async (
+    file: File,
+    onProgress?: (
+      pct: number,
+      details?: { currentPart: number; totalParts: number; uploadedBytes: number; totalBytes: number }
+    ) => void
+  ) => {
+    const backendBase =
+      typeof window !== 'undefined' &&
+      !window.location.hostname.includes('localhost') &&
+      !window.location.hostname.includes('127.0.0.1')
+        ? 'https://v19plus-official.onrender.com/api'
+        : '/api';
+
+    const CHUNK_SIZE = 20 * 1024 * 1024; // 20 MB chunks
+    const totalParts = Math.max(1, Math.ceil(file.size / CHUNK_SIZE));
+
+    // 1. Initiate chunked multipart upload
+    const initRes = await api.post<{ upload_id: string; key: string; chunk_size: number }>(
+      `${backendBase}/media/upload/chunked/initiate`,
+      {
+        filename: file.name,
+        file_size_bytes: file.size,
+        content_type: file.type || 'video/mp4',
+      },
+      { timeout: 30000 }
+    );
+
+    const { upload_id, key } = initRes.data;
+    const parts: { part_number: number; etag: string }[] = [];
+
+    // 2. Upload each chunk with retry logic
+    let uploadedBytes = 0;
+
+    for (let partNumber = 1; partNumber <= totalParts; partNumber++) {
+      const start = (partNumber - 1) * CHUNK_SIZE;
+      const end = Math.min(start + CHUNK_SIZE, file.size);
+      const chunkBlob = file.slice(start, end);
+
+      let attempts = 0;
+      let partEtag = '';
+
+      while (attempts < 3) {
+        try {
+          const chunkForm = new FormData();
+          chunkForm.append('upload_id', upload_id);
+          chunkForm.append('key', key);
+          chunkForm.append('part_number', String(partNumber));
+          chunkForm.append('chunk', chunkBlob, file.name);
+
+          const partRes = await api.post<{ part_number: number; etag: string }>(
+            `${backendBase}/media/upload/chunked/part`,
+            chunkForm,
+            {
+              timeout: 0,
+              headers: { 'Content-Type': undefined },
+              onUploadProgress: (pEvent) => {
+                if (pEvent.total && onProgress) {
+                  const currentChunkLoaded = pEvent.loaded;
+                  const totalLoadedSoFar = start + currentChunkLoaded;
+                  const pct = Math.min(99, Math.round((totalLoadedSoFar * 100) / file.size));
+                  onProgress(pct, {
+                    currentPart: partNumber,
+                    totalParts,
+                    uploadedBytes: totalLoadedSoFar,
+                    totalBytes: file.size,
+                  });
+                }
+              },
+            }
+          );
+
+          partEtag = partRes.data.etag;
+          break;
+        } catch (chunkErr) {
+          attempts++;
+          if (attempts >= 3) {
+            throw new Error(
+              `Failed to upload chunk ${partNumber} of ${totalParts} after 3 attempts: ${
+                chunkErr instanceof Error ? chunkErr.message : 'Network error'
+              }`
+            );
+          }
+          await new Promise((r) => setTimeout(r, 1500 * attempts));
+        }
+      }
+
+      parts.push({ part_number: partNumber, etag: partEtag });
+      uploadedBytes += end - start;
+      if (onProgress) {
+        const pct = Math.min(99, Math.round((uploadedBytes * 100) / file.size));
+        onProgress(pct, {
+          currentPart: partNumber,
+          totalParts,
+          uploadedBytes,
+          totalBytes: file.size,
+        });
+      }
+    }
+
+    // 3. Complete chunked upload
+    const completeRes = await api.post<{
+      storage_key: string;
+      stream_url: string;
+      file_size_bytes: number;
+    }>(
+      `${backendBase}/media/upload/chunked/complete`,
+      {
+        upload_id,
+        key,
+        parts,
+        file_size_bytes: file.size,
+      },
+      { timeout: 60000 }
+    );
+
+    if (onProgress) {
+      onProgress(100, {
+        currentPart: totalParts,
+        totalParts,
+        uploadedBytes: file.size,
+        totalBytes: file.size,
+      });
+    }
+
+    return {
+      data: {
+        storage_key: completeRes.data.storage_key,
+        filename: file.name,
+        file_size_bytes: file.size,
+        stream_url: completeRes.data.stream_url,
+        content_type: file.type || 'video/mp4',
+      },
+    };
+  },
 };

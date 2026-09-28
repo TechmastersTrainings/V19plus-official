@@ -174,10 +174,16 @@ export default function AdminStudioDesk() {
         setUploadStep(`Uploading ${selectedFile.name} (${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB)...`);
         setUploadProgress(5);
 
-        const uploadRes = await mediaApi.uploadDirectFile(selectedFile, (pct) => {
+        const uploadRes = await mediaApi.uploadChunkedFile(selectedFile, (pct, details) => {
           setUploadProgress(pct);
           if (pct >= 100) {
-            setUploadStep('Syncing video to Cloudflare R2 media vault...');
+            setUploadStep('Finalizing and assembling video stream in Cloudflare R2 media vault...');
+          } else if (details) {
+            const uploadedMB = (details.uploadedBytes / (1024 * 1024)).toFixed(1);
+            const totalMB = (details.totalBytes / (1024 * 1024)).toFixed(1);
+            setUploadStep(
+              `Uploading Part ${details.currentPart} of ${details.totalParts} (${uploadedMB} MB / ${totalMB} MB) • ${pct}%`
+            );
           } else {
             setUploadStep(`Uploading video assets: ${pct}%`);
           }

@@ -67,6 +67,24 @@ class MediaStorageService:
         except Exception as e:
             raise V19plusException(f"Failed to generate presigned part URL: {str(e)}", status_code=500)
 
+    def upload_part(
+        self, bucket: str, key: str, upload_id: str, part_number: int, body: Any
+    ) -> str:
+        """Upload a single chunk/part to Cloudflare R2 and return its ETag"""
+        if self.is_mock_mode():
+            return f'"mock_etag_part_{part_number}"'
+        try:
+            res = self.s3_client.upload_part(
+                Bucket=bucket,
+                Key=key,
+                UploadId=upload_id,
+                PartNumber=part_number,
+                Body=body,
+            )
+            return res["ETag"]
+        except Exception as e:
+            raise V19plusException(f"Failed to upload part {part_number} to R2: {str(e)}", status_code=500)
+
     def complete_multipart_upload(
         self, bucket: str, key: str, upload_id: str, parts: List[Dict[str, any]]
     ) -> Dict[str, any]:

@@ -5,8 +5,9 @@ import os
 import re
 import shutil
 import uuid
-from typing import Any
-from fastapi import APIRouter, Depends, Query, status, File, UploadFile, Request, HTTPException
+from typing import Any, List, Optional
+from pydantic import BaseModel
+from fastapi import APIRouter, Depends, Query, status, File, UploadFile, Request, HTTPException, Form, Body
 from fastapi.responses import FileResponse, StreamingResponse
 from starlette.concurrency import run_in_threadpool
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -88,6 +89,112 @@ async def upload_direct_file(
         "file_size_bytes": file_size,
         "stream_url": stream_url,
         "content_type": file.content_type or "video/mp4",
+    }
+
+
+class ChunkInitiateRequest(BaseModel):
+    filename: str
+    file_size_bytes: int
+    content_type: Optional[str] = "video/mp4"
+
+
+class PartInfo(BaseModel):
+    part_number: int
+    etag: str
+
+
+class ChunkCompleteRequest(BaseModel):
+    upload_id: str
+    key: str
+    parts: List[PartInfo]
+    file_size_bytes: int
+
+
+@router.post("/upload/chunked/initiate")
+async def initiate_chunked_upload(
+    req: ChunkInitiateRequest,
+):
+    """
+    Initiate a multipart upload in Cloudflare R2 for resilient chunked streaming.
+    Bypasses proxy payload limits, allowing files of any size (up to hundreds of GBs).
+    """
+    storage = MediaStorageService()
+    raw_name = req.filename or "video.mp4"
+    clean_name = re.sub(r"[^\w\.-]", "_", raw_name)
+    unique_key = f"{uuid.uuid4().hex[:8]}_{clean_name}"
+    bucket = settings.R2_STREAMING_BUCKET or settings.R2_MASTERS_BUCKET
+
+    upload_id = await run_in_threadpool(
+        storage.create_multipart_upload,
+        bucket,
+        unique_key,
+        req.content_type or "video/mp4",
+    )
+
+    return {
+        "upload_id": upload_id,
+        "key": unique_key,
+        "chunk_size": 20 * 1024 * 1024,
+    }
+
+
+@router.post("/upload/chunked/part")
+async def upload_chunked_part(
+    upload_id: str = Form(...),
+    key: str = Form(...),
+    part_number: int = Form(...),
+    chunk: UploadFile = File(...),
+):
+    """
+    Ingest a single 20MB chunk into Cloudflare R2 multipart upload.
+    Streams directly to R2 without touching container disk or exceeding proxy payload limits.
+    """
+    storage = MediaStorageService()
+    bucket = settings.R2_STREAMING_BUCKET or settings.R2_MASTERS_BUCKET
+
+    chunk_data = await chunk.read()
+    etag = await run_in_threadpool(
+        storage.upload_part,
+        bucket,
+        key,
+        upload_id,
+        part_number,
+        chunk_data,
+    )
+
+    return {
+        "part_number": part_number,
+        "etag": etag,
+    }
+
+
+@router.post("/upload/chunked/complete")
+async def complete_chunked_upload(
+    req: ChunkCompleteRequest,
+):
+    """
+    Finalize multipart assembly in Cloudflare R2 and return the public CDN streaming URL.
+    """
+    storage = MediaStorageService()
+    bucket = settings.R2_STREAMING_BUCKET or settings.R2_MASTERS_BUCKET
+    parts_payload = [{"PartNumber": p.part_number, "ETag": p.etag} for p in req.parts]
+
+    await run_in_threadpool(
+        storage.complete_multipart_upload,
+        bucket,
+        req.key,
+        req.upload_id,
+        parts_payload,
+    )
+
+    stream_url = f"/api/media/stream/{req.key}"
+    if settings.CDN_STREAMING_BASE_URL:
+        stream_url = f"{settings.CDN_STREAMING_BASE_URL.rstrip('/')}/{req.key}"
+
+    return {
+        "storage_key": req.key,
+        "stream_url": stream_url,
+        "file_size_bytes": req.file_size_bytes,
     }
 
 
