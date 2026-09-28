@@ -119,10 +119,19 @@ export function VideoPlayer({
         const res = await streamingApi.getPlaybackAuth(content.id, episode?.id || episodeId);
         if (!isMounted) return;
 
+        const normalizeStreamUrl = (url?: string) => {
+          if (!url) return '';
+          if (url.includes('127.0.0.1:8001')) {
+            return url.replace('http://127.0.0.1:8001', '');
+          }
+          return url;
+        };
+
         setAuthData(res.data);
-        setActiveVideoUrl(res.data.stream_url);
+        const resolvedUrl = normalizeStreamUrl(res.data.stream_url);
+        setActiveVideoUrl(resolvedUrl);
         logEvent('playbackAuthorized', {
-          streamUrl: res.data.stream_url,
+          streamUrl: resolvedUrl,
           hasSprite: !!res.data.sprite_vtt_url,
         });
       } catch (err: any) {
@@ -133,13 +142,22 @@ export function VideoPlayer({
         logEvent('playbackAuthFailed', { status: statusCode, error: detailMsg || err.message });
 
         // Subscriptions deferred per user directive - enable open streaming with reliable fallback
-        const fallbackUrl =
+        const normalizeStreamUrl = (url?: string) => {
+          if (!url) return '';
+          if (url.includes('127.0.0.1:8001')) {
+            return url.replace('http://127.0.0.1:8001', '');
+          }
+          return url;
+        };
+
+        const fallbackUrl = normalizeStreamUrl(
           (episode?.videoUrl ||
             (episode as any)?.hls_manifest_key ||
             content.videoUrl ||
             (content as any)?.hls_manifest_key ||
             'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8'
-          ).trim();
+          ).trim()
+        );
 
         setActiveVideoUrl(fallbackUrl);
         setAuthError(null);

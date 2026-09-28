@@ -68,15 +68,18 @@ class StreamingService:
         local_filename = os.path.basename(content.master_storage_key or "")
         local_path = os.path.join(media_dir, local_filename) if local_filename else None
 
-        if local_path and os.path.exists(local_path):
-            stream_url = f"http://127.0.0.1:8001/api/media/stream/{local_filename}"
-        elif hls_manifest_key and (hls_manifest_key.startswith("http://") or hls_manifest_key.startswith("https://")):
-            stream_url = hls_manifest_key
+        if hls_manifest_key and (hls_manifest_key.startswith("http://") or hls_manifest_key.startswith("https://") or hls_manifest_key.startswith("/api/")):
+            if "127.0.0.1:8001" in hls_manifest_key:
+                stream_url = hls_manifest_key.replace("http://127.0.0.1:8001", "")
+            else:
+                stream_url = hls_manifest_key
+        elif local_path and os.path.exists(local_path):
+            stream_url = f"/api/media/stream/{local_filename}"
         elif hls_manifest_key and "content/" in hls_manifest_key:
             # High-bitrate masterclass streaming asset
             stream_url = f"https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8?token={token}"
         elif content.master_storage_key:
-            stream_url = f"http://127.0.0.1:8001/api/media/stream/{local_filename}"
+            stream_url = f"/api/media/stream/{local_filename}"
         else:
             stream_url = f"https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8?token={token}"
 

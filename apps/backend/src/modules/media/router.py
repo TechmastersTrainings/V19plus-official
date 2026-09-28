@@ -50,7 +50,7 @@ async def upload_direct_file(
         shutil.copyfileobj(file.file, buffer)
 
     file_size = os.path.getsize(target_path)
-    stream_url = f"http://127.0.0.1:8001/api/media/stream/{unique_key}"
+    stream_url = f"/api/media/stream/{unique_key}"
 
     return {
         "storage_key": unique_key,
