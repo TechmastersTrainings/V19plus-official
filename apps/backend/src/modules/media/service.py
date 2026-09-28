@@ -1,5 +1,5 @@
 import math
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 import boto3
 from botocore.config import Config
 from src.config import settings
