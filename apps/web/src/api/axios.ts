@@ -7,9 +7,9 @@ export const getBaseURL = () => {
     return process.env.NEXT_PUBLIC_API_URL;
   }
   if (Capacitor.isNativePlatform()) {
-    return 'https://v19plus-api.onrender.com/api';
+    return 'https://v19plus-official.onrender.com/api';
   }
-  return 'http://127.0.0.1:8001/api';
+  return '/api';
 };
 
 const api = axios.create({

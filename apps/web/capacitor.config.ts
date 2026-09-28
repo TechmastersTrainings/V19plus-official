@@ -16,6 +16,7 @@ const config: CapacitorConfig = {
     allowNavigation: [
       'v19plus-web.vercel.app',
       '*.vercel.app',
+      'v19plus-official.onrender.com',
       'v19plus-api.onrender.com',
       '*.onrender.com',
       '*.v19plus.com',
