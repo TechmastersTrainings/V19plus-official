@@ -55,7 +55,7 @@ export function VideoPlayer({
   const [duration, setDuration] = useState(0);
   const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
 
   // Derive poster and title
@@ -98,6 +98,13 @@ export function VideoPlayer({
     };
   }, [content?.id, episodeId, propSrc, content?.videoUrl]);
 
+  // Ensure video element loads when source becomes available
+  useEffect(() => {
+    if (activeSrc && videoRef.current) {
+      videoRef.current.load();
+    }
+  }, [activeSrc]);
+
   /*
    * ---------------------------------------------------------
    * CONTROLS VISIBILITY
@@ -111,20 +118,23 @@ export function VideoPlayer({
       clearTimeout(hideControlsTimer.current);
     }
 
+    // Only auto-hide while video is actively playing!
+    // When paused, controls remain permanently visible.
     if (isPlaying) {
       hideControlsTimer.current = setTimeout(() => {
         setShowControls(false);
-      }, 2500);
+      }, 3000);
     }
   }, [isPlaying]);
 
   useEffect(() => {
+    showPlayerControls();
     return () => {
       if (hideControlsTimer.current) {
         clearTimeout(hideControlsTimer.current);
       }
     };
-  }, []);
+  }, [showPlayerControls, isPlaying]);
 
   /*
    * ---------------------------------------------------------
@@ -141,12 +151,18 @@ export function VideoPlayer({
 
       try {
         if (video.paused) {
+          setIsLoading(true);
           await video.play();
+          setIsPlaying(true);
+          setIsLoading(false);
         } else {
           video.pause();
+          setIsPlaying(false);
+          setShowControls(true);
         }
       } catch (error) {
         console.error("Playback error:", error);
+        setIsLoading(false);
       }
     },
     []
@@ -166,7 +182,7 @@ export function VideoPlayer({
       if (!video) return;
 
       video.currentTime = Math.max(0, video.currentTime - 10);
-
+      setCurrentTime(video.currentTime);
       showPlayerControls();
     },
     [showPlayerControls]
@@ -183,7 +199,7 @@ export function VideoPlayer({
         video.duration || Infinity,
         video.currentTime + 10
       );
-
+      setCurrentTime(video.currentTime);
       showPlayerControls();
     },
     [showPlayerControls]
@@ -202,10 +218,8 @@ export function VideoPlayer({
     if (!video) return;
 
     const newTime = Number(event.target.value);
-
     video.currentTime = newTime;
     setCurrentTime(newTime);
-
     showPlayerControls();
   };
 
@@ -222,7 +236,6 @@ export function VideoPlayer({
     if (!video) return;
 
     const nextMuted = !video.muted;
-
     video.muted = nextMuted;
     setIsMuted(nextMuted);
 
@@ -243,13 +256,11 @@ export function VideoPlayer({
     if (!video) return;
 
     const newVolume = Number(event.target.value);
-
     video.volume = newVolume;
     video.muted = newVolume === 0;
 
     setVolume(newVolume);
     setIsMuted(newVolume === 0);
-
     showPlayerControls();
   };
 
@@ -338,6 +349,7 @@ export function VideoPlayer({
 
   const handlePlay = () => {
     setIsPlaying(true);
+    setIsLoading(false);
     setHasError(false);
   };
 
@@ -349,6 +361,7 @@ export function VideoPlayer({
 
   const handlePause = () => {
     setIsPlaying(false);
+    setIsLoading(false);
     setShowControls(true);
 
     if (hideControlsTimer.current) {
@@ -388,7 +401,9 @@ export function VideoPlayer({
   };
 
   const handleWaiting = () => {
-    setIsLoading(true);
+    if (isPlaying) {
+      setIsLoading(true);
+    }
   };
 
   const handleCanPlay = () => {
@@ -396,10 +411,14 @@ export function VideoPlayer({
   };
 
   const handleError = () => {
-    console.error("V19Plus video playback error");
-    setIsLoading(false);
-    setHasError(true);
-    setIsPlaying(false);
+    const video = videoRef.current;
+    // Autoplay or abort is not a real stream failure
+    if (video && video.error && video.error.code !== 1) {
+      console.error("V19Plus video playback error:", video.error);
+      setIsLoading(false);
+      setHasError(true);
+      setIsPlaying(false);
+    }
   };
 
   const handleEnded = () => {
@@ -484,7 +503,7 @@ export function VideoPlayer({
    */
 
   const formatTime = (seconds: number) => {
-    if (!Number.isFinite(seconds)) {
+    if (!Number.isFinite(seconds) || seconds <= 0) {
       return "00:00";
     }
 
@@ -515,16 +534,14 @@ export function VideoPlayer({
   ) => {
     /*
      * Do NOT call togglePlayPause() here.
-     *
-     * This is intentional.
-     *
-     * Clicking the video itself should only reveal controls.
+     * Clicking the video itself only reveals controls.
      * Playback is controlled by the actual Play/Pause button.
      */
-
     event.stopPropagation();
     showPlayerControls();
   };
+
+  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   /*
    * ---------------------------------------------------------
@@ -551,7 +568,7 @@ export function VideoPlayer({
       }}
       onClick={handleVideoAreaClick}
     >
-      {/* VIDEO */}
+      {/* NATIVE VIDEO ELEMENT */}
 
       <video
         ref={videoRef}
@@ -571,238 +588,252 @@ export function VideoPlayer({
         onEnded={handleEnded}
       />
 
-      {/* LOADING */}
+      {/* ACTIVE PLAYBACK BUFFERING INDICATOR */}
 
-      {isLoading && !hasError && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-white/20 border-t-[#FF5C00]" />
+      {isLoading && isPlaying && !hasError && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center z-20">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-white/20 border-t-white" />
         </div>
       )}
 
-      {/* ERROR */}
+      {/* ERROR MODAL */}
 
       {hasError && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-center">
-          <div className="mb-4 text-lg font-semibold text-white">
-            Unable to play this video
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/85 text-center z-30 p-6">
+          <div className="mb-4 text-xl font-bold text-white">
+            Unable to stream this video
           </div>
+          <p className="text-sm text-white/70 max-w-sm mb-6">
+            The video connection was interrupted or is still being prepared by the server.
+          </p>
 
           <button
             type="button"
             onClick={(event) => {
               event.stopPropagation();
-
               const video = videoRef.current;
               if (!video) return;
 
               setHasError(false);
               setIsLoading(true);
-
               video.load();
-
               video
                 .play()
+                .then(() => {
+                  setIsPlaying(true);
+                  setIsLoading(false);
+                })
                 .catch((error) => {
                   console.error("Retry playback error:", error);
+                  setIsLoading(false);
                 });
             }}
-            className="rounded-lg bg-white px-5 py-2 font-semibold text-black transition hover:bg-gray-200"
+            className="rounded-xl bg-white px-6 py-2.5 font-bold text-black transition hover:bg-white/90 shadow-xl active:scale-95"
           >
-            Retry
+            Retry Playback
           </button>
         </div>
       )}
 
-      {/* CENTER PLAY BUTTON */}
+      {/* PROMINENT PURE-WHITE CENTER PLAY BUTTON WHEN PAUSED */}
 
-      {!isPlaying && !hasError && !isLoading && (
+      {!isPlaying && !hasError && (
         <button
           type="button"
           aria-label="Play video"
           onClick={togglePlayPause}
-          className="absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-black shadow-2xl transition hover:scale-110 hover:bg-white"
+          className="absolute left-1/2 top-1/2 flex h-20 w-20 sm:h-24 sm:w-24 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white text-black shadow-[0_0_50px_rgba(255,255,255,0.7)] transition-all hover:scale-110 active:scale-95 z-20 cursor-pointer group/centerplay"
         >
           <svg
-            width="26"
-            height="26"
+            className="w-10 h-10 sm:w-12 sm:h-12 fill-black ml-1.5 transition-transform group-hover/centerplay:scale-105"
             viewBox="0 0 24 24"
-            fill="currentColor"
           >
             <path d="M8 5v14l11-7z" />
           </svg>
         </button>
       )}
 
-      {/* CONTROLS */}
+      {/* CONTROLS (ALWAYS 100% VISIBLE WHEN PAUSED) */}
 
       <div
-        className={`absolute inset-x-0 bottom-0 transition-opacity duration-300 ${
-          showControls
-            ? "opacity-100"
+        className={`absolute inset-x-0 bottom-0 transition-opacity duration-300 z-30 ${
+          showControls || !isPlaying
+            ? "opacity-100 pointer-events-auto"
             : "pointer-events-none opacity-0"
         }`}
         onClick={(event) => event.stopPropagation()}
       >
-        {/* GRADIENT */}
+        {/* HIGH-CONTRAST GRADIENT BACKDROP */}
 
-        <div className="pointer-events-none absolute inset-0 -top-24 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+        <div className="pointer-events-none absolute inset-0 -top-28 bg-gradient-to-t from-black via-black/80 to-transparent" />
 
-        <div className="relative px-4 pb-3 pt-10">
-          {/* PROGRESS */}
+        <div className="relative px-6 pb-6 pt-12">
+          {/* HIGH CONTRAST WHITE PROGRESS / SEEKING BAR */}
 
-          <input
-            type="range"
-            min={0}
-            max={duration || 0}
-            step={0.1}
-            value={Math.min(currentTime, duration || 0)}
-            onChange={handleSeek}
-            aria-label="Video progress"
-            className="mb-3 h-1.5 w-full cursor-pointer appearance-none rounded-full accent-[#FF5C00]"
-          />
+          <div className="relative w-full mb-4 group/scrubber flex items-center">
+            {/* Visual Custom White Progress Track */}
+            <div className="w-full h-2 bg-white/25 rounded-full overflow-hidden transition-all group-hover/scrubber:h-3">
+              <div
+                className="h-full bg-white rounded-full shadow-[0_0_12px_rgba(255,255,255,0.9)]"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
 
-          {/* CONTROL BAR */}
+            {/* Glowing White Thumb Knob */}
+            <div
+              className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full border-2 border-black shadow-[0_0_8px_white] pointer-events-none transition-all group-hover/scrubber:scale-125"
+              style={{ left: `calc(${progressPercent}% - 8px)` }}
+            />
 
-          <div className="flex items-center gap-3 text-white">
-            {/* PLAY / PAUSE */}
+            {/* Interactive Range Input */}
+            <input
+              type="range"
+              min={0}
+              max={duration || 0}
+              step={0.1}
+              value={Math.min(currentTime, duration || 0)}
+              onChange={handleSeek}
+              aria-label="Video progress"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            />
+          </div>
+
+          {/* HIGH CONTRAST WHITE CONTROL BAR */}
+
+          <div className="flex items-center gap-4 text-white">
+            {/* PLAY / PAUSE BUTTON */}
 
             <button
               type="button"
               aria-label={isPlaying ? "Pause" : "Play"}
               onClick={togglePlayPause}
-              className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-white/15"
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-black shadow-lg transition hover:scale-105 active:scale-95 cursor-pointer"
             >
               {isPlaying ? (
                 <svg
-                  width="22"
-                  height="22"
+                  className="w-5 h-5 fill-black"
                   viewBox="0 0 24 24"
-                  fill="currentColor"
                 >
                   <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
                 </svg>
               ) : (
                 <svg
-                  width="22"
-                  height="22"
+                  className="w-5 h-5 fill-black ml-0.5"
                   viewBox="0 0 24 24"
-                  fill="currentColor"
                 >
                   <path d="M8 5v14l11-7z" />
                 </svg>
               )}
             </button>
 
-            {/* BACKWARD 10 */}
+            {/* BACKWARD 10 SECONDS */}
 
             <button
               type="button"
               aria-label="Skip backward 10 seconds"
               onClick={skipBackward}
-              className="group/skip relative flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-white/15"
+              className="group/skip relative flex h-10 w-10 items-center justify-center rounded-full text-white hover:bg-white/20 transition cursor-pointer"
             >
               <svg
-                width="23"
-                height="23"
+                className="w-6 h-6 stroke-white"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               >
                 <path d="M9 14 5 10l4-4" />
                 <path d="M5 10h7a6 6 0 1 1-5.2 9" />
               </svg>
 
-              <span className="absolute -top-8 whitespace-nowrap rounded bg-black/90 px-2 py-1 text-[10px] opacity-0 transition group-hover/skip:opacity-100">
-                10 sec
+              <span className="absolute -top-8 whitespace-nowrap rounded-md bg-white text-black px-2 py-0.5 text-[11px] font-bold opacity-0 transition group-hover/skip:opacity-100 shadow-md">
+                -10s
               </span>
             </button>
 
-            {/* FORWARD 10 */}
+            {/* FORWARD 10 SECONDS */}
 
             <button
               type="button"
               aria-label="Skip forward 10 seconds"
               onClick={skipForward}
-              className="group/skip relative flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-white/15"
+              className="group/skip relative flex h-10 w-10 items-center justify-center rounded-full text-white hover:bg-white/20 transition cursor-pointer"
             >
               <svg
-                width="23"
-                height="23"
+                className="w-6 h-6 stroke-white"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               >
                 <path d="m15 14 4-4-4-4" />
                 <path d="M19 10h-7a6 6 0 1 0 5.2 9" />
               </svg>
 
-              <span className="absolute -top-8 whitespace-nowrap rounded bg-black/90 px-2 py-1 text-[10px] opacity-0 transition group-hover/skip:opacity-100">
-                10 sec
+              <span className="absolute -top-8 whitespace-nowrap rounded-md bg-white text-black px-2 py-0.5 text-[11px] font-bold opacity-0 transition group-hover/skip:opacity-100 shadow-md">
+                +10s
               </span>
             </button>
 
-            {/* VOLUME */}
+            {/* VOLUME & MUTE TOGGLE */}
 
-            <button
-              type="button"
-              aria-label={isMuted ? "Unmute" : "Mute"}
-              onClick={toggleMute}
-              className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-white/15"
-            >
-              {isMuted || volume === 0 ? (
-                <svg
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M11 5 6 9H3v6h3l5 4z" />
-                  <path d="m17 9 4 4m0-4-4 4" />
-                </svg>
-              ) : (
-                <svg
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M11 5 6 9H3v6h3l5 4z" />
-                  <path d="M15.5 8.5a5 5 0 0 1 0 7" />
-                  <path d="M18 6a8.5 8.5 0 0 1 0 12" />
-                </svg>
-              )}
-            </button>
+            <div className="flex items-center gap-2 group/volume">
+              <button
+                type="button"
+                aria-label={isMuted ? "Unmute" : "Mute"}
+                onClick={toggleMute}
+                className="flex h-10 w-10 items-center justify-center rounded-full text-white hover:bg-white/20 transition cursor-pointer"
+              >
+                {isMuted || volume === 0 ? (
+                  <svg
+                    className="w-6 h-6 stroke-white"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    strokeWidth="2.2"
+                  >
+                    <path d="M11 5 6 9H3v6h3l5 4z" />
+                    <path d="m17 9 4 4m0-4-4 4" />
+                  </svg>
+                ) : (
+                  <svg
+                    className="w-6 h-6 stroke-white"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    strokeWidth="2.2"
+                  >
+                    <path d="M11 5 6 9H3v6h3l5 4z" />
+                    <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+                    <path d="M18 6a8.5 8.5 0 0 1 0 12" />
+                  </svg>
+                )}
+              </button>
 
-            {/* VOLUME SLIDER */}
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.01}
+                value={isMuted ? 0 : volume}
+                onChange={handleVolumeChange}
+                aria-label="Volume"
+                className="w-20 cursor-pointer accent-white hidden sm:block h-1.5 rounded-full"
+              />
+            </div>
 
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.01}
-              value={isMuted ? 0 : volume}
-              onChange={handleVolumeChange}
-              aria-label="Volume"
-              className="hidden w-20 cursor-pointer accent-[#FF5C00] sm:block"
-            />
+            {/* TIME DISPLAY IN BRIGHT WHITE */}
 
-            {/* TIME */}
-
-            <div className="ml-1 whitespace-nowrap text-xs text-white/90">
-              {formatTime(currentTime)} / {formatTime(duration)}
+            <div className="ml-2 whitespace-nowrap text-xs sm:text-sm font-mono font-bold text-white tracking-wider">
+              <span>{formatTime(currentTime)}</span>
+              <span className="text-white/60 mx-1.5">/</span>
+              <span className="text-white/80">{formatTime(duration)}</span>
             </div>
 
             {/* SPACER */}
 
             <div className="flex-1" />
 
-            {/* FULLSCREEN */}
+            {/* FULLSCREEN BUTTON */}
 
             <button
               type="button"
@@ -812,27 +843,23 @@ export function VideoPlayer({
                   : "Enter fullscreen"
               }
               onClick={toggleFullscreen}
-              className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-white/15"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-white hover:bg-white/20 transition cursor-pointer"
             >
               {isFullscreen ? (
                 <svg
-                  width="21"
-                  height="21"
+                  className="w-6 h-6 stroke-white"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
+                  strokeWidth="2.5"
                 >
                   <path d="M8 3v5H3M16 3v5h5M8 21v-5H3M21 16h-5v5" />
                 </svg>
               ) : (
                 <svg
-                  width="21"
-                  height="21"
+                  className="w-6 h-6 stroke-white"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
+                  strokeWidth="2.5"
                 >
                   <path d="M8 3H3v5M21 8V3h-5M3 16v5h5M16 21h5v-5" />
                 </svg>
@@ -842,11 +869,13 @@ export function VideoPlayer({
         </div>
       </div>
 
-      {/* TITLE & BACK BUTTON */}
+      {/* TOP HEADER: BACK BUTTON & TITLE IN CRISP WHITE */}
 
       <div
-        className={`absolute left-4 top-4 flex items-center gap-3 transition-opacity duration-300 z-20 ${
-          showControls ? "opacity-100" : "opacity-0 pointer-events-none"
+        className={`absolute left-6 top-6 flex items-center gap-4 transition-opacity duration-300 z-30 ${
+          showControls || !isPlaying
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
         }`}
       >
         <button
@@ -856,15 +885,15 @@ export function VideoPlayer({
             router.back();
           }}
           aria-label="Go back"
-          className="flex h-9 w-9 items-center justify-center rounded-xl bg-black/60 text-white backdrop-blur-md transition hover:bg-black/80 active:scale-95"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md border border-white/30 transition hover:bg-white/35 active:scale-95 cursor-pointer shadow-lg"
         >
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          <svg className="h-5 w-5 stroke-white" fill="none" viewBox="0 0 24 24" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
         </button>
 
         {title && (
-          <span className="rounded-xl bg-black/60 px-3.5 py-1.5 text-sm font-medium text-white backdrop-blur-md">
+          <span className="rounded-xl bg-black/70 px-4 py-2 text-sm sm:text-base font-bold text-white border border-white/20 backdrop-blur-md shadow-xl">
             {title}
           </span>
         )}
