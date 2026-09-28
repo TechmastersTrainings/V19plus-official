@@ -319,20 +319,31 @@ export function VideoPlayer({
         }, 500);
       };
 
-      video.addEventListener('playing', clearBuffer);
+      const handlePlay = () => {
+        setIsPlaying(true);
+        clearBuffer();
+      };
+      const handlePause = () => {
+        setIsPlaying(false);
+        setShowControls(true);
+      };
+
+      video.addEventListener('play', handlePlay);
+      video.addEventListener('playing', handlePlay);
       video.addEventListener('timeupdate', clearBuffer);
       video.addEventListener('canplay', clearBuffer);
       video.addEventListener('canplaythrough', clearBuffer);
-      video.addEventListener('pause', clearBuffer);
+      video.addEventListener('pause', handlePause);
       video.addEventListener('waiting', handleWaiting);
       video.addEventListener('stalled', handleStalled);
 
       cleanupListeners = () => {
-        video.removeEventListener('playing', clearBuffer);
+        video.removeEventListener('play', handlePlay);
+        video.removeEventListener('playing', handlePlay);
         video.removeEventListener('timeupdate', clearBuffer);
         video.removeEventListener('canplay', clearBuffer);
         video.removeEventListener('canplaythrough', clearBuffer);
-        video.removeEventListener('pause', clearBuffer);
+        video.removeEventListener('pause', handlePause);
         video.removeEventListener('waiting', handleWaiting);
         video.removeEventListener('stalled', handleStalled);
       };
@@ -420,6 +431,19 @@ export function VideoPlayer({
       const next = !prev;
       triggerCenterFeedback(next ? 'play' : 'pause');
       logEvent(next ? 'play' : 'pause', { origin: 'user_action' });
+
+      // Directly drive the underlying video element to ensure immediate user-gesture propagation
+      const video = containerRef.current?.querySelector('video');
+      if (video) {
+        if (next) {
+          video.play().catch((err) => {
+            console.warn('Video play deferred:', err);
+          });
+        } else {
+          video.pause();
+        }
+      }
+
       return next;
     });
   }, [logEvent, triggerCenterFeedback]);
@@ -633,8 +657,22 @@ export function VideoPlayer({
               onClick={() => {
                 setIsError(false);
                 setIsBuffering(true);
-                if (authData?.stream_url) {
+                const video = containerRef.current?.querySelector('video');
+                if (video) {
+                  video.load();
+                  video
+                    .play()
+                    .then(() => {
+                      setIsPlaying(true);
+                      setIsBuffering(false);
+                    })
+                    .catch(() => {
+                      setIsPlaying(false);
+                      setIsBuffering(false);
+                    });
+                } else if (authData?.stream_url) {
                   setActiveVideoUrl(authData.stream_url);
+                  setIsPlaying(true);
                 }
               }}
               className="px-6 py-2.5 bg-[#FF5C00] hover:bg-[#FF7A00] text-white font-bold rounded-xl text-sm transition-all shadow-lg active:scale-95"
@@ -731,6 +769,7 @@ export function VideoPlayer({
                 'webkit-playsinline': 'true',
                 'x5-playsinline': 'true',
                 preload: 'auto',
+                poster: content.thumbnailUrl || (content as any)?.bannerUrl || '',
                 style: {
                   width: '100%',
                   height: '100%',
@@ -844,7 +883,33 @@ export function VideoPlayer({
           }}
           onError={(e) => {
             logEvent('error', { origin: 'react_player_onError', error: e });
-            setIsError(true);
+
+            // 1. Check if it's an autoplay policy or user-gesture restriction
+            const errName = (e as any)?.name;
+            const errMsg = String((e as any)?.message || '');
+            const videoElem = containerRef.current?.querySelector('video');
+            const mediaError = videoElem?.error;
+
+            if (
+              errName === 'NotAllowedError' ||
+              errName === 'AbortError' ||
+              errMsg.includes('interact') ||
+              errMsg.includes('user gesture') ||
+              errMsg.includes('denied permission') ||
+              errMsg.includes('pause()') ||
+              (!mediaError && (!videoElem || videoElem.paused))
+            ) {
+              // Autoplay blocked by browser policy: graceful transition to user-initiated playback
+              logEvent('autoplayDeferredToUserGesture');
+              setIsPlaying(false);
+              setShowControls(true);
+              return;
+            }
+
+            // 2. Only show fatal error if mediaError is an actual fatal decode/network error
+            if (mediaError && mediaError.code !== 1) {
+              setIsError(true);
+            }
           }}
           progressInterval={250}
         />
