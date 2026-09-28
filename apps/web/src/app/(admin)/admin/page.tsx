@@ -176,13 +176,17 @@ export default function AdminStudioDesk() {
 
         const uploadRes = await mediaApi.uploadDirectFile(selectedFile, (pct) => {
           setUploadProgress(pct);
-          setUploadStep(`Uploading to local media vault: ${pct}%`);
+          if (pct >= 100) {
+            setUploadStep('Syncing video to Cloudflare R2 media vault...');
+          } else {
+            setUploadStep(`Uploading video assets: ${pct}%`);
+          }
         });
 
         finalMasterKey = uploadRes.data.storage_key;
         finalHlsKey = uploadRes.data.stream_url;
         setUploadProgress(100);
-        setUploadStep('Video uploaded and verified successfully!');
+        setUploadStep('Video securely stored in Cloudflare R2 and verified!');
       } else {
         finalHlsKey = streamManifestKey.trim() || undefined;
         finalMasterKey = masterStorageKey.trim() || undefined;

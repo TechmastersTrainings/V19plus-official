@@ -43,16 +43,23 @@ export const mediaApi = {
   uploadDirectFile: (file: File, onProgress?: (pct: number) => void) => {
     const formData = new FormData();
     formData.append('file', file);
+
+    // Direct upload to Render backend in production to bypass Vercel 4.5MB payload limit
+    const uploadUrl =
+      typeof window !== 'undefined' &&
+      !window.location.hostname.includes('localhost') &&
+      !window.location.hostname.includes('127.0.0.1')
+        ? 'https://v19plus-official.onrender.com/api/media/upload/file'
+        : '/media/upload/file';
+
     return api.post<{
       storage_key: string;
       filename: string;
       file_size_bytes: number;
       stream_url: string;
       content_type: string;
-    }>('/media/upload/file', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+    }>(uploadUrl, formData, {
+      timeout: 0, // Disable timeout for large video file uploads
       onUploadProgress: (progressEvent) => {
         if (progressEvent.total && onProgress) {
           const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);

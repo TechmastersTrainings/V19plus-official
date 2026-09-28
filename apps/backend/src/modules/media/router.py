@@ -1,4 +1,5 @@
 import inspect
+import logging
 import math
 import os
 import re
@@ -7,6 +8,7 @@ import uuid
 from typing import Any
 from fastapi import APIRouter, Depends, Query, status, File, UploadFile, Request, HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
+from starlette.concurrency import run_in_threadpool
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.config import settings
 from src.database import get_db_session
@@ -23,6 +25,8 @@ from src.modules.media.schemas import (
 from src.modules.media.service import MediaStorageService
 from src.modules.video_jobs.models import JobStatus, VideoJob
 from src.modules.content.models import Content, ContentStatus, Episode
+
+logger = logging.getLogger("v19plus.media")
 
 router = APIRouter(prefix="/media", tags=["Media Ingestion (Direct & Multipart)"])
 
@@ -42,7 +46,8 @@ async def upload_direct_file(
     Directly ingest and store a video file from local storage or external HDD.
     Saves to media_storage and makes it immediately streamable in the player.
     """
-    clean_name = re.sub(r"[^\w\.-]", "_", file.filename)
+    raw_name = file.filename or "video.mp4"
+    clean_name = re.sub(r"[^\w\.-]", "_", raw_name)
     unique_key = f"{uuid.uuid4().hex[:8]}_{clean_name}"
     target_path = os.path.join(MEDIA_DIR, unique_key)
 
@@ -55,10 +60,10 @@ async def upload_direct_file(
     # Sync to Cloudflare R2 bucket for permanent persistence across container deploys
     try:
         if settings.R2_ACCOUNT_ID and settings.R2_ACCESS_KEY_ID:
-            from src.modules.media.service import MediaStorageService
             storage = MediaStorageService()
             bucket_target = settings.R2_STREAMING_BUCKET or settings.R2_MASTERS_BUCKET
-            storage.s3_client.upload_file(
+            await run_in_threadpool(
+                storage.s3_client.upload_file,
                 target_path,
                 bucket_target,
                 unique_key,
@@ -67,12 +72,19 @@ async def upload_direct_file(
             logger.info(f"Video {unique_key} successfully synced to Cloudflare R2 bucket '{bucket_target}'.")
             if settings.CDN_STREAMING_BASE_URL:
                 stream_url = f"{settings.CDN_STREAMING_BASE_URL.rstrip('/')}/{unique_key}"
+
+            # Clean up ephemeral local file in production to preserve container disk
+            if settings.ENVIRONMENT == "production" and os.path.exists(target_path):
+                try:
+                    os.remove(target_path)
+                except Exception:
+                    pass
     except Exception as e:
         logger.warning(f"Could not sync file to Cloudflare R2: {e}")
 
     return {
         "storage_key": unique_key,
-        "filename": file.filename,
+        "filename": raw_name,
         "file_size_bytes": file_size,
         "stream_url": stream_url,
         "content_type": file.content_type or "video/mp4",
