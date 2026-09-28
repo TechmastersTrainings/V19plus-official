@@ -103,7 +103,9 @@ function persistTokens(accessToken: string, refreshToken: string, user: User) {
 
     const sec = window.location.protocol === 'https:' ? '; Secure' : '';
     document.cookie = `accessToken=${accessToken}; path=/; max-age=86400; SameSite=Lax${sec}`;
+    document.cookie = `access_token=${accessToken}; path=/; max-age=86400; SameSite=Lax${sec}`;
     document.cookie = `refreshToken=${refreshToken}; path=/; max-age=2592000; SameSite=Lax${sec}`;
+    document.cookie = `refresh_token=${refreshToken}; path=/; max-age=2592000; SameSite=Lax${sec}`;
   } catch (err) {
     console.warn('[authStore] Failed to persist tokens:', err);
   }
@@ -120,7 +122,9 @@ function clearPersistedTokens() {
     localStorage.removeItem('v19_active_profile');
 
     document.cookie = 'accessToken=; Max-Age=0; path=/';
+    document.cookie = 'access_token=; Max-Age=0; path=/';
     document.cookie = 'refreshToken=; Max-Age=0; path=/';
+    document.cookie = 'refresh_token=; Max-Age=0; path=/';
     document.cookie = 'v19_active_profile_id=; Max-Age=0; path=/';
   } catch (err) {
     console.warn('[authStore] Failed to clear tokens:', err);

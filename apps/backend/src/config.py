@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     JWT_ACCESS_SECRET: str = "dev_access_secret_min_32_characters_long_for_security"
     JWT_REFRESH_SECRET: str = "dev_refresh_secret_min_32_characters_long_for_security"
     JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     # Playback Security (HMAC Tokens)

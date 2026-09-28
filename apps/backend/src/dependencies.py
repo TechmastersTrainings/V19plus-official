@@ -1,5 +1,5 @@
 from typing import Optional
-from fastapi import Cookie, Depends, Header
+from fastapi import Cookie, Depends, Header, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.exceptions import ForbiddenException, UnauthorizedException
 from src.core.security import decode_token
@@ -19,6 +19,7 @@ class TokenUser:
 
 
 async def get_token_from_request(
+    request: Request,
     authorization: Optional[str] = Header(None),
     access_token: Optional[str] = Cookie(None),
 ) -> str:
@@ -27,10 +28,14 @@ async def get_token_from_request(
         return authorization.split(" ")[1]
     if access_token:
         return access_token
+    cookie_token = request.cookies.get("accessToken") or request.cookies.get("access_token")
+    if cookie_token:
+        return cookie_token
     raise UnauthorizedException("Authentication token missing")
 
 
 async def get_optional_token(
+    request: Request,
     authorization: Optional[str] = Header(None),
     access_token: Optional[str] = Cookie(None),
 ) -> Optional[str]:
@@ -38,6 +43,9 @@ async def get_optional_token(
         return authorization.split(" ")[1]
     if access_token:
         return access_token
+    cookie_token = request.cookies.get("accessToken") or request.cookies.get("access_token")
+    if cookie_token:
+        return cookie_token
     return None
 
 

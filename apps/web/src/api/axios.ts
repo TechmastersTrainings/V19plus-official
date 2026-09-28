@@ -20,6 +20,13 @@ const api = axios.create({
 });
 
 api.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
+  // If sending FormData, delete Content-Type so browser sets multipart/form-data with boundary
+  if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+    if (config.headers) {
+      delete config.headers['Content-Type'];
+    }
+  }
+
   let token = useAuthStore.getState().accessToken;
   if (!token && typeof window !== 'undefined') {
     token = localStorage.getItem('v19_access_token');

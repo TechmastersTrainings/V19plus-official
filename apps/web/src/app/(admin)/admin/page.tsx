@@ -227,7 +227,20 @@ export default function AdminStudioDesk() {
       setActiveTab('catalog');
     } catch (err: any) {
       console.error('Push error:', err);
-      toast.error(err.response?.data?.detail || err.message || 'Failed to push content.');
+      let errorMsg = 'Failed to push content.';
+      const detail = err.response?.data?.detail;
+      if (typeof detail === 'string') {
+        errorMsg = detail;
+      } else if (Array.isArray(detail)) {
+        errorMsg = detail
+          .map((d: any) => (typeof d === 'string' ? d : d.msg || JSON.stringify(d)))
+          .join(', ');
+      } else if (detail && typeof detail === 'object') {
+        errorMsg = detail.msg || JSON.stringify(detail);
+      } else if (err.message) {
+        errorMsg = err.message;
+      }
+      toast.error(errorMsg);
     } finally {
       setSubmitting(false);
     }

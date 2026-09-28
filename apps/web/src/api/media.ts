@@ -60,6 +60,9 @@ export const mediaApi = {
       content_type: string;
     }>(uploadUrl, formData, {
       timeout: 0, // Disable timeout for large video file uploads
+      headers: {
+        'Content-Type': undefined,
+      },
       onUploadProgress: (progressEvent) => {
         if (progressEvent.total && onProgress) {
           const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
