@@ -20,7 +20,8 @@ export const useAdminAuthStore = create<AdminAuthState>((set) => ({
     set({ isLoading: true });
     try {
       const { data } = await authApi.adminLogin(email, password);
-      setAdminToken(data.accessToken);
+      const token = (data as any).access_token || (data as any).accessToken;
+      setAdminToken(token);
       set({ user: data.user, isAuthenticated: true, isLoading: false });
     } catch (err) {
       set({ isLoading: false });

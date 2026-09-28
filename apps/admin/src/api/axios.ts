@@ -5,13 +5,24 @@ const api = axios.create({
   withCredentials: true,
 });
 
-let accessToken: string | null = null;
+let accessToken: string | null =
+  typeof window !== 'undefined' ? localStorage.getItem('v19_admin_token') : null;
 
 export function setAdminToken(token: string | null) {
   accessToken = token;
+  if (typeof window !== 'undefined') {
+    if (token) {
+      localStorage.setItem('v19_admin_token', token);
+    } else {
+      localStorage.removeItem('v19_admin_token');
+    }
+  }
 }
 
 api.interceptors.request.use(async (config) => {
+  if (!accessToken && typeof window !== 'undefined') {
+    accessToken = localStorage.getItem('v19_admin_token');
+  }
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;
   }
@@ -29,11 +40,12 @@ api.interceptors.response.use(
       original._retry = true;
       try {
         const { data } = await api.post('/auth/refresh');
-        accessToken = data.accessToken;
-        original.headers.Authorization = `Bearer ${data.accessToken}`;
+        const token = (data as any).access_token || (data as any).accessToken;
+        setAdminToken(token);
+        original.headers.Authorization = `Bearer ${token}`;
         return api(original);
       } catch (refreshErr) {
-        accessToken = null;
+        setAdminToken(null);
         return Promise.reject(refreshErr);
       }
     }

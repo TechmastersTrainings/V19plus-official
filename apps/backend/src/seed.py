@@ -106,34 +106,37 @@ async def seed():
                 logger.info(f"Added plan: {p_data['name']} (₹{p_data['price_inr_paise']/100}/mo) with {len(p_data['entitlements'])} entitlements.")
         await db.commit()
 
-        # 3. Seed Default Admin User
-        admin_email = "support@techmastersinnovations.in"
-        res = await db.execute(select(User).where(User.email == admin_email))
-        admin = res.scalar_one_or_none()
-        if not admin:
-            admin = User(
-                email=admin_email,
-                name="TechMasters Admin",
-                hashed_password=hash_password("Fri10Feb@2023"),
-                role="ADMIN",
-                is_active=True,
-                is_verified=True,
-            )
-            db.add(admin)
-            await db.flush()
+        # 3. Seed Default Admin Users
+        admin_accounts = [
+            ("techmastersinnovations@gmail.com", "TechMasters Innovations Admin"),
+            ("support@techmastersinnovations.in", "TechMasters Support Admin"),
+        ]
+        for admin_email, admin_name in admin_accounts:
+            res = await db.execute(select(User).where(User.email == admin_email))
+            admin = res.scalar_one_or_none()
+            if not admin:
+                admin = User(
+                    email=admin_email,
+                    name=admin_name,
+                    hashed_password=hash_password("Fri10Feb@2023"),
+                    role="ADMIN",
+                    is_active=True,
+                    is_verified=True,
+                )
+                db.add(admin)
+                await db.flush()
 
-            # Create Admin Profile
-            admin_profile = Profile(
-                user_id=admin.id,
-                name="Studio Admin",
-                avatar_color="#FF5C00",
-                is_kids=False,
-            )
-            db.add(admin_profile)
-            await db.commit()
-            logger.info(f"Created default admin account: {admin_email} (Password: Fri10Feb@2023)")
-        else:
-            logger.info(f"Admin account {admin_email} already exists.")
+                admin_profile = Profile(
+                    user_id=admin.id,
+                    name="Studio Admin",
+                    avatar_color="#FF5C00",
+                    is_kids=False,
+                )
+                db.add(admin_profile)
+                await db.commit()
+                logger.info(f"Created default admin account: {admin_email} (Password: Fri10Feb@2023)")
+            else:
+                logger.info(f"Admin account {admin_email} already exists.")
 
     logger.info("✅ Database seeding completed successfully!")
 
