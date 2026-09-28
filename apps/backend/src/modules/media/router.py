@@ -65,6 +65,8 @@ async def upload_direct_file(
                 ExtraArgs={"ContentType": file.content_type or "video/mp4"},
             )
             logger.info(f"Video {unique_key} successfully synced to Cloudflare R2 bucket '{bucket_target}'.")
+            if settings.CDN_STREAMING_BASE_URL:
+                stream_url = f"{settings.CDN_STREAMING_BASE_URL.rstrip('/')}/{unique_key}"
     except Exception as e:
         logger.warning(f"Could not sync file to Cloudflare R2: {e}")
 
