@@ -52,6 +52,22 @@ async def upload_direct_file(
     file_size = os.path.getsize(target_path)
     stream_url = f"/api/media/stream/{unique_key}"
 
+    # Sync to Cloudflare R2 bucket for permanent persistence across container deploys
+    try:
+        if settings.R2_ACCOUNT_ID and settings.R2_ACCESS_KEY_ID:
+            from src.modules.media.service import MediaStorageService
+            storage = MediaStorageService()
+            bucket_target = settings.R2_STREAMING_BUCKET or settings.R2_MASTERS_BUCKET
+            storage.s3_client.upload_file(
+                target_path,
+                bucket_target,
+                unique_key,
+                ExtraArgs={"ContentType": file.content_type or "video/mp4"},
+            )
+            logger.info(f"Video {unique_key} successfully synced to Cloudflare R2 bucket '{bucket_target}'.")
+    except Exception as e:
+        logger.warning(f"Could not sync file to Cloudflare R2: {e}")
+
     return {
         "storage_key": unique_key,
         "filename": file.filename,
@@ -71,6 +87,11 @@ async def stream_video_file(filename: str, request: Request):
     file_path = os.path.join(MEDIA_DIR, clean_filename)
 
     if not os.path.exists(file_path):
+        # Graceful fallback: Redirect to Cloudflare R2 CDN if local file is missing on container
+        if settings.CDN_STREAMING_BASE_URL:
+            r2_cdn_url = f"{settings.CDN_STREAMING_BASE_URL.rstrip('/')}/{clean_filename}"
+            from fastapi.responses import RedirectResponse
+            return RedirectResponse(r2_cdn_url, status_code=307)
         raise HTTPException(status_code=404, detail="Media file not found on disk.")
 
     file_size = os.path.getsize(file_path)
