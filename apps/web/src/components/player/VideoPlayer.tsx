@@ -10,7 +10,7 @@ import { useDownloadStore } from '../../store/downloadStore';
 import { historyApi } from '../../api/history';
 import { streamingApi, PlaybackAuthResponse } from '../../api/streaming';
 import { Capacitor } from '@capacitor/core';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Play, Pause, RotateCcw, RotateCw } from 'lucide-react';
 
 interface VideoPlayerProps {
   content: Content;
@@ -377,20 +377,98 @@ export function VideoPlayer({
     }
   }, []);
 
+  const [centerFeedback, setCenterFeedback] = useState<'play' | 'pause' | 'rewind' | 'forward' | null>(null);
+  const clickTimeoutRef = useRef<any>(null);
+  const feedbackTimeoutRef = useRef<any>(null);
+
+  const triggerCenterFeedback = useCallback((type: 'play' | 'pause' | 'rewind' | 'forward') => {
+    setCenterFeedback(type);
+    if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
+    feedbackTimeoutRef.current = setTimeout(() => {
+      setCenterFeedback(null);
+    }, 600);
+  }, []);
+
   const resetHideTimer = useCallback(() => {
     setShowControls(true);
     if (hideTimer.current) clearTimeout(hideTimer.current);
-    hideTimer.current = setTimeout(() => setShowControls(false), 3000);
-  }, []);
+    // In Netflix / YouTube style: keep controls permanently visible when paused.
+    // When playing, auto-hide controls after 3.5 seconds of inactivity.
+    if (isPlaying) {
+      hideTimer.current = setTimeout(() => setShowControls(false), 3500);
+    }
+  }, [isPlaying]);
 
   useEffect(() => {
     resetHideTimer();
     return () => {
       if (hideTimer.current) clearTimeout(hideTimer.current);
     };
-  }, [resetHideTimer]);
+  }, [resetHideTimer, isPlaying]);
 
-  // Keyboard controls
+  const handleSeek = useCallback(
+    (time: number) => {
+      logEvent('seek', { time });
+      setProgress(time);
+      playerRef.current?.seekTo(time, 'seconds');
+    },
+    [logEvent]
+  );
+
+  const togglePlayPause = useCallback(() => {
+    setIsPlaying((prev) => {
+      const next = !prev;
+      triggerCenterFeedback(next ? 'play' : 'pause');
+      logEvent(next ? 'play' : 'pause', { origin: 'user_action' });
+      return next;
+    });
+  }, [logEvent, triggerCenterFeedback]);
+
+  // Netflix/YouTube style click & double-click container handling
+  const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // 1. If controls are hidden, first click/touch ONLY reveals controls (hover first!)
+    if (!showControls) {
+      setShowControls(true);
+      resetHideTimer();
+      return;
+    }
+
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const clickX = e.clientX - rect.left;
+    const widthPct = clickX / rect.width;
+
+    if (clickTimeoutRef.current) {
+      // Double-click detected!
+      clearTimeout(clickTimeoutRef.current);
+      clickTimeoutRef.current = null;
+
+      if (widthPct < 0.35) {
+        // Double-click left: Rewind 10s (YouTube / Netflix style)
+        const next = Math.max(0, progress - 10);
+        handleSeek(next);
+        triggerCenterFeedback('rewind');
+      } else if (widthPct > 0.65) {
+        // Double-click right: Forward 10s (YouTube / Netflix style)
+        const next = Math.min(duration || totalDuration, progress + 10);
+        handleSeek(next);
+        triggerCenterFeedback('forward');
+      } else {
+        // Double-click center: Toggle play/pause
+        togglePlayPause();
+      }
+      resetHideTimer();
+    } else {
+      // Single-click: Wait 280ms to differentiate between single and double-click
+      clickTimeoutRef.current = setTimeout(() => {
+        clickTimeoutRef.current = null;
+        togglePlayPause();
+        resetHideTimer();
+      }, 280);
+    }
+  };
+
+  // YouTube / Netflix keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const isPlayerActive =
@@ -402,28 +480,32 @@ export function VideoPlayer({
 
       switch (e.key) {
         case ' ':
+        case 'k':
+        case 'K':
           e.preventDefault();
-          setIsPlaying((prev) => {
-            const next = !prev;
-            logEvent(next ? 'play' : 'pause', { origin: 'keyboard_space' });
-            return next;
-          });
+          togglePlayPause();
+          break;
+        case 'j':
+        case 'J':
+          e.preventDefault();
+          handleSeek(Math.max(0, progress - 10));
+          triggerCenterFeedback('rewind');
+          break;
+        case 'l':
+        case 'L':
+          e.preventDefault();
+          handleSeek(Math.min(duration || totalDuration, progress + 10));
+          triggerCenterFeedback('forward');
           break;
         case 'ArrowLeft':
           e.preventDefault();
-          setProgress((prev) => {
-            const next = Math.max(0, prev - 10);
-            playerRef.current?.seekTo(next, 'seconds');
-            return next;
-          });
+          handleSeek(Math.max(0, progress - 5));
+          triggerCenterFeedback('rewind');
           break;
         case 'ArrowRight':
           e.preventDefault();
-          setProgress((prev) => {
-            const next = Math.min(duration, prev + 10);
-            playerRef.current?.seekTo(next, 'seconds');
-            return next;
-          });
+          handleSeek(Math.min(duration || totalDuration, progress + 5));
+          triggerCenterFeedback('forward');
           break;
         case 'f':
         case 'F':
@@ -441,18 +523,37 @@ export function VideoPlayer({
           e.preventDefault();
           setVolume((prev) => Math.max(0, prev - 0.1));
           break;
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9': {
+          e.preventDefault();
+          const targetPct = Number(e.key) / 10;
+          const targetSec = targetPct * (duration || totalDuration);
+          handleSeek(targetSec);
+          break;
+        }
       }
       resetHideTimer();
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [duration, handleToggleFullscreen, resetHideTimer, logEvent]);
-
-  const handleSeek = (time: number) => {
-    logEvent('seek', { time });
-    setProgress(time);
-    playerRef.current?.seekTo(time, 'seconds');
-  };
+  }, [
+    duration,
+    totalDuration,
+    progress,
+    handleToggleFullscreen,
+    resetHideTimer,
+    togglePlayPause,
+    handleSeek,
+    triggerCenterFeedback,
+  ]);
 
   const handleEnded = () => {
     logEvent('ended');
@@ -576,13 +677,7 @@ export function VideoPlayer({
       onMouseLeave={() => {
         isHovered.current = false;
       }}
-      onClick={() => {
-        setIsPlaying((prev) => {
-          const next = !prev;
-          logEvent(next ? 'play' : 'pause', { origin: 'container_click' });
-          return next;
-        });
-      }}
+      onClick={handleContainerClick}
     >
       {/* Top Bar with Back Button & Content Metadata */}
       {showControls && (
@@ -757,21 +852,60 @@ export function VideoPlayer({
 
       <SubtitleOverlay visible={false} text="" />
 
-      {/* Center Play Button when paused */}
-      {!isPlaying && !isBuffering && !authLoading && (
-        <div
-          className="absolute inset-0 flex items-center justify-center z-20 pointer-events-auto cursor-pointer bg-black/30"
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsPlaying(true);
-            logEvent('play', { origin: 'center_play_button' });
-          }}
-        >
-          <div className="w-20 h-20 rounded-full bg-[#FF5C00] hover:bg-[#FF7A00] flex items-center justify-center text-white shadow-[0_0_30px_rgba(255,92,0,0.6)] transition-all hover:scale-110 active:scale-95">
-            <svg className="w-9 h-9 fill-white ml-1" viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z" />
-            </svg>
+      {/* Animated Netflix / YouTube Side Arc Ripple for Double-Tap Seek */}
+      {centerFeedback === 'rewind' && (
+        <div className="absolute left-0 top-0 bottom-0 w-1/3 flex items-center justify-center pointer-events-none bg-gradient-to-r from-white/10 to-transparent rounded-r-full animate-pulse z-20">
+          <div className="flex flex-col items-center gap-1.5 bg-black/40 px-4 py-3 rounded-2xl backdrop-blur-sm">
+            <RotateCcw className="w-8 h-8 text-white" />
+            <span className="text-xs font-bold text-white font-mono tracking-wider">10 seconds</span>
           </div>
+        </div>
+      )}
+      {centerFeedback === 'forward' && (
+        <div className="absolute right-0 top-0 bottom-0 w-1/3 flex items-center justify-center pointer-events-none bg-gradient-to-l from-white/10 to-transparent rounded-l-full animate-pulse z-20">
+          <div className="flex flex-col items-center gap-1.5 bg-black/40 px-4 py-3 rounded-2xl backdrop-blur-sm">
+            <RotateCw className="w-8 h-8 text-white" />
+            <span className="text-xs font-bold text-white font-mono tracking-wider">10 seconds</span>
+          </div>
+        </div>
+      )}
+
+      {/* Animated Netflix / YouTube Transient Center Feedback Ripple */}
+      {centerFeedback && (
+        <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none transition-all">
+          <div className="w-24 h-24 rounded-full bg-black/70 backdrop-blur-md border border-white/20 flex flex-col items-center justify-center text-white shadow-[0_0_40px_rgba(0,0,0,0.8)] animate-fade-in">
+            {centerFeedback === 'play' && <Play className="w-12 h-12 fill-white text-white ml-1.5 drop-shadow" />}
+            {centerFeedback === 'pause' && <Pause className="w-12 h-12 fill-white text-white drop-shadow" />}
+            {centerFeedback === 'rewind' && (
+              <div className="flex flex-col items-center">
+                <RotateCcw className="w-9 h-9 text-white" />
+                <span className="text-xs font-bold mt-1 text-[#FF5C00] font-mono tracking-wider">-10s</span>
+              </div>
+            )}
+            {centerFeedback === 'forward' && (
+              <div className="flex flex-col items-center">
+                <RotateCw className="w-9 h-9 text-white" />
+                <span className="text-xs font-bold mt-1 text-[#FF5C00] font-mono tracking-wider">+10s</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Prominent Netflix / YouTube Center Play Button when Paused */}
+      {!isPlaying && !isBuffering && !authLoading && showControls && (
+        <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+          <button
+            type="button"
+            className="pointer-events-auto w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-[#FF5C00]/90 hover:bg-[#FF5C00] text-white flex items-center justify-center shadow-[0_0_40px_rgba(255,92,0,0.6)] backdrop-blur-md border border-white/20 transition-all transform hover:scale-110 active:scale-95 group"
+            onClick={(e) => {
+              e.stopPropagation();
+              togglePlayPause();
+            }}
+            aria-label="Play video"
+          >
+            <Play className="w-10 h-10 sm:w-12 sm:h-12 fill-white text-white ml-1.5 group-hover:scale-105 transition-transform" />
+          </button>
         </div>
       )}
 
