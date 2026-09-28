@@ -109,9 +109,20 @@ export default function WatchPage({ params }: { params: { slug: string } }) {
       ? (savedProgress as any).progressSeconds ?? (savedProgress.progress / 100) * totalSeconds
       : 0;
 
+  const activeEpisode = allEpisodes.find((e: Episode) => e.id === activeEpisodeId);
+  const videoSrc =
+    (activeEpisode as any)?.videoUrl ||
+    (activeEpisode as any)?.hls_manifest_key ||
+    content.videoUrl ||
+    (content as any)?.hls_manifest_key ||
+    '';
+
   return (
     <div className="w-full h-screen bg-black overflow-hidden">
       <VideoPlayer
+        src={videoSrc}
+        poster={content.thumbnailUrl || (content as any)?.bannerUrl}
+        title={content.title}
         content={content}
         episodeId={activeEpisodeId}
         initialResumeSeconds={resumeSeconds}

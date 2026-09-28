@@ -1,1041 +1,876 @@
-import { useRef, useEffect, useCallback, useState } from 'react';
-import ReactPlayer from 'react-player';
-import { useRouter } from 'next/navigation';
-import { PlayerControls } from './PlayerControls';
-import { SubtitleOverlay } from './SubtitleOverlay';
-import { NextEpisodeOverlay } from './NextEpisodeOverlay';
-import { Content } from '../../api/content';
-import { getPlaybackPrefs } from '../../utils/playbackPrefs';
-import { useDownloadStore } from '../../store/downloadStore';
-import { historyApi } from '../../api/history';
-import { streamingApi, PlaybackAuthResponse } from '../../api/streaming';
-import { Capacitor } from '@capacitor/core';
-import { AlertCircle, Play, Pause, RotateCcw, RotateCw } from 'lucide-react';
+"use client";
 
-interface VideoPlayerProps {
-  content: Content;
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { useRouter } from "next/navigation";
+import { streamingApi } from "../../api/streaming";
+import { historyApi } from "../../api/history";
+import { Content } from "../../api/content";
+
+export interface VideoPlayerProps {
+  src?: string;
+  poster?: string;
+  title?: string;
+  className?: string;
+  content?: Content;
   episodeId?: string;
-  onNextEpisode?: () => void;
   initialResumeSeconds?: number;
-  autoPlay?: boolean;
+  onNextEpisode?: () => void;
 }
 
 export function VideoPlayer({
+  src: propSrc,
+  poster: propPoster,
+  title: propTitle = "V19Plus",
+  className = "",
   content,
   episodeId,
-  onNextEpisode,
   initialResumeSeconds = 0,
-  autoPlay = true,
+  onNextEpisode,
 }: VideoPlayerProps) {
   const router = useRouter();
-
-  // Unique instance ID for debugging and complete multi-player isolation
-  const instanceId = useRef('player_' + Math.random().toString(36).substring(2, 9)).current;
-
-  // Instance-scoped refs
-  const playerRef = useRef<ReactPlayer>(null);
-  const hlsPlayerRef = useRef<any>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const hideTimer = useRef<any>(null);
-  const bufferTimer = useRef<any>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const hideControlsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasResumed = useRef(false);
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const hasSeeked = useRef(false);
-  const isHovered = useRef(false);
-  const isManualQualityRef = useRef(false);
 
-  // Playback authorization states
-  const [authData, setAuthData] = useState<PlaybackAuthResponse | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [authError, setAuthError] = useState<{
-    status?: number;
-    message: string;
-    requiresAuth?: boolean;
-    requiresSubscription?: boolean;
-  } | null>(null);
-
-  // Instance-scoped playback states
-  const [isPlaying, setIsPlaying] = useState(autoPlay);
-  const [progress, setProgress] = useState(initialResumeSeconds);
-  const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(0.8);
-  const [isMuted, setIsMuted] = useState(false);
-  const [showControls, setShowControls] = useState(true);
-  const [playbackSpeed, setPlaybackSpeed] = useState(() => getPlaybackPrefs().defaultSpeed);
-  const [subtitles, setSubtitles] = useState(() => getPlaybackPrefs().subtitles);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [qualities, setQualities] = useState<Array<{ height: number; bitrate?: number; index: number; label?: string; url?: string }>>([]);
-  const [currentQuality, setCurrentQuality] = useState<number>(-1); // -1 = Auto ABR
-  const [showNextOverlay, setShowNextOverlay] = useState(false);
-  const [isError, setIsError] = useState(false);
-  const [isBuffering, setIsBuffering] = useState(false);
-
-  // Central instrumentation logger
-  const logEvent = useCallback((event: string, details?: any) => {
-    const timestamp = new Date().toISOString();
-    console.log(`[Player #${instanceId} @ ${timestamp}] ${event}`, details !== undefined ? details : '');
-  }, [instanceId]);
-
-  const allEpisodes = content.seasons?.flatMap((s) => s.episodes) || [];
-  const episode = (episodeId ? allEpisodes.find((e) => e.id === episodeId) : null) || allEpisodes[0];
-
-  const totalDuration = episode?.duration
-    ? episode.duration * 60
-    : (episode as any)?.duration_seconds
-    ? (episode as any).duration_seconds
-    : (content.duration || (content as any)?.duration_seconds || 0) * (content.duration ? 60 : 1);
-
-  const nextEpisode = allEpisodes.find((e, i, arr) => {
-    const activeId = episode?.id || episodeId;
-    const idx = arr.findIndex((ep) => ep.id === activeId);
-    return idx >= 0 && i === idx + 1;
+  const [activeSrc, setActiveSrc] = useState<string>(() => {
+    return (
+      propSrc ||
+      content?.videoUrl ||
+      (content as any)?.hls_manifest_key ||
+      ""
+    );
   });
 
-  const { downloads } = useDownloadStore();
-  const downloadItem = downloads[episode?.id || episodeId || content.id];
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [volume, setVolume] = useState(1);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [showControls, setShowControls] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
-  const [activeVideoUrl, setActiveVideoUrl] = useState<string>('');
+  // Derive poster and title
+  const poster =
+    propPoster ||
+    content?.thumbnailUrl ||
+    (content as any)?.bannerUrl ||
+    "";
+  const title = propTitle || content?.title || "V19Plus";
 
-  // 1. Fetch authorized playback token and HLS stream URL from FastAPI backend
+  // Fetch authorized streaming URL from backend if not provided directly
   useEffect(() => {
-    let isMounted = true;
-
-    // If offline download is available on device, play locally
-    if (downloadItem && downloadItem.status === 'completed' && downloadItem.localUri) {
-      const localUrl =
-        typeof (Capacitor as any)?.convertFileSrc === 'function' && Capacitor.isNativePlatform()
-          ? (Capacitor as any).convertFileSrc(downloadItem.localUri)
-          : downloadItem.localUri;
-      setActiveVideoUrl(localUrl);
-      setAuthLoading(false);
+    if (propSrc) {
+      setActiveSrc(propSrc);
       return;
     }
 
-    const fetchAuth = async () => {
-      setAuthLoading(true);
-      setAuthError(null);
-      setIsError(false);
+    if (!content?.id) return;
 
-      try {
-        const res = await streamingApi.getPlaybackAuth(content.id, episode?.id || episodeId);
+    let isMounted = true;
+    streamingApi
+      .getPlaybackAuth(content.id, episodeId)
+      .then((res) => {
         if (!isMounted) return;
-
-        const normalizeStreamUrl = (url?: string) => {
-          if (!url) return '';
-          if (url.includes('127.0.0.1:8001')) {
-            return url.replace('http://127.0.0.1:8001', '');
-          }
-          return url;
-        };
-
-        setAuthData(res.data);
-        const resolvedUrl = normalizeStreamUrl(res.data.stream_url);
-        setActiveVideoUrl(resolvedUrl);
-        logEvent('playbackAuthorized', {
-          streamUrl: resolvedUrl,
-          hasSprite: !!res.data.sprite_vtt_url,
-        });
-      } catch (err: any) {
+        if (res.data?.stream_url) {
+          setActiveSrc(res.data.stream_url);
+        }
+      })
+      .catch(() => {
         if (!isMounted) return;
-        const statusCode = err.response?.status;
-        const detailMsg = err.response?.data?.detail;
-
-        logEvent('playbackAuthFailed', { status: statusCode, error: detailMsg || err.message });
-
-        // Subscriptions deferred per user directive - enable open streaming with reliable fallback
-        const normalizeStreamUrl = (url?: string) => {
-          if (!url) return '';
-          if (url.includes('127.0.0.1:8001')) {
-            return url.replace('http://127.0.0.1:8001', '');
-          }
-          return url;
-        };
-
-        const fallbackUrl = normalizeStreamUrl(
-          (episode?.videoUrl ||
-            (episode as any)?.hls_manifest_key ||
-            content.videoUrl ||
-            (content as any)?.hls_manifest_key ||
-            'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8'
-          ).trim()
-        );
-
-        setActiveVideoUrl(fallbackUrl);
-        setAuthError(null);
-      } finally {
-        if (isMounted) setAuthLoading(false);
-      }
-    };
-
-    fetchAuth();
+        const fallback =
+          content.videoUrl ||
+          (content as any)?.hls_manifest_key ||
+          "";
+        if (fallback) setActiveSrc(fallback);
+      });
 
     return () => {
       isMounted = false;
     };
-  }, [content.id, episode?.id, episodeId, downloadItem, logEvent]);
+  }, [content?.id, episodeId, propSrc, content?.videoUrl]);
 
-  // Instance-scoped history and watch progress saving
-  const saveProgressNow = useCallback(
-    (sec?: number) => {
-      const currentSec = sec !== undefined ? sec : progress;
-      if (!content?.id || currentSec <= 0) return;
-      const total = totalDuration > 0 ? totalDuration : 1;
-      const pct = Math.min(100, (currentSec / total) * 100);
+  /*
+   * ---------------------------------------------------------
+   * CONTROLS VISIBILITY
+   * ---------------------------------------------------------
+   */
 
-      // 1. Report to FastAPI streaming progress endpoint
+  const showPlayerControls = useCallback(() => {
+    setShowControls(true);
+
+    if (hideControlsTimer.current) {
+      clearTimeout(hideControlsTimer.current);
+    }
+
+    if (isPlaying) {
+      hideControlsTimer.current = setTimeout(() => {
+        setShowControls(false);
+      }, 2500);
+    }
+  }, [isPlaying]);
+
+  useEffect(() => {
+    return () => {
+      if (hideControlsTimer.current) {
+        clearTimeout(hideControlsTimer.current);
+      }
+    };
+  }, []);
+
+  /*
+   * ---------------------------------------------------------
+   * PLAY / PAUSE
+   * ---------------------------------------------------------
+   */
+
+  const togglePlayPause = useCallback(
+    async (event?: React.MouseEvent | React.TouchEvent) => {
+      event?.stopPropagation();
+
+      const video = videoRef.current;
+      if (!video) return;
+
+      try {
+        if (video.paused) {
+          await video.play();
+        } else {
+          video.pause();
+        }
+      } catch (error) {
+        console.error("Playback error:", error);
+      }
+    },
+    []
+  );
+
+  /*
+   * ---------------------------------------------------------
+   * SKIP BACKWARD / FORWARD
+   * ---------------------------------------------------------
+   */
+
+  const skipBackward = useCallback(
+    (event?: React.MouseEvent | React.TouchEvent) => {
+      event?.stopPropagation();
+
+      const video = videoRef.current;
+      if (!video) return;
+
+      video.currentTime = Math.max(0, video.currentTime - 10);
+
+      showPlayerControls();
+    },
+    [showPlayerControls]
+  );
+
+  const skipForward = useCallback(
+    (event?: React.MouseEvent | React.TouchEvent) => {
+      event?.stopPropagation();
+
+      const video = videoRef.current;
+      if (!video) return;
+
+      video.currentTime = Math.min(
+        video.duration || Infinity,
+        video.currentTime + 10
+      );
+
+      showPlayerControls();
+    },
+    [showPlayerControls]
+  );
+
+  /*
+   * ---------------------------------------------------------
+   * SEEK
+   * ---------------------------------------------------------
+   */
+
+  const handleSeek = (event: React.ChangeEvent<HTMLInputElement>) => {
+    event.stopPropagation();
+
+    const video = videoRef.current;
+    if (!video) return;
+
+    const newTime = Number(event.target.value);
+
+    video.currentTime = newTime;
+    setCurrentTime(newTime);
+
+    showPlayerControls();
+  };
+
+  /*
+   * ---------------------------------------------------------
+   * VOLUME
+   * ---------------------------------------------------------
+   */
+
+  const toggleMute = (event: React.MouseEvent) => {
+    event.stopPropagation();
+
+    const video = videoRef.current;
+    if (!video) return;
+
+    const nextMuted = !video.muted;
+
+    video.muted = nextMuted;
+    setIsMuted(nextMuted);
+
+    if (!nextMuted && video.volume === 0) {
+      video.volume = 1;
+      setVolume(1);
+    }
+
+    showPlayerControls();
+  };
+
+  const handleVolumeChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    event.stopPropagation();
+
+    const video = videoRef.current;
+    if (!video) return;
+
+    const newVolume = Number(event.target.value);
+
+    video.volume = newVolume;
+    video.muted = newVolume === 0;
+
+    setVolume(newVolume);
+    setIsMuted(newVolume === 0);
+
+    showPlayerControls();
+  };
+
+  /*
+   * ---------------------------------------------------------
+   * FULLSCREEN
+   * ---------------------------------------------------------
+   */
+
+  const toggleFullscreen = async (event?: React.MouseEvent) => {
+    event?.stopPropagation();
+
+    const container = containerRef.current;
+    if (!container) return;
+
+    try {
+      if (!document.fullscreenElement) {
+        await container.requestFullscreen();
+        setIsFullscreen(true);
+      } else {
+        await document.exitFullscreen();
+        setIsFullscreen(false);
+      }
+    } catch (error) {
+      console.error("Fullscreen error:", error);
+    }
+
+    showPlayerControls();
+  };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+
+    document.addEventListener(
+      "fullscreenchange",
+      handleFullscreenChange
+    );
+
+    return () => {
+      document.removeEventListener(
+        "fullscreenchange",
+        handleFullscreenChange
+      );
+    };
+  }, []);
+
+  /*
+   * ---------------------------------------------------------
+   * PROGRESS PERSISTENCE
+   * ---------------------------------------------------------
+   */
+
+  const reportProgress = useCallback(
+    (sec: number, total: number) => {
+      if (!content?.id || sec <= 0) return;
+      const pct = Math.min(100, (sec / (total || 1)) * 100);
+
       streamingApi
         .updateProgress({
           content_id: content.id,
-          episode_id: episode?.id || episodeId,
-          progress_seconds: Math.floor(currentSec),
+          episode_id: episodeId,
+          progress_seconds: Math.floor(sec),
           duration_seconds: Math.max(1, Math.floor(total)),
         })
         .catch(() => {});
 
-      // 2. Also keep legacy historyApi upsert for backwards compatibility
       historyApi
         .upsert({
           contentId: content.id,
-          episodeId: episode?.id || episodeId,
+          episodeId: episodeId,
           progress: pct,
           completed: pct >= 95,
         })
         .catch(() => {});
     },
-    [content.id, episode?.id, episodeId, progress, totalDuration]
+    [content?.id, episodeId]
   );
 
-  const triggerPeriodicSave = useCallback(
-    (sec: number) => {
-      if (saveTimeout.current) clearTimeout(saveTimeout.current);
-      saveTimeout.current = setTimeout(() => {
-        saveProgressNow(sec);
-      }, 15000); // 15-second debounced reporting
-    },
-    [saveProgressNow]
-  );
+  /*
+   * ---------------------------------------------------------
+   * VIDEO EVENTS
+   * ---------------------------------------------------------
+   */
 
-  // Cleanup: Save this player's progress on unmount
-  useEffect(() => {
-    return () => {
-      if (saveTimeout.current) {
-        clearTimeout(saveTimeout.current);
-      }
-      saveProgressNow();
-    };
-  }, [saveProgressNow]);
+  const handlePlay = () => {
+    setIsPlaying(true);
+    setHasError(false);
+  };
 
-  // Orientation and KeepAwake for native Capacitor platforms
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    let isMounted = true;
+  const handlePlaying = () => {
+    setIsPlaying(true);
+    setIsLoading(false);
+    setHasError(false);
+  };
 
-    const enableNativeFeatures = async () => {
-      try {
-        const { Capacitor } = await import('@capacitor/core');
-        if (!Capacitor.isNativePlatform()) return;
-
-        const { ScreenOrientation } = await import('@capacitor/screen-orientation');
-        if (!isMounted) return;
-        await ScreenOrientation.lock({ orientation: 'landscape' });
-
-        const { KeepAwake } = await import('@capacitor-community/keep-awake');
-        if (!isMounted) {
-          await ScreenOrientation.unlock();
-          return;
-        }
-        await KeepAwake.keepAwake();
-      } catch (err) {
-        console.error('Failed to enable native video player locks:', err);
-      }
-    };
-
-    enableNativeFeatures();
-
-    return () => {
-      isMounted = false;
-      const disableNativeFeatures = async () => {
-        try {
-          const { Capacitor } = await import('@capacitor/core');
-          if (!Capacitor.isNativePlatform()) return;
-
-          const { ScreenOrientation } = await import('@capacitor/screen-orientation');
-          await ScreenOrientation.unlock();
-
-          const { KeepAwake } = await import('@capacitor-community/keep-awake');
-          await KeepAwake.allowSleep();
-        } catch (err) {
-          console.error('Failed to disable native video player locks:', err);
-        }
-      };
-      disableNativeFeatures();
-    };
-  }, []);
-
-  // Initial resume seek
-  useEffect(() => {
-    if (initialResumeSeconds > 0 && duration > 0 && !hasSeeked.current) {
-      playerRef.current?.seekTo(initialResumeSeconds, 'seconds');
-      setProgress(initialResumeSeconds);
-      hasSeeked.current = true;
-    }
-  }, [duration, initialResumeSeconds]);
-
-  // Real-time synchronization with native <video> element
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    let cleanupListeners: (() => void) | null = null;
-
-    const attachListeners = () => {
-      const video = container.querySelector('video');
-      if (!video) return false;
-
-      const clearBuffer = () => {
-        if (bufferTimer.current) {
-          clearTimeout(bufferTimer.current);
-          bufferTimer.current = null;
-        }
-        setIsBuffering(false);
-      };
-
-      const handleWaiting = () => {
-        logEvent('waiting', { currentTime: video.currentTime, readyState: video.readyState });
-        if (bufferTimer.current) clearTimeout(bufferTimer.current);
-        bufferTimer.current = setTimeout(() => {
-          if (!video.paused && !video.ended) {
-            setIsBuffering(true);
-          }
-        }, 500);
-      };
-
-      const handleStalled = () => {
-        logEvent('stalled', { currentTime: video.currentTime, networkState: video.networkState });
-        if (bufferTimer.current) clearTimeout(bufferTimer.current);
-        bufferTimer.current = setTimeout(() => {
-          if (!video.paused && !video.ended) {
-            setIsBuffering(true);
-          }
-        }, 500);
-      };
-
-      const handlePlay = () => {
-        setIsPlaying(true);
-        clearBuffer();
-      };
-      const handlePause = () => {
-        setIsPlaying(false);
-        setShowControls(true);
-      };
-
-      video.addEventListener('play', handlePlay);
-      video.addEventListener('playing', handlePlay);
-      video.addEventListener('timeupdate', clearBuffer);
-      video.addEventListener('canplay', clearBuffer);
-      video.addEventListener('canplaythrough', clearBuffer);
-      video.addEventListener('pause', handlePause);
-      video.addEventListener('waiting', handleWaiting);
-      video.addEventListener('stalled', handleStalled);
-
-      cleanupListeners = () => {
-        video.removeEventListener('play', handlePlay);
-        video.removeEventListener('playing', handlePlay);
-        video.removeEventListener('timeupdate', clearBuffer);
-        video.removeEventListener('canplay', clearBuffer);
-        video.removeEventListener('canplaythrough', clearBuffer);
-        video.removeEventListener('pause', handlePause);
-        video.removeEventListener('waiting', handleWaiting);
-        video.removeEventListener('stalled', handleStalled);
-      };
-      return true;
-    };
-
-    if (!attachListeners()) {
-      const interval = setInterval(() => {
-        if (attachListeners()) {
-          clearInterval(interval);
-        }
-      }, 200);
-      return () => {
-        clearInterval(interval);
-        if (cleanupListeners) cleanupListeners();
-        if (bufferTimer.current) clearTimeout(bufferTimer.current);
-      };
-    }
-
-    return () => {
-      if (cleanupListeners) cleanupListeners();
-      if (bufferTimer.current) clearTimeout(bufferTimer.current);
-    };
-  }, [activeVideoUrl, logEvent]);
-
-  // Fullscreen change listener
-  useEffect(() => {
-    const onFullscreenChange = () => {
-      setIsFullscreen(document.fullscreenElement === containerRef.current);
-    };
-    document.addEventListener('fullscreenchange', onFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
-  }, []);
-
-  const handleToggleFullscreen = useCallback(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    if (!document.fullscreenElement) {
-      container.requestFullscreen?.().then(() => setIsFullscreen(true)).catch(() => {});
-    } else {
-      document.exitFullscreen?.().then(() => setIsFullscreen(false)).catch(() => {});
-    }
-  }, []);
-
-  const [centerFeedback, setCenterFeedback] = useState<'play' | 'pause' | 'rewind' | 'forward' | null>(null);
-  const clickTimeoutRef = useRef<any>(null);
-  const feedbackTimeoutRef = useRef<any>(null);
-
-  const triggerCenterFeedback = useCallback((type: 'play' | 'pause' | 'rewind' | 'forward') => {
-    setCenterFeedback(type);
-    if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
-    feedbackTimeoutRef.current = setTimeout(() => {
-      setCenterFeedback(null);
-    }, 600);
-  }, []);
-
-  const resetHideTimer = useCallback(() => {
+  const handlePause = () => {
+    setIsPlaying(false);
     setShowControls(true);
-    if (hideTimer.current) clearTimeout(hideTimer.current);
-    // In Netflix / YouTube style: keep controls permanently visible when paused.
-    // When playing, auto-hide controls after 3.5 seconds of inactivity.
-    if (isPlaying) {
-      hideTimer.current = setTimeout(() => setShowControls(false), 3500);
-    }
-  }, [isPlaying]);
 
-  useEffect(() => {
-    resetHideTimer();
-    return () => {
-      if (hideTimer.current) clearTimeout(hideTimer.current);
-    };
-  }, [resetHideTimer, isPlaying]);
-
-  const handleSeek = useCallback(
-    (time: number) => {
-      logEvent('seek', { time });
-      setProgress(time);
-      playerRef.current?.seekTo(time, 'seconds');
-    },
-    [logEvent]
-  );
-
-  const togglePlayPause = useCallback(() => {
-    setIsPlaying((prev) => {
-      const next = !prev;
-      triggerCenterFeedback(next ? 'play' : 'pause');
-      logEvent(next ? 'play' : 'pause', { origin: 'user_action' });
-
-      // Directly drive the underlying video element to ensure immediate user-gesture propagation
-      const video = containerRef.current?.querySelector('video');
-      if (video) {
-        if (next) {
-          video.play().catch((err) => {
-            console.warn('Video play deferred:', err);
-          });
-        } else {
-          video.pause();
-        }
-      }
-
-      return next;
-    });
-  }, [logEvent, triggerCenterFeedback]);
-
-  // Netflix/YouTube style click & double-click container handling
-  const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    // 1. If controls are hidden, first click/touch ONLY reveals controls (hover first!)
-    if (!showControls) {
-      setShowControls(true);
-      resetHideTimer();
-      return;
-    }
-
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const clickX = e.clientX - rect.left;
-    const widthPct = clickX / rect.width;
-
-    if (clickTimeoutRef.current) {
-      // Double-click detected!
-      clearTimeout(clickTimeoutRef.current);
-      clickTimeoutRef.current = null;
-
-      if (widthPct < 0.35) {
-        // Double-click left: Rewind 10s (YouTube / Netflix style)
-        const next = Math.max(0, progress - 10);
-        handleSeek(next);
-        triggerCenterFeedback('rewind');
-      } else if (widthPct > 0.65) {
-        // Double-click right: Forward 10s (YouTube / Netflix style)
-        const next = Math.min(duration || totalDuration, progress + 10);
-        handleSeek(next);
-        triggerCenterFeedback('forward');
-      } else {
-        // Double-click center: Toggle play/pause
-        togglePlayPause();
-      }
-      resetHideTimer();
-    } else {
-      // Single-click: Wait 280ms to differentiate between single and double-click
-      clickTimeoutRef.current = setTimeout(() => {
-        clickTimeoutRef.current = null;
-        togglePlayPause();
-        resetHideTimer();
-      }, 280);
+    if (hideControlsTimer.current) {
+      clearTimeout(hideControlsTimer.current);
     }
   };
 
-  // YouTube / Netflix keyboard shortcuts
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      const isPlayerActive =
-        isHovered.current ||
-        containerRef.current?.contains(document.activeElement) ||
-        document.fullscreenElement === containerRef.current;
+  const handleTimeUpdate = () => {
+    const video = videoRef.current;
+    if (!video) return;
 
-      if (!isPlayerActive) return;
+    setCurrentTime(video.currentTime);
 
-      switch (e.key) {
-        case ' ':
-        case 'k':
-        case 'K':
-          e.preventDefault();
-          togglePlayPause();
-          break;
-        case 'j':
-        case 'J':
-          e.preventDefault();
-          handleSeek(Math.max(0, progress - 10));
-          triggerCenterFeedback('rewind');
-          break;
-        case 'l':
-        case 'L':
-          e.preventDefault();
-          handleSeek(Math.min(duration || totalDuration, progress + 10));
-          triggerCenterFeedback('forward');
-          break;
-        case 'ArrowLeft':
-          e.preventDefault();
-          handleSeek(Math.max(0, progress - 5));
-          triggerCenterFeedback('rewind');
-          break;
-        case 'ArrowRight':
-          e.preventDefault();
-          handleSeek(Math.min(duration || totalDuration, progress + 5));
-          triggerCenterFeedback('forward');
-          break;
-        case 'f':
-        case 'F':
-          handleToggleFullscreen();
-          break;
-        case 'm':
-        case 'M':
-          setIsMuted((prev) => !prev);
-          break;
-        case 'ArrowUp':
-          e.preventDefault();
-          setVolume((prev) => Math.min(1, prev + 0.1));
-          break;
-        case 'ArrowDown':
-          e.preventDefault();
-          setVolume((prev) => Math.max(0, prev - 0.1));
-          break;
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9': {
-          e.preventDefault();
-          const targetPct = Number(e.key) / 10;
-          const targetSec = targetPct * (duration || totalDuration);
-          handleSeek(targetSec);
-          break;
-        }
-      }
-      resetHideTimer();
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [
-    duration,
-    totalDuration,
-    progress,
-    handleToggleFullscreen,
-    resetHideTimer,
-    togglePlayPause,
-    handleSeek,
-    triggerCenterFeedback,
-  ]);
+    // Debounced watch history reporting
+    if (!saveTimeout.current && video.currentTime > 0) {
+      saveTimeout.current = setTimeout(() => {
+        saveTimeout.current = null;
+        reportProgress(video.currentTime, video.duration || duration);
+      }, 15000);
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    setDuration(video.duration);
+    setIsLoading(false);
+    setHasError(false);
+
+    // Initial resume seek
+    if (initialResumeSeconds > 0 && !hasResumed.current) {
+      video.currentTime = initialResumeSeconds;
+      setCurrentTime(initialResumeSeconds);
+      hasResumed.current = true;
+    }
+  };
+
+  const handleWaiting = () => {
+    setIsLoading(true);
+  };
+
+  const handleCanPlay = () => {
+    setIsLoading(false);
+  };
+
+  const handleError = () => {
+    console.error("V19Plus video playback error");
+    setIsLoading(false);
+    setHasError(true);
+    setIsPlaying(false);
+  };
 
   const handleEnded = () => {
-    logEvent('ended');
-    saveProgressNow(duration);
-    const prefs = getPlaybackPrefs();
-    if (onNextEpisode && prefs.autoplayNext) {
-      setShowNextOverlay(true);
-    } else {
-      setIsPlaying(false);
+    setIsPlaying(false);
+    setShowControls(true);
+    if (onNextEpisode) {
+      onNextEpisode();
     }
   };
 
-  const handlePiP = async () => {
-    const video = containerRef.current?.querySelector('video');
-    if (video && document.pictureInPictureEnabled) {
-      try {
-        if (document.pictureInPictureElement) {
-          await document.exitPictureInPicture();
-        } else {
-          await video.requestPictureInPicture();
-        }
-      } catch (e) {
-        console.error('PiP failed', e);
+  /*
+   * ---------------------------------------------------------
+   * KEYBOARD CONTROLS
+   * ---------------------------------------------------------
+   */
+
+  useEffect(() => {
+    const handleKeyboard = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        return;
       }
-    }
-  };
 
-  const handleSetQuality = (qualityIndex: number) => {
-    setCurrentQuality(qualityIndex);
-    if (hlsPlayerRef.current) {
-      if (qualityIndex === -1) {
-        isManualQualityRef.current = false;
-        hlsPlayerRef.current.currentLevel = -1; // Auto ABR
-        logEvent('qualitySelected', { label: 'Auto (ABR)' });
-      } else {
-        isManualQualityRef.current = true;
-        const targetLevel = qualities.find((q) => q.index === qualityIndex);
-        if (targetLevel) {
-          hlsPlayerRef.current.currentLevel = targetLevel.index;
-          logEvent('qualitySelected', { label: targetLevel.label, index: targetLevel.index });
-        }
+      const video = videoRef.current;
+      if (!video) return;
+
+      switch (event.key) {
+        case " ":
+          event.preventDefault();
+          togglePlayPause();
+          showPlayerControls();
+          break;
+
+        case "ArrowLeft":
+          event.preventDefault();
+          skipBackward();
+          break;
+
+        case "ArrowRight":
+          event.preventDefault();
+          skipForward();
+          break;
+
+        case "f":
+        case "F":
+          event.preventDefault();
+          toggleFullscreen();
+          break;
+
+        case "m":
+        case "M":
+          event.preventDefault();
+          toggleMute(event as unknown as React.MouseEvent);
+          break;
+
+        default:
+          break;
       }
+    };
+
+    window.addEventListener("keydown", handleKeyboard);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyboard);
+    };
+  }, [
+    togglePlayPause,
+    skipBackward,
+    skipForward,
+  ]);
+
+  /*
+   * ---------------------------------------------------------
+   * TIME FORMAT
+   * ---------------------------------------------------------
+   */
+
+  const formatTime = (seconds: number) => {
+    if (!Number.isFinite(seconds)) {
+      return "00:00";
     }
+
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+
+    if (hrs > 0) {
+      return `${hrs}:${String(mins).padStart(2, "0")}:${String(
+        secs
+      ).padStart(2, "0")}`;
+    }
+
+    return `${String(mins).padStart(2, "0")}:${String(
+      secs
+    ).padStart(2, "0")}`;
   };
 
-  // ─── Loading / Authorization State ──────────────────────────────────────────
-  if (authLoading) {
-    return (
-      <div className="w-full h-full bg-black flex items-center justify-center text-center p-6">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-14 h-14 border-4 border-white/10 border-t-[#FF5C00] rounded-full animate-spin" />
-          <span className="text-white/70 text-sm font-medium tracking-wide">
-            Authorizing Secure Playback...
-          </span>
-        </div>
-      </div>
-    );
-  }
+  /*
+   * ---------------------------------------------------------
+   * IMPORTANT:
+   * CLICKING THE VIDEO DOES NOT TOGGLE PLAYBACK.
+   * ---------------------------------------------------------
+   */
 
+  const handleVideoAreaClick = (
+    event: React.MouseEvent<HTMLDivElement>
+  ) => {
+    /*
+     * Do NOT call togglePlayPause() here.
+     *
+     * This is intentional.
+     *
+     * Clicking the video itself should only reveal controls.
+     * Playback is controlled by the actual Play/Pause button.
+     */
 
+    event.stopPropagation();
+    showPlayerControls();
+  };
 
-  // ─── Playback Failure / Error View ──────────────────────────────────────────
-  if (isError || (authError && !activeVideoUrl)) {
-    return (
-      <div className="w-full h-full bg-black flex items-center justify-center p-6 text-center select-none">
-        <div className="max-w-md p-8 bg-[#181818] border border-white/10 rounded-3xl shadow-2xl flex flex-col items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 mb-2">
-            <AlertCircle className="w-8 h-8" />
-          </div>
-          <h2 className="text-xl font-black text-white">Playback Error</h2>
-          <p className="text-sm text-gray-400 leading-relaxed">
-            {authError?.message ||
-              'Unable to load the video stream. The video may be still processing or network connection was interrupted.'}
-          </p>
-          <div className="flex gap-3 mt-3">
-            <button
-              onClick={() => {
-                setIsError(false);
-                setIsBuffering(true);
-                const video = containerRef.current?.querySelector('video');
-                if (video) {
-                  video.load();
-                  video
-                    .play()
-                    .then(() => {
-                      setIsPlaying(true);
-                      setIsBuffering(false);
-                    })
-                    .catch(() => {
-                      setIsPlaying(false);
-                      setIsBuffering(false);
-                    });
-                } else if (authData?.stream_url) {
-                  setActiveVideoUrl(authData.stream_url);
-                  setIsPlaying(true);
-                }
-              }}
-              className="px-6 py-2.5 bg-[#FF5C00] hover:bg-[#FF7A00] text-white font-bold rounded-xl text-sm transition-all shadow-lg active:scale-95"
-            >
-              Retry Playback
-            </button>
-            <button
-              onClick={() => router.back()}
-              className="px-6 py-2.5 bg-[#2a2a2a] hover:bg-[#333] text-white font-bold rounded-xl text-sm transition-all active:scale-95"
-            >
-              Go Back
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const showNextBtn = totalDuration > 0 && progress / totalDuration > 0.9 && !!onNextEpisode;
-  const activeSubtitles = episode?.subtitles || content.subtitles || [];
-  const tracks = activeSubtitles.map((sub) => ({
-    kind: 'subtitles',
-    src: sub.url,
-    srcLang: sub.language,
-    label: sub.label,
-    default: sub.language === 'en',
-  }));
-  const activeTracks = subtitles ? tracks : [];
+  /*
+   * ---------------------------------------------------------
+   * RENDER
+   * ---------------------------------------------------------
+   */
 
   return (
     <div
       ref={containerRef}
-      className={`relative w-full h-full bg-black overflow-hidden select-none ${
-        showControls ? 'cursor-default' : 'cursor-none'
-      }`}
-      onMouseMove={resetHideTimer}
-      onMouseEnter={() => {
-        isHovered.current = true;
-      }}
+      className={`relative w-full h-full overflow-hidden bg-black select-none group ${className}`}
+      onMouseMove={showPlayerControls}
+      onMouseEnter={showPlayerControls}
       onMouseLeave={() => {
-        isHovered.current = false;
+        if (isPlaying) {
+          if (hideControlsTimer.current) {
+            clearTimeout(hideControlsTimer.current);
+          }
+
+          hideControlsTimer.current = setTimeout(() => {
+            setShowControls(false);
+          }, 1500);
+        }
       }}
-      onClick={handleContainerClick}
+      onClick={handleVideoAreaClick}
     >
-      {/* Top Bar with Back Button & Content Metadata */}
-      {showControls && (
-        <div
-          className="absolute top-0 left-0 right-0 z-20 p-6 flex items-center gap-4 bg-gradient-to-b from-black/80 to-transparent animate-fade-in pointer-events-auto"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            onClick={() => router.back()}
-            className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all backdrop-blur-md active:scale-95"
-            aria-label="Go back"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-          </button>
-          <div className="flex flex-col text-left">
-            <span className="text-white font-bold text-lg md:text-xl leading-tight">
-              {content.title}
-            </span>
-            {episode && (
-              <span className="text-white/60 text-xs md:text-sm">
-                S{content.seasons?.find((s) => s.episodes?.some((e) => e.id === episodeId))?.number || 1}:E
-                {episode.number} — {episode.title}
-              </span>
-            )}
-          </div>
-        </div>
-      )}
+      {/* VIDEO */}
 
-      {/* ReactPlayer with HLS stream support */}
-      {activeVideoUrl && (
-        <ReactPlayer
-          ref={playerRef}
-          url={activeVideoUrl}
-          playing={isPlaying}
-          volume={isMuted ? 0 : volume}
-          playbackRate={playbackSpeed}
-          width="100%"
-          height="100%"
-          playsinline
-          config={{
-            file: {
-              forceHLS:
-                activeVideoUrl.includes('.m3u8') ||
-                activeVideoUrl.includes('/hls/') ||
-                activeVideoUrl.includes('stream.v19plus.com'),
-              forceDASH: activeVideoUrl.includes('.mpd'),
-              attributes: {
-                playsInline: true,
-                'webkit-playsinline': 'true',
-                'x5-playsinline': 'true',
-                preload: 'auto',
-                poster: content.thumbnailUrl || (content as any)?.bannerUrl || '',
-                style: {
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'contain',
-                },
-              },
-              tracks: activeTracks,
-              hlsOptions: {
-                enableWorker: true,
-                lowLatencyMode: false,
-                backBufferLength: 90,
-                maxBufferLength: 60,
-                maxMaxBufferLength: 120,
-                maxBufferSize: 80 * 1000 * 1000,
-                maxBufferHole: 0.8,
-                highBufferWatchdogPeriod: 1,
-                nudgeOffset: 0.2,
-                nudgeMaxRetry: 10,
-                maxFragLookUpTolerance: 0.3,
-                startLevel: -1, // Native automatic ABR start
-                autoStartLoad: true,
-                capLevelToPlayerSize: false,
-                abrEwmaDefaultEstimate: 4000000,
-                abrBandWidthFactor: 0.85,
-                abrBandWidthUpFactor: 0.7,
-                abrMaxWithRealBitrate: true,
-                fragLoadingTimeOut: 20000,
-                fragLoadingMaxRetry: 6,
-                fragLoadingRetryDelay: 500,
-                levelLoadingTimeOut: 15000,
-                levelLoadingMaxRetry: 5,
-              },
-            },
-          }}
-          onReady={(player) => {
-            const internalPlayer = player.getInternalPlayer('hls');
-            if (internalPlayer) {
-              hlsPlayerRef.current = internalPlayer;
-
-              internalPlayer.on('hlsManifestParsed', (event: any, data: any) => {
-                logEvent('manifestParsed', { levelsCount: data?.levels?.length });
-                if (data.levels && data.levels.length > 0) {
-                  const getLabel = (height: number) => {
-                    if (height >= 1080) return `${height}p Full HD`;
-                    if (height >= 720) return `${height}p HD`;
-                    if (height >= 480) return `${height}p Standard`;
-                    if (height >= 360) return `${height}p Medium`;
-                    if (height >= 240) return `${height}p Low Data`;
-                    return `${height}p`;
-                  };
-                  const parsed = data.levels
-                    .map((l: any, i: number) => ({
-                      height: l.height || 0,
-                      bitrate: l.bitrate || 0,
-                      index: i,
-                      label: getLabel(l.height),
-                    }))
-                    .sort((a: any, b: any) => b.height - a.height);
-                  setQualities(parsed);
-                }
-              });
-
-              internalPlayer.on('hlsError', (event: any, data: any) => {
-                logEvent('error', { type: data?.type, details: data?.details, fatal: data?.fatal });
-                if (data?.fatal) {
-                  switch (data.type) {
-                    case 'networkError':
-                      internalPlayer.startLoad();
-                      break;
-                    case 'mediaError':
-                      internalPlayer.recoverMediaError();
-                      break;
-                    default:
-                      internalPlayer.startLoad();
-                      break;
-                  }
-                }
-              });
-            }
-          }}
-          onPlay={() => {
-            if (bufferTimer.current) clearTimeout(bufferTimer.current);
-            setIsBuffering(false);
-            setIsPlaying(true);
-            logEvent('play', { progress });
-          }}
-          onProgress={({ playedSeconds }) => {
-            if (bufferTimer.current) clearTimeout(bufferTimer.current);
-            setIsBuffering(false);
-            setProgress(playedSeconds);
-            triggerPeriodicSave(playedSeconds);
-          }}
-          onDuration={(d) => setDuration(d)}
-          onEnded={handleEnded}
-          onPause={() => {
-            logEvent('pause', { progress });
-            saveProgressNow(progress);
-          }}
-          onBuffer={() => {
-            if (bufferTimer.current) clearTimeout(bufferTimer.current);
-            bufferTimer.current = setTimeout(() => {
-              const v = containerRef.current?.querySelector('video');
-              if (v && !v.paused && !v.ended) {
-                setIsBuffering(true);
-              }
-            }, 500);
-          }}
-          onBufferEnd={() => {
-            if (bufferTimer.current) clearTimeout(bufferTimer.current);
-            setIsBuffering(false);
-          }}
-          onError={(e) => {
-            logEvent('error', { origin: 'react_player_onError', error: e });
-
-            // 1. Check if it's an autoplay policy or user-gesture restriction
-            const errName = (e as any)?.name;
-            const errMsg = String((e as any)?.message || '');
-            const videoElem = containerRef.current?.querySelector('video');
-            const mediaError = videoElem?.error;
-
-            if (
-              errName === 'NotAllowedError' ||
-              errName === 'AbortError' ||
-              errMsg.includes('interact') ||
-              errMsg.includes('user gesture') ||
-              errMsg.includes('denied permission') ||
-              errMsg.includes('pause()') ||
-              (!mediaError && (!videoElem || videoElem.paused))
-            ) {
-              // Autoplay blocked by browser policy: graceful transition to user-initiated playback
-              logEvent('autoplayDeferredToUserGesture');
-              setIsPlaying(false);
-              setShowControls(true);
-              return;
-            }
-
-            // 2. Only show fatal error if mediaError is an actual fatal decode/network error
-            if (mediaError && mediaError.code !== 1) {
-              setIsError(true);
-            }
-          }}
-          progressInterval={250}
-        />
-      )}
-
-      <SubtitleOverlay visible={false} text="" />
-
-      {/* Animated Netflix / YouTube Side Arc Ripple for Double-Tap Seek */}
-      {centerFeedback === 'rewind' && (
-        <div className="absolute left-0 top-0 bottom-0 w-1/3 flex items-center justify-center pointer-events-none bg-gradient-to-r from-white/10 to-transparent rounded-r-full animate-pulse z-20">
-          <div className="flex flex-col items-center gap-1.5 bg-black/40 px-4 py-3 rounded-2xl backdrop-blur-sm">
-            <RotateCcw className="w-8 h-8 text-white" />
-            <span className="text-xs font-bold text-white font-mono tracking-wider">10 seconds</span>
-          </div>
-        </div>
-      )}
-      {centerFeedback === 'forward' && (
-        <div className="absolute right-0 top-0 bottom-0 w-1/3 flex items-center justify-center pointer-events-none bg-gradient-to-l from-white/10 to-transparent rounded-l-full animate-pulse z-20">
-          <div className="flex flex-col items-center gap-1.5 bg-black/40 px-4 py-3 rounded-2xl backdrop-blur-sm">
-            <RotateCw className="w-8 h-8 text-white" />
-            <span className="text-xs font-bold text-white font-mono tracking-wider">10 seconds</span>
-          </div>
-        </div>
-      )}
-
-      {/* Animated Netflix / YouTube Transient Center Feedback Ripple */}
-      {centerFeedback && (
-        <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none transition-all">
-          <div className="w-24 h-24 rounded-full bg-black/70 backdrop-blur-md border border-white/20 flex flex-col items-center justify-center text-white shadow-[0_0_40px_rgba(0,0,0,0.8)] animate-fade-in">
-            {centerFeedback === 'play' && <Play className="w-12 h-12 fill-white text-white ml-1.5 drop-shadow" />}
-            {centerFeedback === 'pause' && <Pause className="w-12 h-12 fill-white text-white drop-shadow" />}
-            {centerFeedback === 'rewind' && (
-              <div className="flex flex-col items-center">
-                <RotateCcw className="w-9 h-9 text-white" />
-                <span className="text-xs font-bold mt-1 text-[#FF5C00] font-mono tracking-wider">-10s</span>
-              </div>
-            )}
-            {centerFeedback === 'forward' && (
-              <div className="flex flex-col items-center">
-                <RotateCw className="w-9 h-9 text-white" />
-                <span className="text-xs font-bold mt-1 text-[#FF5C00] font-mono tracking-wider">+10s</span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Prominent Netflix / YouTube Center Play Button when Paused */}
-      {!isPlaying && !isBuffering && !authLoading && showControls && (
-        <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
-          <button
-            type="button"
-            className="pointer-events-auto w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-[#FF5C00]/90 hover:bg-[#FF5C00] text-white flex items-center justify-center shadow-[0_0_40px_rgba(255,92,0,0.6)] backdrop-blur-md border border-white/20 transition-all transform hover:scale-110 active:scale-95 group"
-            onClick={(e) => {
-              e.stopPropagation();
-              togglePlayPause();
-            }}
-            aria-label="Play video"
-          >
-            <Play className="w-10 h-10 sm:w-12 sm:h-12 fill-white text-white ml-1.5 group-hover:scale-105 transition-transform" />
-          </button>
-        </div>
-      )}
-
-      {/* Buffering Spinner */}
-      {isBuffering && (
-        <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
-          <div className="w-14 h-14 border-4 border-white/20 border-t-[#FF5C00] rounded-full animate-spin" />
-        </div>
-      )}
-
-      {showNextOverlay && onNextEpisode && (
-        <NextEpisodeOverlay
-          title={nextEpisode?.title}
-          onNext={() => {
-            setShowNextOverlay(false);
-            onNextEpisode();
-          }}
-          onCancel={() => {
-            setShowNextOverlay(false);
-            setIsPlaying(false);
-          }}
-        />
-      )}
-
-      <PlayerControls
-        duration={duration || totalDuration}
-        onSeek={handleSeek}
-        onNextEpisode={onNextEpisode}
-        showNext={showNextBtn}
-        onPiP={handlePiP}
-        spriteVttUrl={authData?.sprite_vtt_url}
-        isPlaying={isPlaying}
-        progress={progress}
-        volume={volume}
-        isMuted={isMuted}
-        showControls={showControls}
-        playbackSpeed={playbackSpeed}
-        subtitles={subtitles}
-        isFullscreen={isFullscreen}
-        qualities={qualities}
-        currentQuality={currentQuality}
-        onTogglePlay={() => {
-          setIsPlaying((prev) => {
-            const next = !prev;
-            logEvent(next ? 'play' : 'pause', { origin: 'toggle_button' });
-            return next;
-          });
-        }}
-        onToggleMute={() => setIsMuted((prev) => !prev)}
-        onToggleFullscreen={handleToggleFullscreen}
-        onToggleSubtitles={() => setSubtitles((prev) => !prev)}
-        onSetPlaybackSpeed={(s) => setPlaybackSpeed(s)}
-        onSetVolume={(v) => {
-          setVolume(v);
-          setIsMuted(v === 0);
-        }}
-        onSetQuality={handleSetQuality}
+      <video
+        ref={videoRef}
+        src={activeSrc}
+        poster={poster}
+        preload="metadata"
+        playsInline
+        className="block h-full w-full object-contain bg-black"
+        onPlay={handlePlay}
+        onPlaying={handlePlaying}
+        onPause={handlePause}
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={handleLoadedMetadata}
+        onWaiting={handleWaiting}
+        onCanPlay={handleCanPlay}
+        onError={handleError}
+        onEnded={handleEnded}
       />
 
-      {!showControls && (
-        <div className="absolute top-4 left-4 text-white/50 text-sm pointer-events-none">
-          {content.title}
-          {episode ? ` — ${episode.title}` : ''}
+      {/* LOADING */}
+
+      {isLoading && !hasError && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-white/20 border-t-[#FF5C00]" />
         </div>
       )}
+
+      {/* ERROR */}
+
+      {hasError && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 text-center">
+          <div className="mb-4 text-lg font-semibold text-white">
+            Unable to play this video
+          </div>
+
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+
+              const video = videoRef.current;
+              if (!video) return;
+
+              setHasError(false);
+              setIsLoading(true);
+
+              video.load();
+
+              video
+                .play()
+                .catch((error) => {
+                  console.error("Retry playback error:", error);
+                });
+            }}
+            className="rounded-lg bg-white px-5 py-2 font-semibold text-black transition hover:bg-gray-200"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* CENTER PLAY BUTTON */}
+
+      {!isPlaying && !hasError && !isLoading && (
+        <button
+          type="button"
+          aria-label="Play video"
+          onClick={togglePlayPause}
+          className="absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-black shadow-2xl transition hover:scale-110 hover:bg-white"
+        >
+          <svg
+            width="26"
+            height="26"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path d="M8 5v14l11-7z" />
+          </svg>
+        </button>
+      )}
+
+      {/* CONTROLS */}
+
+      <div
+        className={`absolute inset-x-0 bottom-0 transition-opacity duration-300 ${
+          showControls
+            ? "opacity-100"
+            : "pointer-events-none opacity-0"
+        }`}
+        onClick={(event) => event.stopPropagation()}
+      >
+        {/* GRADIENT */}
+
+        <div className="pointer-events-none absolute inset-0 -top-24 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+
+        <div className="relative px-4 pb-3 pt-10">
+          {/* PROGRESS */}
+
+          <input
+            type="range"
+            min={0}
+            max={duration || 0}
+            step={0.1}
+            value={Math.min(currentTime, duration || 0)}
+            onChange={handleSeek}
+            aria-label="Video progress"
+            className="mb-3 h-1.5 w-full cursor-pointer appearance-none rounded-full accent-[#FF5C00]"
+          />
+
+          {/* CONTROL BAR */}
+
+          <div className="flex items-center gap-3 text-white">
+            {/* PLAY / PAUSE */}
+
+            <button
+              type="button"
+              aria-label={isPlaying ? "Pause" : "Play"}
+              onClick={togglePlayPause}
+              className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-white/15"
+            >
+              {isPlaying ? (
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
+                </svg>
+              ) : (
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              )}
+            </button>
+
+            {/* BACKWARD 10 */}
+
+            <button
+              type="button"
+              aria-label="Skip backward 10 seconds"
+              onClick={skipBackward}
+              className="group/skip relative flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-white/15"
+            >
+              <svg
+                width="23"
+                height="23"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M9 14 5 10l4-4" />
+                <path d="M5 10h7a6 6 0 1 1-5.2 9" />
+              </svg>
+
+              <span className="absolute -top-8 whitespace-nowrap rounded bg-black/90 px-2 py-1 text-[10px] opacity-0 transition group-hover/skip:opacity-100">
+                10 sec
+              </span>
+            </button>
+
+            {/* FORWARD 10 */}
+
+            <button
+              type="button"
+              aria-label="Skip forward 10 seconds"
+              onClick={skipForward}
+              className="group/skip relative flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-white/15"
+            >
+              <svg
+                width="23"
+                height="23"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="m15 14 4-4-4-4" />
+                <path d="M19 10h-7a6 6 0 1 0 5.2 9" />
+              </svg>
+
+              <span className="absolute -top-8 whitespace-nowrap rounded bg-black/90 px-2 py-1 text-[10px] opacity-0 transition group-hover/skip:opacity-100">
+                10 sec
+              </span>
+            </button>
+
+            {/* VOLUME */}
+
+            <button
+              type="button"
+              aria-label={isMuted ? "Unmute" : "Mute"}
+              onClick={toggleMute}
+              className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-white/15"
+            >
+              {isMuted || volume === 0 ? (
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M11 5 6 9H3v6h3l5 4z" />
+                  <path d="m17 9 4 4m0-4-4 4" />
+                </svg>
+              ) : (
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M11 5 6 9H3v6h3l5 4z" />
+                  <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+                  <path d="M18 6a8.5 8.5 0 0 1 0 12" />
+                </svg>
+              )}
+            </button>
+
+            {/* VOLUME SLIDER */}
+
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={isMuted ? 0 : volume}
+              onChange={handleVolumeChange}
+              aria-label="Volume"
+              className="hidden w-20 cursor-pointer accent-[#FF5C00] sm:block"
+            />
+
+            {/* TIME */}
+
+            <div className="ml-1 whitespace-nowrap text-xs text-white/90">
+              {formatTime(currentTime)} / {formatTime(duration)}
+            </div>
+
+            {/* SPACER */}
+
+            <div className="flex-1" />
+
+            {/* FULLSCREEN */}
+
+            <button
+              type="button"
+              aria-label={
+                isFullscreen
+                  ? "Exit fullscreen"
+                  : "Enter fullscreen"
+              }
+              onClick={toggleFullscreen}
+              className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-white/15"
+            >
+              {isFullscreen ? (
+                <svg
+                  width="21"
+                  height="21"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M8 3v5H3M16 3v5h5M8 21v-5H3M21 16h-5v5" />
+                </svg>
+              ) : (
+                <svg
+                  width="21"
+                  height="21"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M8 3H3v5M21 8V3h-5M3 16v5h5M16 21h5v-5" />
+                </svg>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* TITLE & BACK BUTTON */}
+
+      <div
+        className={`absolute left-4 top-4 flex items-center gap-3 transition-opacity duration-300 z-20 ${
+          showControls ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+      >
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            router.back();
+          }}
+          aria-label="Go back"
+          className="flex h-9 w-9 items-center justify-center rounded-xl bg-black/60 text-white backdrop-blur-md transition hover:bg-black/80 active:scale-95"
+        >
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+        </button>
+
+        {title && (
+          <span className="rounded-xl bg-black/60 px-3.5 py-1.5 text-sm font-medium text-white backdrop-blur-md">
+            {title}
+          </span>
+        )}
+      </div>
     </div>
   );
 }
+
+export default VideoPlayer;
