@@ -95,7 +95,7 @@ export default function MoviesPage() {
               </h1>
             </div>
             <p className="text-xs text-[#8C8478] mt-1 ml-3.5">
-              Curated 4K Ultra HD feature films and cinema productions
+              Curated feature films, acclaimed cinema, and original premieres
             </p>
           </div>
 

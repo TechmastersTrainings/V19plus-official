@@ -30,12 +30,12 @@ const FAQS: FAQItem[] = [
   {
     category: 'Streaming & Playback',
     question: 'Which devices are supported by V19Plus?',
-    answer: 'V19Plus can be accessed on any modern desktop or mobile browser. We also provide a native Android app (.apk) that can be installed on Android devices. iOS support is currently in development.'
+    answer: 'V19Plus can be accessed on any modern desktop or mobile browser. We also provide a native Android app (.apk) that can be installed on Android devices. iOS app support is coming soon.'
   },
   {
     category: 'Troubleshooting',
     question: 'The Android APK won\'t open or keeps stopping, what do I do?',
-    answer: 'This is usually caused by installing the new APK over an older conflicting package. Please completely uninstall the V19+ app from your phone first, download the latest version (v1.0.5 or newer) from Google Play Store or your workspace, and install it fresh.'
+    answer: 'This is usually caused by installing the new APK over an older conflicting package. Please completely uninstall the V19+ app from your phone first, download the latest version from the Google Play Store or our official download page, and install it fresh.'
   },
   {
     category: 'Troubleshooting',
@@ -101,7 +101,7 @@ export default function SupportPage() {
         <div className="text-center mb-12">
           <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight mb-4">Help Center & Support</h1>
           <p className="text-gray-400 max-w-xl mx-auto text-sm md:text-base">
-            Find answers to frequently asked questions or get in touch directly with our technical support team.
+            Find answers to frequently asked questions or get in touch directly with our member support team.
           </p>
         </div>
 

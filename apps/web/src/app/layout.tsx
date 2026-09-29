@@ -7,14 +7,14 @@ export const metadata = {
     default: 'V19Plus | Official Streaming Platform',
     template: '%s | V19Plus',
   },
-  description: 'V19Plus is the official premium streaming platform offering thousands of movies, TV series, live sports, and original productions in 4K Ultra HD.',
-  keywords: ['V19Plus', 'V19 Plus', 'V19', 'streaming', 'movies', 'TV shows', 'cinema', '4K streaming', 'OTT'],
+  description: 'V19Plus is the official streaming platform offering movies, TV series, masterclasses, and original productions.',
+  keywords: ['V19Plus', 'V19 Plus', 'V19', 'streaming', 'movies', 'TV shows', 'cinema', 'masterclasses', 'OTT'],
   alternates: {
     canonical: 'https://v19-plus.web.app',
   },
   openGraph: {
     title: 'V19Plus | Official Streaming Platform',
-    description: 'Stream unlimited movies, TV shows, live sports, and documentaries in 4K Ultra HD on V19Plus.',
+    description: 'Stream unlimited movies, TV shows, masterclasses, and documentaries on V19Plus.',
     url: 'https://v19-plus.web.app',
     siteName: 'V19Plus',
     images: [
@@ -77,7 +77,7 @@ const jsonLd = {
       '@id': 'https://v19-plus.web.app/#website',
       url: 'https://v19-plus.web.app/',
       name: 'V19Plus',
-      description: 'Stream unlimited movies, TV shows, and documentaries in 4K Ultra HD.',
+      description: 'Stream unlimited movies, TV shows, and documentaries on V19Plus.',
       publisher: {
         '@id': 'https://v19-plus.web.app/#organization',
       },

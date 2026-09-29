@@ -30,13 +30,13 @@ export function Footer() {
               </span>
             </Link>
             <p className="text-xs sm:text-sm text-gray-400 leading-relaxed max-w-md">
-              V19Plus is a premier entertainment streaming platform delivering cinematic feature films,
-              world-class masterclasses, and acclaimed documentaries in true 4K Ultra HD with immersive spatial audio.
+              V19Plus is a premier streaming destination for extraordinary movies, inspiring masterclasses,
+              and compelling documentaries—crafted for lovers of great stories everywhere.
             </p>
             {/* Entertainment badges */}
             <div className="flex flex-wrap gap-2 pt-2">
               <span className="px-2.5 py-1 rounded-md bg-[#14100D] border border-white/10 text-[11px] font-semibold text-gray-300 flex items-center gap-1.5">
-                <Sparkles className="w-3 h-3 text-[#FF5C00]" /> 4K Ultra HD
+                <Sparkles className="w-3 h-3 text-[#FF5C00]" /> Curated Stories
               </span>
               <span className="px-2.5 py-1 rounded-md bg-[#14100D] border border-white/10 text-[11px] font-semibold text-gray-300 flex items-center gap-1.5">
                 <Film className="w-3 h-3 text-[#FF8A00]" /> V19Plus Originals
@@ -157,11 +157,11 @@ export function Footer() {
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
           <p>© 2026 V19Plus Entertainment. All rights reserved.</p>
           <div className="flex items-center gap-4 text-[11px]">
-            <span>True 4K Ultra HD</span>
+            <span>Unlimited Entertainment</span>
             <span>•</span>
-            <span>Dolby Atmos Compatible</span>
+            <span>Multi-Device Access</span>
             <span>•</span>
-            <span>Stream Anywhere</span>
+            <span>Cancel Anytime</span>
           </div>
         </div>
       </div>

@@ -323,7 +323,7 @@ export function PlayerControls({
                     <p className="text-[10px] font-black text-[#8C8478] uppercase tracking-wider px-2 mb-1.5 flex items-center justify-between">
                       <span>Stream Quality</span>
                       <span className="text-[9px] text-[#FF5C00] font-semibold">
-                        {currentQuality === -1 ? 'Auto (ABR)' : 'Locked'}
+                        {currentQuality === -1 ? 'Auto' : 'Selected'}
                       </span>
                     </p>
                     <button
@@ -333,7 +333,7 @@ export function PlayerControls({
                     >
                       <div>
                         <div className="font-bold">Auto (Recommended)</div>
-                        <div className="text-[10px] text-white/50">Adaptive bitrate • Continuous stream</div>
+                        <div className="text-[10px] text-white/50">Auto quality • Best for your network</div>
                       </div>
                       {currentQuality === -1 && <Check className="w-4 h-4 text-[#FF5C00] shrink-0" />}
                     </button>
@@ -357,7 +357,7 @@ export function PlayerControls({
                         <div>
                           <div className="font-bold">{q.label || `${q.height}p`}</div>
                           <div className="text-[10px] text-white/40">
-                            {q.bitrate ? `${Math.round(q.bitrate / 1000)} kbps` : ''}
+                            {q.height >= 1080 ? 'Full HD' : q.height >= 720 ? 'High Definition' : 'Standard Definition'}
                           </div>
                         </div>
                         {currentQuality === q.index && <Check className="w-4 h-4 text-[#FF5C00] shrink-0" />}

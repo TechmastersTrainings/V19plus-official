@@ -315,7 +315,7 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* 12. The V19Plus Experience Section */}
+      {/* 12. Curated Entertainment Showcase */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16 sm:mt-20">
         <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#18130F] via-[#120E0B] to-[#0A0807] border border-white/10 p-6 sm:p-10 shadow-2xl">
           {/* Ambient Glow */}
@@ -326,13 +326,13 @@ export default function HomePage() {
               <div className="space-y-2">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[#FFA84A] text-xs font-bold tracking-widest uppercase">
                   <Sparkles className="w-3.5 h-3.5 text-[#FF5C00]" />
-                  <span>The V19Plus Standard</span>
+                  <span>Curated Entertainment</span>
                 </div>
                 <h3 className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight">
-                  Cinema Fidelity. In Every Frame.
+                  Stories Worth Watching. Crafted for You.
                 </h3>
                 <p className="text-sm sm:text-base text-[#B8B0A2] max-w-2xl leading-relaxed">
-                  Engineered from the ground up for high-fidelity master playback, delivering uncompromised 4K visual clarity and immersive spatial audio.
+                  Explore an exclusive collection of acclaimed movies, captivating documentaries, and inspiring masterclasses—curated for audiences who cherish unforgettable entertainment.
                 </p>
               </div>
 
@@ -340,46 +340,46 @@ export default function HomePage() {
                 href="/browse"
                 className="self-start md:self-auto inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs sm:text-sm border border-white/15 transition-all shadow-md group"
               >
-                <span>Explore All Titles</span>
+                <span>Browse All Stories</span>
                 <ArrowRight className="w-4 h-4 text-[#FFA84A] group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
 
-            {/* 3 Premium Feature Cards */}
+            {/* 3 User-Centric Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 pt-2">
               <div className="p-5 sm:p-6 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3 hover:border-[#FF5C00]/30 transition-colors">
                 <div className="w-10 h-10 rounded-xl bg-[#FF5C00]/15 flex items-center justify-center text-[#FF5C00]">
                   <Film className="w-5 h-5" />
                 </div>
                 <h4 className="text-base font-bold text-white tracking-wide">
-                  True 4K Ultra HD
+                  Original Stories & Cinema
                 </h4>
                 <p className="text-xs sm:text-sm text-[#9A9284] leading-relaxed">
-                  Pristine resolution and color depth calibrated for high-performance OLED and big-screen displays.
+                  Handpicked premiere films, extraordinary real-life journeys, and masterclasses from world-renowned creators.
                 </p>
               </div>
 
               <div className="p-5 sm:p-6 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3 hover:border-[#FF5C00]/30 transition-colors">
                 <div className="w-10 h-10 rounded-xl bg-[#FF5C00]/15 flex items-center justify-center text-[#FF8A00]">
-                  <Volume2 className="w-5 h-5" />
+                  <Tv className="w-5 h-5" />
                 </div>
                 <h4 className="text-base font-bold text-white tracking-wide">
-                  Dolby Atmos® Spatial Sound
+                  Watch Everywhere, Anytime
                 </h4>
                 <p className="text-xs sm:text-sm text-[#9A9284] leading-relaxed">
-                  Three-dimensional acoustics that envelop you in the scene with crystal-clear dialogue and punchy dynamics.
+                  Enjoy uninterrupted viewing on your living room television, smartphone, tablet, or laptop.
                 </p>
               </div>
 
               <div className="p-5 sm:p-6 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3 hover:border-[#FF5C00]/30 transition-colors">
                 <div className="w-10 h-10 rounded-xl bg-[#FF5C00]/15 flex items-center justify-center text-[#FFA84A]">
-                  <Tv className="w-5 h-5" />
+                  <Sparkles className="w-5 h-5" />
                 </div>
                 <h4 className="text-base font-bold text-white tracking-wide">
-                  Continuous Cross-Device Sync
+                  Ad-Free Pure Viewing
                 </h4>
                 <p className="text-xs sm:text-sm text-[#9A9284] leading-relaxed">
-                  Start on your television, resume instantly on your mobile or tablet with synchronized watch progress.
+                  Zero commercials, zero interruptions. Just pure storytelling and personal recommendations tailored to your taste.
                 </p>
               </div>
             </div>

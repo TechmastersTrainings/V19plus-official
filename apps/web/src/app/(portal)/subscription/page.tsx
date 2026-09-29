@@ -65,16 +65,16 @@ const PLAN_META: Record<
   'premium-4k': {
     badge: 'MOST POPULAR',
     isPopular: true,
-    resolutionLabel: '4K Ultra HD + HDR10+',
-    soundLabel: 'Dolby Atmos® & Spatial Audio',
+    resolutionLabel: 'Cinema Quality',
+    soundLabel: 'Theater Surround Sound',
     deviceLabel: 'All Devices + Smart TVs & Consoles',
     perks: [
-      'Full 4K Ultra HD with HDR10+ color depth',
-      'Dolby Atmos® 3D spatial surround sound',
+      'Highest quality picture & vibrant color',
+      'Theater-style spatial surround sound',
       'Stream on 4 screens at the same time',
       'Offline downloads on 4 devices',
-      'Early VIP access to V19+ Masterclasses',
-      'Zero ads, 60fps high bitrate streaming',
+      'Early access to new masterclasses',
+      'Zero ads, smooth uninterrupted streaming',
     ],
     gradient: 'from-[#2A1608] via-[#140D07] to-[#070605]',
     borderGlow: 'border-[#FF5C00]/80 shadow-[0_0_35px_rgba(255,92,0,0.28)]',
@@ -82,14 +82,14 @@ const PLAN_META: Record<
   'annual-vip': {
     badge: 'BEST VALUE • SAVE 20%',
     isBestValue: true,
-    resolutionLabel: '4K Ultra HD + HDR10+',
-    soundLabel: 'Dolby Atmos® & Spatial Audio',
+    resolutionLabel: 'Cinema Quality',
+    soundLabel: 'Theater Surround Sound',
     deviceLabel: 'All Devices + VIP Dedicated Concierge',
     perks: [
-      '12 full months of uninterrupted 4K Ultra HD',
+      '12 full months of unlimited entertainment',
       'Equivalent to just ₹249/month (Save ₹6,589)',
       'Stream on 4 screens simultaneously',
-      'Dolby Atmos® & IMAX enhanced masters',
+      'Theater acoustics & festival screenings',
       'Priority festival premier screenings',
       '24/7 dedicated VIP customer concierge',
     ],
@@ -220,8 +220,8 @@ function SubscriptionContent() {
 
   const faqs = [
     {
-      q: 'How does the V19plus free trial or instant activation work?',
-      a: 'Once you choose any V19+ pass, your account receives instant access across all your devices. You can stream our 4K Ultra HD catalog and original masterclasses immediately.',
+      q: 'How does instant activation work?',
+      a: 'Once you choose any V19+ pass, your account receives instant access across all your devices. You can stream our entire collection of films, series, and masterclasses immediately.',
     },
     {
       q: 'Can I switch or cancel my plan at any time?',
@@ -232,8 +232,8 @@ function SubscriptionContent() {
       a: 'V19plus runs on modern web browsers (Chrome, Safari, Firefox, Edge), iOS & iPadOS, Android mobile & tablets, Apple TV, Android TV, Amazon Fire TV, and Chromecast.',
     },
     {
-      q: 'What is the video & audio streaming quality?',
-      a: 'Our Standard tier delivers pristine 1080p Full HD at high bitrates. Premium 4K and Annual VIP passes deliver full 4K Ultra HD, HDR10+, and Dolby Atmos® 3D spatial audio mastered for theater-quality sound.',
+      q: 'What is the streaming quality?',
+      a: 'Enjoy crystal-clear visual quality and theater-style sound tailored for living room TVs, tablets, and phones with zero buffering.',
     },
   ];
 
@@ -257,7 +257,7 @@ function SubscriptionContent() {
             </span>
           </h1>
           <p className="text-gray-300 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto">
-            Experience ground-breaking originals, 4K HDR10+ cinema, and Dolby Atmos® surround sound on all your screens.
+            Experience ground-breaking originals, acclaimed cinema, and captivating masterclasses on all your screens.
             Cancel anytime in one tap.
           </p>
 
@@ -463,7 +463,7 @@ function SubscriptionContent() {
             Compare Pass Features
           </h2>
           <p className="text-gray-400 text-sm text-center max-w-xl mx-auto mb-10">
-            Every pass gives you full access to V19plus original content with ultra low-latency playback.
+            Every pass gives you full access to all V19plus original movies, series, and masterclasses with instant playback.
           </p>
 
           <div className="overflow-x-auto">
@@ -473,7 +473,7 @@ function SubscriptionContent() {
                   <th className="py-4 pr-4 font-bold">Feature</th>
                   <th className="py-4 px-3 font-bold text-center">Mobile</th>
                   <th className="py-4 px-3 font-bold text-center">Standard HD</th>
-                  <th className="py-4 px-3 font-bold text-center text-[#FF8A00]">Premium 4K</th>
+                  <th className="py-4 px-3 font-bold text-center text-[#FF8A00]">Premium Pass</th>
                   <th className="py-4 pl-3 font-bold text-center text-amber-300">Annual VIP</th>
                 </tr>
               </thead>
@@ -486,14 +486,14 @@ function SubscriptionContent() {
                   <td className="py-4 pl-3 text-center font-bold text-amber-300">₹249/mo eq.</td>
                 </tr>
                 <tr>
-                  <td className="py-4 pr-4 font-semibold text-white">Maximum Resolution</td>
-                  <td className="py-4 px-3 text-center">480p</td>
-                  <td className="py-4 px-3 text-center">1080p FHD</td>
-                  <td className="py-4 px-3 text-center font-bold text-white">4K + HDR10+</td>
-                  <td className="py-4 pl-3 text-center font-bold text-white">4K + HDR10+</td>
+                  <td className="py-4 pr-4 font-semibold text-white">Picture Quality</td>
+                  <td className="py-4 px-3 text-center">Standard</td>
+                  <td className="py-4 px-3 text-center">Full HD</td>
+                  <td className="py-4 px-3 text-center font-bold text-white">Cinema Quality</td>
+                  <td className="py-4 pl-3 text-center font-bold text-white">Cinema Quality</td>
                 </tr>
                 <tr>
-                  <td className="py-4 pr-4 font-semibold text-white">Dolby Atmos® 3D Sound</td>
+                  <td className="py-4 pr-4 font-semibold text-white">Theater Surround Sound</td>
                   <td className="py-4 px-3 text-center text-gray-500">—</td>
                   <td className="py-4 px-3 text-center text-gray-500">—</td>
                   <td className="py-4 px-3 text-center text-emerald-400 font-bold">✓ Included</td>
@@ -551,7 +551,7 @@ function SubscriptionContent() {
               <Zap className="w-5 h-5" />
             </div>
             <h4 className="font-bold text-white mb-1">Instant Screen Activation</h4>
-            <p className="text-xs text-gray-400">Start streaming in 4K immediately upon checkout.</p>
+            <p className="text-xs text-gray-400">Start streaming immediately upon checkout.</p>
           </div>
 
           <div className="p-6 rounded-2xl bg-[#100D09]/60 border border-white/5 flex flex-col items-center">

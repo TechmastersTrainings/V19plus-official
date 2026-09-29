@@ -84,12 +84,12 @@ export function ContentCard({
     }
   };
 
-  // 4 authentic specs matching the card list
+  // User-centric informative details matching the card list
   const cardListItems = [
-    '4K Ultra HD Master',
-    'Dolby Atmos Spatial Audio',
-    'Ad-Free Cinema Experience',
-    durationMins > 0 ? `${Math.floor(durationMins / 60)}h ${durationMins % 60}m Runtime` : `${primaryGenre} Feature`,
+    durationMins > 0 ? `${Math.floor(durationMins / 60)}h ${durationMins % 60}m Runtime` : 'Full Feature',
+    primaryGenre ? `${primaryGenre}` : 'Curated Cinema',
+    releaseYear ? `Released in ${releaseYear}` : 'Original Production',
+    'Ad-Free Viewing',
   ];
 
   const effectivePoster =
@@ -124,13 +124,6 @@ export function ContentCard({
               </span>
             </div>
           )}
-
-          {/* Top 4K Badge */}
-          <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
-            <span className="text-[9px] font-black text-white/95 bg-black/70 backdrop-blur-md px-1.5 py-0.5 rounded border border-white/10 tracking-widest shadow">
-              4K
-            </span>
-          </div>
 
           {/* Watchlist toggle icon */}
           <button

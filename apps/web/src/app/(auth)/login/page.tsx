@@ -227,7 +227,7 @@ export default function LoginPage() {
 
       {/* Footer Strip */}
       <footer className="relative z-10 text-center py-6 px-4 text-xs text-gray-500">
-        <p>© 2026 V19Plus OTT Platform. All rights reserved. 4K Ultra HD & Dolby Atmos streaming.</p>
+        <p>© 2026 V19Plus Entertainment. All rights reserved. Unlimited streaming on all devices.</p>
       </footer>
 
       {/* Forgot Password Modal */}

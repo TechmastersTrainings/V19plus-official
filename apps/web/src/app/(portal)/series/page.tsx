@@ -94,7 +94,7 @@ export default function WebSeriesPage() {
               </h1>
             </div>
             <p className="text-xs text-[#8C8478] mt-1 ml-3.5">
-              Episodic masterclasses and multi-part recorded series
+              Binge-worthy drama, docuseries, and original episodic stories
             </p>
           </div>
 

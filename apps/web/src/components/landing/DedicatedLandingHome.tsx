@@ -32,7 +32,7 @@ interface FaqItem {
 const FAQ_LIST: FaqItem[] = [
   {
     q: 'What is V19Plus?',
-    a: 'V19Plus is a premium video streaming platform engineered for cinema-grade feature films, studio masterclasses, and in-depth documentaries. We specialize in high-bitrate streaming with uncompromised audio and video fidelity.',
+    a: 'V19Plus is a premier entertainment streaming platform offering extraordinary feature films, world-class masterclasses, and in-depth documentaries—crafted for lovers of great stories.',
   },
   {
     q: 'Where can I watch V19Plus?',
@@ -40,11 +40,11 @@ const FAQ_LIST: FaqItem[] = [
   },
   {
     q: 'What kind of content can I watch on V19Plus?',
-    a: 'V19Plus features a premier, handpicked selection of original feature films, world-class masterclasses, hard-hitting documentaries, and exclusive entertainment events—all presented in stunning 4K Ultra HD with spatial audio.',
+    a: 'V19Plus features a premier, handpicked selection of original feature films, world-class masterclasses, hard-hitting documentaries, and exclusive entertainment events—crafted for lovers of great stories.',
   },
   {
-    q: 'What video and audio quality is supported?',
-    a: 'V19Plus supports up to 4K Ultra HD resolution with adaptive multi-bitrate HLS streaming, wide color gamut, and high-fidelity multi-channel audio for a genuine cinema experience on all compatible displays.',
+    q: 'Can I stream on all my screens?',
+    a: 'Yes. You can stream seamlessly on smart TVs, phones, tablets, and laptops. Your watchlist and place in each video automatically sync across all your devices.',
   },
   {
     q: 'Can I cancel anytime?',
@@ -123,7 +123,7 @@ export function DedicatedLandingHome() {
             transition={{ duration: 0.7, delay: 0.2 }}
             className="text-base sm:text-xl md:text-2xl text-[#C8C2B8] max-w-2xl mx-auto font-medium leading-relaxed"
           >
-            Stream anywhere in stunning 4K Ultra HD. Cinema-grade storytelling, pristine spatial audio, cancel anytime.
+            Stream anytime, anywhere. Acclaimed films, inspiring masterclasses, and powerful documentaries—all in one place.
           </motion.p>
 
           {/* Call to Action Form */}
@@ -178,13 +178,13 @@ export function DedicatedLandingHome() {
             className="pt-6 flex flex-wrap items-center justify-center gap-3 text-xs font-semibold text-[#B8B0A2]"
           >
             <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 backdrop-blur-sm">
-              <Check className="w-3.5 h-3.5 text-[#FF5C00]" /> 4K Ultra HD Master Bitrate
+              <Check className="w-3.5 h-3.5 text-[#FF5C00]" /> Unlimited Ad-Free Streaming
             </span>
             <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 backdrop-blur-sm">
-              <Check className="w-3.5 h-3.5 text-[#FF5C00]" /> Multi-Device Synchronized Continuity
+              <Check className="w-3.5 h-3.5 text-[#FF5C00]" /> Watch on Smart TV, Phone & Laptop
             </span>
             <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 backdrop-blur-sm">
-              <Check className="w-3.5 h-3.5 text-[#FF5C00]" /> Curated Studio Master Catalog
+              <Check className="w-3.5 h-3.5 text-[#FF5C00]" /> New Releases Added Regularly
             </span>
           </motion.div>
         </div>
@@ -231,11 +231,11 @@ export function DedicatedLandingHome() {
                   Cinema-Quality Playback
                 </h3>
                 <p className="text-xs text-[#9A9284] mt-1 text-center max-w-xs">
-                  Native 4K rendering with direct byte-range seek and zero buffering.
+                  Smooth, instant playback on all your favorite screens.
                 </p>
                 <div className="mt-4 flex items-center gap-2 text-[10px] font-mono font-bold text-[#FFA84A] bg-white/5 px-3 py-1 rounded-full border border-white/10">
                   <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                  HIGH BITRATE ACTIVE
+                  INSTANT STREAMING
                 </div>
               </div>
             </div>
@@ -319,46 +319,46 @@ export function DedicatedLandingHome() {
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-6 space-y-5">
             <span className="text-xs font-black uppercase tracking-widest text-[#FF5C00]">
-              CINEMATIC FIDELITY
+              CURATED ENTERTAINMENT
             </span>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white leading-tight">
-              True 4K Ultra HD. Pure acoustic immersion.
+              Stories that move you. On every screen.
             </h2>
             <p className="text-base sm:text-lg text-[#C8C2B8] leading-relaxed">
-              Every production on V19Plus is mastered to exacting cinema standards. Experience pristine visuals, dynamic HDR contrast, and spatial audio that puts you right inside the atmosphere of each story.
+              From breathtaking feature films to masterclasses taught by renowned masters, V19Plus brings together original perspectives and unforgettable storytelling crafted for true entertainment enthusiasts.
             </p>
             <div className="space-y-3 pt-2">
               <div className="flex items-center gap-3 text-sm text-[#E5E0D8]">
                 <div className="w-5 h-5 rounded-full bg-[#FF5C00]/20 flex items-center justify-center text-[#FF5C00]">
                   <Check className="w-3 h-3" />
                 </div>
-                <span>4K Ultra HD resolution with wide color gamut</span>
+                <span>Unlimited access to original films and masterclasses</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-[#E5E0D8]">
                 <div className="w-5 h-5 rounded-full bg-[#FF5C00]/20 flex items-center justify-center text-[#FF5C00]">
                   <Check className="w-3 h-3" />
                 </div>
-                <span>Instant buffer-free playback with intelligent adaptive streaming</span>
+                <span>Watch seamlessly across smart TVs, phones, tablets, and computers</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-[#E5E0D8]">
                 <div className="w-5 h-5 rounded-full bg-[#FF5C00]/20 flex items-center justify-center text-[#FF5C00]">
                   <Check className="w-3 h-3" />
                 </div>
-                <span>Dolby Atmos® compatible spatial multi-channel audio</span>
+                <span>Zero commercials, zero interruptions, pure viewing pleasure</span>
               </div>
             </div>
           </div>
 
           <div className="lg:col-span-6 flex justify-center">
             <Card
-              title="V19Plus Cinema Pass"
-              paragraph="The premier way to experience world-class streaming."
+              title="V19Plus All-Access"
+              paragraph="Stream unlimited cinema, series, and masterclasses."
               items={[
-                '4K Ultra HD Resolution & HDR',
-                'Dolby Atmos® Spatial Sound',
-                'Ad-Free Uninterrupted Streaming',
-                'Simultaneous Multi-Device Play',
-                'Watchlist & Seamless Resume Sync',
+                'Full Movie & Series Catalog',
+                'All Masterclasses & Workshops',
+                'Ad-Free Uninterrupted Viewing',
+                'Multi-Device Streaming & Sync',
+                'Instant Personal Watchlist',
               ]}
               buttonText="Start Watching Now"
               theme="orange"

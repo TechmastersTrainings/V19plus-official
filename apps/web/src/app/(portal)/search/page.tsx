@@ -20,7 +20,7 @@ const TRENDING_TERMS = [
   'Action Blockbusters',
   'V19Plus Originals',
   'Sci-Fi Thrillers',
-  '4K Ultra HD',
+  'Masterclasses',
   'Top Rated Series',
   'Award Winners'
 ];

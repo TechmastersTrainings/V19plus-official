@@ -153,7 +153,7 @@ export default function TitleDetailPage() {
           {content.rating && (
             <span className="border border-n-muted/50 px-2 py-0.5 rounded text-xs text-n-muted bg-white/5">{content.rating}</span>
           )}
-          <span className="text-n-muted">{content.seasons && content.seasons.length > 0 ? `${content.seasons.length} Seasons` : '4K HDR'}</span>
+          <span className="text-n-muted">{content.seasons && content.seasons.length > 0 ? `${content.seasons.length} Seasons` : 'Feature'}</span>
           <span className="bg-n-surface border border-n-divider text-n-muted px-2 py-0.5 rounded text-xs uppercase">
             {content.type}
           </span>

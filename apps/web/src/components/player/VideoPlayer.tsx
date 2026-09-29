@@ -792,7 +792,7 @@ export function VideoPlayer({
             Unable to stream this video
           </div>
           <p className="text-sm text-white/70 max-w-sm mb-6">
-            The video connection was interrupted or is still being prepared by the server.
+            Unable to play this title right now. Please check your connection and try again.
           </p>
 
           <button

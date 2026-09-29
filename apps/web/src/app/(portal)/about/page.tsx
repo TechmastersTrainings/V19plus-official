@@ -13,10 +13,10 @@ export default function AboutPage() {
 
         <div className="space-y-6 text-sm sm:text-base text-[#C8C2B8] leading-relaxed">
           <p>
-            V19Plus is a premier video streaming platform engineered for cinema-grade feature films, world-class masterclasses, and in-depth documentaries. We specialize in uncompromised 4K Ultra HD visual fidelity and immersive spatial audio.
+            V19Plus is a premier video streaming destination dedicated to outstanding feature films, world-class masterclasses, and acclaimed documentaries. We celebrate remarkable storytelling and bring compelling human experiences to audiences worldwide.
           </p>
           <p>
-            Our mission is to connect discerning audiences with high-caliber productions across television, desktop, tablet, and mobile devices—delivering a seamless, buffer-free entertainment experience anywhere.
+            Our mission is to connect viewers with high-caliber productions across television, desktop, tablet, and mobile devices—delivering an intuitive, uninterrupted entertainment experience anywhere.
           </p>
           <div className="pt-4 border-t border-white/10">
             <Link href="/" className="text-sm font-semibold text-[#FF5C00] hover:underline">
