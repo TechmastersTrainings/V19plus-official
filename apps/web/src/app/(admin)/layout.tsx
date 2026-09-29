@@ -1,21 +1,16 @@
 'use client';
 
 import React from 'react';
-import { Topbar } from '../../components/layout/Topbar';
-import { Footer } from '../../components/layout/Footer';
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Pure Admin Console container - strictly no consumer Topbar or consumer Footer
   return (
-    <div className="flex flex-col min-h-screen bg-[#08080a] text-white">
-      <Topbar />
-      <main className="flex-1 pt-18 sm:pt-20 pb-16">
-        {children}
-      </main>
-      <Footer />
+    <div className="min-h-screen bg-[#070605] text-white selection:bg-[#FF5C00]/30 selection:text-white antialiased">
+      {children}
     </div>
   );
 }

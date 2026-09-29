@@ -16,6 +16,7 @@ from src.modules.video_jobs.router import router as video_jobs_router
 from src.modules.content.search_router import router as search_router
 from src.modules.streaming.watchlist_router import router as watchlist_router
 from src.modules.content.settings_router import router as settings_router
+from src.modules.admin.router import router as admin_router
 
 logging.basicConfig(
     level=logging.INFO if not settings.DEBUG else logging.DEBUG,
@@ -88,6 +89,7 @@ app.include_router(video_jobs_router, prefix="/api")
 app.include_router(search_router, prefix="/api")
 app.include_router(watchlist_router, prefix="/api")
 app.include_router(settings_router, prefix="/api")
+app.include_router(admin_router, prefix="/api")
 
 
 @app.get("/", tags=["Root"])
