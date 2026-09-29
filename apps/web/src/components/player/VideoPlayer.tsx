@@ -667,12 +667,12 @@ export function VideoPlayer({
 
         <div className="pointer-events-none absolute inset-0 -top-28 bg-gradient-to-t from-black via-black/80 to-transparent" />
 
-        <div className="relative px-6 pb-6 pt-12">
+        <div className="relative px-3 sm:px-6 pb-4 sm:pb-6 pt-8 sm:pt-12">
           {/* HIGH CONTRAST WHITE PROGRESS / SEEKING BAR */}
 
-          <div className="relative w-full mb-4 group/scrubber flex items-center">
+          <div className="relative w-full mb-3 sm:mb-4 group/scrubber flex items-center">
             {/* Visual Custom White Progress Track */}
-            <div className="w-full h-2 bg-white/25 rounded-full overflow-hidden transition-all group-hover/scrubber:h-3">
+            <div className="w-full h-1.5 sm:h-2 bg-white/25 rounded-full overflow-hidden transition-all group-hover/scrubber:h-3">
               <div
                 className="h-full bg-white rounded-full shadow-[0_0_12px_rgba(255,255,255,0.9)]"
                 style={{ width: `${progressPercent}%` }}
@@ -681,8 +681,8 @@ export function VideoPlayer({
 
             {/* Glowing White Thumb Knob */}
             <div
-              className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full border-2 border-black shadow-[0_0_8px_white] pointer-events-none transition-all group-hover/scrubber:scale-125"
-              style={{ left: `calc(${progressPercent}% - 8px)` }}
+              className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-white rounded-full border-2 border-black shadow-[0_0_8px_white] pointer-events-none transition-all group-hover/scrubber:scale-125"
+              style={{ left: `calc(${progressPercent}% - 7px)` }}
             />
 
             {/* Interactive Range Input */}
@@ -700,25 +700,25 @@ export function VideoPlayer({
 
           {/* HIGH CONTRAST WHITE CONTROL BAR */}
 
-          <div className="flex items-center gap-4 text-white">
+          <div className="flex items-center gap-1.5 sm:gap-4 text-white">
             {/* PLAY / PAUSE BUTTON */}
 
             <button
               type="button"
               aria-label={isPlaying ? "Pause" : "Play"}
               onClick={togglePlayPause}
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-black shadow-lg transition hover:scale-105 active:scale-95 cursor-pointer"
+              className="flex h-8 w-8 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-white text-black shadow-lg transition hover:scale-105 active:scale-95 cursor-pointer flex-shrink-0"
             >
               {isPlaying ? (
                 <svg
-                  className="w-5 h-5 fill-black"
+                  className="w-4 h-4 sm:w-5 sm:h-5 fill-black"
                   viewBox="0 0 24 24"
                 >
                   <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
                 </svg>
               ) : (
                 <svg
-                  className="w-5 h-5 fill-black ml-0.5"
+                  className="w-4 h-4 sm:w-5 sm:h-5 fill-black ml-0.5"
                   viewBox="0 0 24 24"
                 >
                   <path d="M8 5v14l11-7z" />
@@ -732,10 +732,10 @@ export function VideoPlayer({
               type="button"
               aria-label="Skip backward 10 seconds"
               onClick={skipBackward}
-              className="group/skip relative flex h-10 w-10 items-center justify-center rounded-full text-white hover:bg-white/20 transition cursor-pointer"
+              className="group/skip relative flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full text-white hover:bg-white/20 transition cursor-pointer flex-shrink-0"
             >
               <svg
-                className="w-6 h-6 stroke-white"
+                className="w-5 h-5 sm:w-6 sm:h-6 stroke-white"
                 viewBox="0 0 24 24"
                 fill="none"
                 strokeWidth="2.5"
@@ -746,7 +746,7 @@ export function VideoPlayer({
                 <path d="M5 10h7a6 6 0 1 1-5.2 9" />
               </svg>
 
-              <span className="absolute -top-8 whitespace-nowrap rounded-md bg-white text-black px-2 py-0.5 text-[11px] font-bold opacity-0 transition group-hover/skip:opacity-100 shadow-md">
+              <span className="absolute -top-8 whitespace-nowrap rounded-md bg-white text-black px-2 py-0.5 text-[10px] sm:text-[11px] font-bold opacity-0 transition group-hover/skip:opacity-100 shadow-md">
                 -10s
               </span>
             </button>
@@ -757,10 +757,10 @@ export function VideoPlayer({
               type="button"
               aria-label="Skip forward 10 seconds"
               onClick={skipForward}
-              className="group/skip relative flex h-10 w-10 items-center justify-center rounded-full text-white hover:bg-white/20 transition cursor-pointer"
+              className="group/skip relative flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full text-white hover:bg-white/20 transition cursor-pointer flex-shrink-0"
             >
               <svg
-                className="w-6 h-6 stroke-white"
+                className="w-5 h-5 sm:w-6 sm:h-6 stroke-white"
                 viewBox="0 0 24 24"
                 fill="none"
                 strokeWidth="2.5"
@@ -771,23 +771,23 @@ export function VideoPlayer({
                 <path d="M19 10h-7a6 6 0 1 0 5.2 9" />
               </svg>
 
-              <span className="absolute -top-8 whitespace-nowrap rounded-md bg-white text-black px-2 py-0.5 text-[11px] font-bold opacity-0 transition group-hover/skip:opacity-100 shadow-md">
+              <span className="absolute -top-8 whitespace-nowrap rounded-md bg-white text-black px-2 py-0.5 text-[10px] sm:text-[11px] font-bold opacity-0 transition group-hover/skip:opacity-100 shadow-md">
                 +10s
               </span>
             </button>
 
             {/* VOLUME & MUTE TOGGLE */}
 
-            <div className="flex items-center gap-2 group/volume">
+            <div className="flex items-center gap-1 sm:gap-2 group/volume flex-shrink-0">
               <button
                 type="button"
                 aria-label={isMuted ? "Unmute" : "Mute"}
                 onClick={toggleMute}
-                className="flex h-10 w-10 items-center justify-center rounded-full text-white hover:bg-white/20 transition cursor-pointer"
+                className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full text-white hover:bg-white/20 transition cursor-pointer"
               >
                 {isMuted || volume === 0 ? (
                   <svg
-                    className="w-6 h-6 stroke-white"
+                    className="w-5 h-5 sm:w-6 sm:h-6 stroke-white"
                     viewBox="0 0 24 24"
                     fill="none"
                     strokeWidth="2.2"
@@ -797,7 +797,7 @@ export function VideoPlayer({
                   </svg>
                 ) : (
                   <svg
-                    className="w-6 h-6 stroke-white"
+                    className="w-5 h-5 sm:w-6 sm:h-6 stroke-white"
                     viewBox="0 0 24 24"
                     fill="none"
                     strokeWidth="2.2"
@@ -817,15 +817,15 @@ export function VideoPlayer({
                 value={isMuted ? 0 : volume}
                 onChange={handleVolumeChange}
                 aria-label="Volume"
-                className="w-20 cursor-pointer accent-white hidden sm:block h-1.5 rounded-full"
+                className="w-16 sm:w-20 cursor-pointer accent-white hidden md:block h-1.5 rounded-full"
               />
             </div>
 
             {/* TIME DISPLAY IN BRIGHT WHITE */}
 
-            <div className="ml-2 whitespace-nowrap text-xs sm:text-sm font-mono font-bold text-white tracking-wider">
+            <div className="ml-1 sm:ml-2 whitespace-nowrap text-[10px] sm:text-xs md:text-sm font-mono font-bold text-white tracking-wider flex-shrink-0">
               <span>{formatTime(currentTime)}</span>
-              <span className="text-white/60 mx-1.5">/</span>
+              <span className="text-white/60 mx-1">/</span>
               <span className="text-white/80">{formatTime(duration)}</span>
             </div>
 
@@ -843,11 +843,11 @@ export function VideoPlayer({
                   : "Enter fullscreen"
               }
               onClick={toggleFullscreen}
-              className="flex h-10 w-10 items-center justify-center rounded-full text-white hover:bg-white/20 transition cursor-pointer"
+              className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full text-white hover:bg-white/20 transition cursor-pointer flex-shrink-0"
             >
               {isFullscreen ? (
                 <svg
-                  className="w-6 h-6 stroke-white"
+                  className="w-5 h-5 sm:w-6 sm:h-6 stroke-white"
                   viewBox="0 0 24 24"
                   fill="none"
                   strokeWidth="2.5"
@@ -856,7 +856,7 @@ export function VideoPlayer({
                 </svg>
               ) : (
                 <svg
-                  className="w-6 h-6 stroke-white"
+                  className="w-5 h-5 sm:w-6 sm:h-6 stroke-white"
                   viewBox="0 0 24 24"
                   fill="none"
                   strokeWidth="2.5"
@@ -872,7 +872,7 @@ export function VideoPlayer({
       {/* TOP HEADER: BACK BUTTON & TITLE IN CRISP WHITE */}
 
       <div
-        className={`absolute left-6 top-6 flex items-center gap-4 transition-opacity duration-300 z-30 ${
+        className={`absolute left-3 top-3 sm:left-6 sm:top-6 flex items-center gap-2 sm:gap-4 transition-opacity duration-300 z-30 max-w-[90vw] ${
           showControls || !isPlaying
             ? "opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none"
@@ -885,15 +885,15 @@ export function VideoPlayer({
             router.back();
           }}
           aria-label="Go back"
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md border border-white/30 transition hover:bg-white/35 active:scale-95 cursor-pointer shadow-lg"
+          className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md border border-white/30 transition hover:bg-white/35 active:scale-95 cursor-pointer shadow-lg flex-shrink-0"
         >
-          <svg className="h-5 w-5 stroke-white" fill="none" viewBox="0 0 24 24" strokeWidth={2.5}>
+          <svg className="h-4 w-4 sm:h-5 sm:w-5 stroke-white" fill="none" viewBox="0 0 24 24" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
         </button>
 
         {title && (
-          <span className="rounded-xl bg-black/70 px-4 py-2 text-sm sm:text-base font-bold text-white border border-white/20 backdrop-blur-md shadow-xl">
+          <span className="rounded-xl bg-black/70 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-base font-bold text-white border border-white/20 backdrop-blur-md shadow-xl truncate max-w-[200px] sm:max-w-md">
             {title}
           </span>
         )}
