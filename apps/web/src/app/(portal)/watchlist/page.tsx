@@ -22,7 +22,7 @@ export default function WatchlistPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#070605] pt-24 sm:pt-28 pb-20 animate-fade-in text-white select-none">
+      <div className="min-h-screen bg-[#070605] pt-24 sm:pt-28 pb-20 animate-fade-in text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
           <Skeleton className="h-8 w-48 rounded-xl mb-2" />
           <Skeleton className="h-4 w-64 rounded-lg" />
@@ -39,14 +39,14 @@ export default function WatchlistPage() {
   const items = (watchlist || []).filter((item: any) => item?.content && item.content.id);
 
   return (
-    <div className="min-h-screen bg-[#070605] pt-24 sm:pt-28 pb-20 animate-fade-in text-white select-none">
+    <div className="min-h-screen bg-[#070605] pt-24 sm:pt-28 pb-20 animate-fade-in text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center gap-2">
             <span className="w-1.5 h-5 rounded-full bg-[#FF5C00]" />
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              My Saved Vault
+              My Watchlist
             </h1>
           </div>
           <p className="text-xs text-[#8C8478] mt-1 ml-3.5">

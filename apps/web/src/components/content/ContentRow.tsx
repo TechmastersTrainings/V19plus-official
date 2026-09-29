@@ -54,7 +54,7 @@ export function ContentRow({
   };
 
   return (
-    <section className="mb-8 sm:mb-10 group/row relative select-none">
+    <section className="mb-8 sm:mb-10 group/row relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="flex items-end justify-between mb-3">

@@ -182,7 +182,7 @@ function SearchContent() {
   const hasSearched = results.length > 0 || (!!query && !loading);
 
   return (
-    <div className="min-h-screen bg-[#070605] pt-24 sm:pt-28 pb-24 md:pb-16 animate-fade-in select-none text-white">
+    <div className="min-h-screen bg-[#070605] pt-24 sm:pt-28 pb-24 md:pb-16 animate-fade-in text-white">
       {/* Search Header Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-white mb-2 tracking-tight">

@@ -71,7 +71,7 @@ export function Topbar() {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 select-none ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
           ? 'bg-[#070605]/95 backdrop-blur-2xl border-b border-white/10 shadow-[0_10px_35px_rgba(0,0,0,0.9)]'
           : 'bg-gradient-to-b from-[#070605] via-[#070605]/70 to-transparent'

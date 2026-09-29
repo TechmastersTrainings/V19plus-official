@@ -5,13 +5,13 @@ import { Sparkles } from 'lucide-react';
 
 const FALLBACK_CATEGORIES = [
   'All',
-  'Knowledge & Masterclasses',
+  'Masterclasses',
+  'Cinema',
   'Documentary',
-  'Recorded Long-Form Events',
+  'Premieres',
   'Action',
   'Drama',
   'Sci-Fi',
-  'Spiritual & Devotional',
 ];
 
 export function GenreBar() {
@@ -32,7 +32,7 @@ export function GenreBar() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1.5 select-none">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1.5">
       <div
         ref={scrollRef}
         className="flex items-center gap-2 overflow-x-auto scrollbar-hide py-1"

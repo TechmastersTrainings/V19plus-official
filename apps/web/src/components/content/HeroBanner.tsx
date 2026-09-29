@@ -93,8 +93,12 @@ export function HeroBanner({ content, contents, isLoading, hideContent = false }
       ? current.genres.map((g) => g.name)
       : current.genre || [];
 
+  const effectiveBackdrop =
+    backdropSrc ||
+    'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=1920&q=80';
+
   return (
-    <section className="relative w-full h-[520px] sm:h-[600px] md:h-[680px] lg:h-[720px] overflow-hidden bg-[#070605] select-none">
+    <section className="relative w-full h-[520px] sm:h-[600px] md:h-[680px] lg:h-[720px] overflow-hidden bg-[#070605]">
       {/* Background Poster / Backdrop with Ken Burns effect */}
       <div className="absolute inset-0 z-0">
         <AnimatePresence mode="wait">
@@ -106,22 +110,12 @@ export function HeroBanner({ content, contents, isLoading, hideContent = false }
             transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
             className="w-full h-full relative"
           >
-            {backdropSrc ? (
-              <img
-                src={backdropSrc}
-                alt={current.title}
-                className="w-full h-full object-cover object-top sm:object-center transform scale-100 transition-transform duration-[10000ms] hover:scale-105"
-                loading="eager"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-[#1C140C] via-[#100C08] to-[#070605] flex items-center justify-center">
-                <div className="text-center opacity-25 select-none">
-                  <span className="text-7xl font-black text-[#FF5C00]/25 tracking-tighter">
-                    V19+
-                  </span>
-                </div>
-              </div>
-            )}
+            <img
+              src={effectiveBackdrop}
+              alt={current.title}
+              className="w-full h-full object-cover object-top sm:object-center transform scale-100 transition-transform duration-[10000ms] hover:scale-105"
+              loading="eager"
+            />
 
             {/* Studio Multi-Layered Vignettes */}
             <div className="hidden md:block absolute inset-0 bg-gradient-to-r from-[#070605] via-[#070605]/85 to-transparent z-10 w-[68%]" />

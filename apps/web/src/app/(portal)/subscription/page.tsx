@@ -238,7 +238,7 @@ function SubscriptionContent() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#070605] text-white pt-24 pb-28 px-4 sm:px-6 lg:px-8 relative overflow-hidden select-none">
+    <div className="min-h-screen bg-[#070605] text-white pt-24 pb-28 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
       {/* Ambient background glows */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[450px] bg-gradient-to-b from-[#FF5C00]/15 via-[#FF8A00]/5 to-transparent blur-[140px] pointer-events-none -z-10" />
       <div className="absolute top-1/3 -right-48 w-96 h-96 bg-[#FF5C00]/10 blur-[160px] pointer-events-none -z-10" />

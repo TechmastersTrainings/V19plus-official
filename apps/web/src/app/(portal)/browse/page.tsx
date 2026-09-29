@@ -47,7 +47,7 @@ function BrowseContent() {
   const items: Content[] = (data?.items || []) as Content[];
 
   return (
-    <div className="min-h-screen bg-[#070605] pt-24 pb-20 select-none animate-fade-in">
+    <div className="min-h-screen bg-[#070605] pt-24 pb-20 animate-fade-in">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header row */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -55,11 +55,11 @@ function BrowseContent() {
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-5 rounded-full bg-[#FF5C00]" />
               <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-                Studio Catalog
+                Explore Catalog
               </h1>
             </div>
             <p className="text-xs text-[#8C8478] mt-1 ml-3.5">
-              Explore masterclasses, recorded longform, documentaries, and 4K cinema
+              Explore masterclasses, premier cinema, documentaries, and exclusive releases
             </p>
           </div>
 

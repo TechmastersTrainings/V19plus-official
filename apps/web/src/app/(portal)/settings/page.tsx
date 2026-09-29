@@ -83,7 +83,7 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0A0806] pt-24 sm:pt-28 pb-24 md:pb-16 px-4 sm:px-8 md:px-16 animate-fade-in text-white select-none">
+    <div className="min-h-screen bg-[#0A0806] pt-24 sm:pt-28 pb-24 md:pb-16 px-4 sm:px-8 md:px-16 animate-fade-in text-white">
       <div className="max-w-2xl mx-auto">
         {/* Page Title */}
         <h1

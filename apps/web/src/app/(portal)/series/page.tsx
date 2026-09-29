@@ -82,7 +82,7 @@ export default function WebSeriesPage() {
   }, [rawItems, selectedLanguage, sortBy]);
 
   return (
-    <div className="min-h-screen bg-[#070605] pt-24 pb-20 select-none animate-fade-in">
+    <div className="min-h-screen bg-[#070605] pt-24 pb-20 animate-fade-in">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Page Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">

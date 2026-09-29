@@ -26,6 +26,8 @@ import {
   Play,
   Volume2,
   Tv,
+  Compass,
+  ArrowRight,
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -149,27 +151,27 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#070605] text-white pb-24 select-none animate-fade-in overflow-x-hidden">
-      {/* Admin Studio Quick Desk Bar (Visible to admins or for quick upload access) */}
+    <div className="min-h-screen bg-[#070605] text-white pb-24 animate-fade-in overflow-x-hidden">
+      {/* Admin Studio Quick Desk Bar (Visible strictly to authenticated admins) */}
       {isAdmin && (
-        <div className="relative z-30 bg-gradient-to-r from-[#FF5C00]/20 via-[#1A1410] to-[#070605] border-b border-[#FF5C00]/30 px-4 sm:px-6 py-2.5 flex items-center justify-between text-xs">
+        <div className="relative z-30 bg-gradient-to-r from-[#FF5C00]/15 via-[#1A1410] to-[#070605] border-b border-white/10 px-4 sm:px-6 py-2.5 flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
-            <ShieldAlert className="w-4 h-4 text-[#FF5C00]" />
-            <span className="font-bold text-white">
-              Studio Admin Mode Active — All videos are pushed and uploaded by the studio.
+            <span className="w-2 h-2 rounded-full bg-[#FF5C00] animate-pulse" />
+            <span className="font-semibold text-[#E5E0D8]">
+              V19Plus Studio Partner Portal • Catalog & Media Management
             </span>
           </div>
           <Link
             href="/admin"
-            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#FF5C00] hover:bg-[#E04800] text-white font-bold tracking-wide transition-all shadow-[0_0_10px_rgba(255,92,0,0.4)]"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#FF5C00] hover:bg-[#E04800] text-white font-bold tracking-wide transition-all shadow-[0_0_12px_rgba(255,92,0,0.3)]"
           >
             <UploadCloud className="w-3.5 h-3.5" />
-            <span>Admin Studio Desk</span>
+            <span>Studio Portal</span>
           </Link>
         </div>
       )}
 
-      {/* 1. Cinematic Full-Bleed Billboard Hero (Strictly Real Data) */}
+      {/* 1. Cinematic Full-Bleed Billboard Hero */}
       {heroItems.length > 0 && (
         <HeroBanner
           contents={heroItems}
@@ -186,7 +188,7 @@ export default function HomePage() {
       {activeGenre && (
         <ContentRow
           title={`${activeGenre} Collection`}
-          subtitle="Curated real titles in this category"
+          subtitle="Explore top titles in this category"
           items={
             genreContent?.items ||
             allPool.filter((item: any) =>
@@ -212,14 +214,15 @@ export default function HomePage() {
         />
       )}
 
-      {/* 5. Masterclasses & Knowledge (If any exist) */}
-      {masterclasses.length > 0 && (
+      {/* 5. Trending Now (Featured popular content) */}
+      {trending.length > 0 && (
         <ContentRow
-          title="Masterclasses & Knowledge"
-          subtitle="High-bitrate studio masterclasses and cinematography"
-          items={masterclasses}
+          title="Trending Now"
+          subtitle="Most popular titles streaming on V19Plus this week"
+          items={trending}
+          isLoading={trendingLoading}
           size="md"
-          seeAllHref="/browse?genre=knowledge"
+          seeAllHref="/browse"
         />
       )}
 
@@ -227,40 +230,51 @@ export default function HomePage() {
       {featureMovies.length > 0 && (
         <ContentRow
           title="Feature Films"
-          subtitle="Original feature films and cinema productions"
+          subtitle="Original premiere cinema and feature productions"
           items={featureMovies}
           size="md"
           seeAllHref="/movies"
         />
       )}
 
-      {/* 7. Documentaries (If any exist) */}
-      {documentaries.length > 0 && (
+      {/* 7. Masterclasses & Workshops (If any exist) */}
+      {masterclasses.length > 0 && (
         <ContentRow
-          title="Documentaries"
-          subtitle="Expeditions and documentary features"
-          items={documentaries}
+          title="Masterclasses & Workshops"
+          subtitle="Instructional master sessions led by industry pioneers"
+          items={masterclasses}
           size="md"
-          seeAllHref="/browse?type=DOCUMENTARY"
+          seeAllHref="/browse?genre=knowledge"
         />
       )}
 
-      {/* 8. Long-Form Events (If any exist) */}
+      {/* 8. Premieres & Recorded Events (If any exist) */}
       {events.length > 0 && (
         <ContentRow
-          title="Recorded Events"
-          subtitle="Full recordings and multi-hour live events"
+          title="Premieres & Broadcasts"
+          subtitle="Full-length master recordings and exclusive special events"
           items={events}
           size="md"
           seeAllHref="/browse?genre=events"
         />
       )}
 
-      {/* 9. All Studio Releases (Show when additional titles exist) */}
-      {(allPool.length > masterclasses.length || (masterclasses.length === 0 && allPool.length > 0)) && (
+      {/* 9. Documentaries (If any exist) */}
+      {documentaries.length > 0 && (
         <ContentRow
-          title="All Studio Releases"
-          subtitle="All officially published master titles in the catalog"
+          title="Documentaries & Real Stories"
+          subtitle="Investigative features, real-world journeys, and true accounts"
+          items={documentaries}
+          size="md"
+          seeAllHref="/browse?type=DOCUMENTARY"
+        />
+      )}
+
+      {/* 10. Curated Catalog (Show when all items exist) */}
+      {allPool.length > 0 && (
+        <ContentRow
+          title="Curated Catalog"
+          subtitle="Explore all available films, series, and masterclasses"
           items={allPool}
           isLoading={isLoading}
           size="md"
@@ -268,53 +282,105 @@ export default function HomePage() {
         />
       )}
 
-      {/* 10. Studio Empty State (When no titles are published yet) */}
+      {/* 11. Empty State (When no titles are published yet) */}
       {!isLoading && allPool.length === 0 && (
-        <div className="max-w-2xl mx-auto my-16 p-8 rounded-3xl bg-[#120F0C] border border-white/10 text-center space-y-4 shadow-2xl">
+        <div className="max-w-xl mx-auto my-16 p-8 rounded-3xl bg-[#120F0C] border border-white/10 text-center space-y-4 shadow-2xl">
           <div className="w-16 h-16 rounded-2xl bg-[#FF5C00]/15 flex items-center justify-center text-[#FF5C00] mx-auto shadow-[0_0_20px_rgba(255,92,0,0.3)]">
             <Film className="w-8 h-8" />
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-white">
-            V19Plus Studio Master Archive
+            Premieres Coming Soon
           </h2>
           <p className="text-sm text-[#A49C90] leading-relaxed">
-            Every single video on V19Plus is directly uploaded and published by the platform admin.
-            No mock or synthetic content is displayed.
+            Our cinema catalog is being updated with new original masterclasses and feature films. Check back regularly or explore the library.
           </p>
-          <div className="pt-2">
+          <div className="pt-2 flex items-center justify-center gap-3">
             <Link
-              href="/admin"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#FF5C00] hover:bg-[#E04800] text-white font-bold text-sm shadow-[0_0_20px_rgba(255,92,0,0.4)] transition-all active:scale-95"
+              href="/browse"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm border border-white/10 transition-all"
             >
-              <UploadCloud className="w-4 h-4" />
-              <span>Go to Admin Studio Desk to Upload</span>
+              <Compass className="w-4 h-4 text-[#FF8A00]" />
+              <span>Browse Catalog</span>
             </Link>
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#FF5C00] hover:bg-[#E04800] text-white font-bold text-sm shadow-[0_0_20px_rgba(255,92,0,0.4)] transition-all active:scale-95"
+              >
+                <UploadCloud className="w-4 h-4" />
+                <span>Upload to Catalog</span>
+              </Link>
+            )}
           </div>
         </div>
       )}
 
-      {/* 11. Studio Master Architecture Banner */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16">
-        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#120F0C] via-[#1A1410] to-[#0A0908] border border-white/10 p-6 sm:p-10">
-          <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-            <div className="md:col-span-2 space-y-2">
-              <span className="text-xs font-black tracking-widest text-[#FF5C00] uppercase">
-                ENGINEERED FOR MASTER RECORDINGS
-              </span>
-              <h3 className="text-xl sm:text-2xl font-black text-white">
-                Singapore Origin • Cloudflare Anycast CDN • Adaptive 4K HLS
-              </h3>
-              <p className="text-xs sm:text-sm text-[#9A9284] max-w-xl leading-relaxed">
-                V19plus ingests high-bitrate 20GB–100GB+ master video recordings directly to Cloudflare R2
-                object storage and streams low-latency multi-rendition HLS globally.
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row md:flex-col items-start md:items-end justify-center gap-3">
-              <div className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-[#E5E0D8]">
-                ✓ Direct Multipart Ingest (64MB)
+      {/* 12. The V19Plus Experience Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16 sm:mt-20">
+        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#18130F] via-[#120E0B] to-[#0A0807] border border-white/10 p-6 sm:p-10 shadow-2xl">
+          {/* Ambient Glow */}
+          <div className="absolute top-0 right-1/4 w-96 h-96 bg-[#FF5C00]/10 blur-[130px] rounded-full pointer-events-none" />
+
+          <div className="relative z-10 space-y-8">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[#FFA84A] text-xs font-bold tracking-widest uppercase">
+                  <Sparkles className="w-3.5 h-3.5 text-[#FF5C00]" />
+                  <span>The V19Plus Standard</span>
+                </div>
+                <h3 className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight">
+                  Cinema Fidelity. In Every Frame.
+                </h3>
+                <p className="text-sm sm:text-base text-[#B8B0A2] max-w-2xl leading-relaxed">
+                  Engineered from the ground up for high-fidelity master playback, delivering uncompromised 4K visual clarity and immersive spatial audio.
+                </p>
               </div>
-              <div className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-[#E5E0D8]">
-                ✓ Zero Subscription Gate
+
+              <Link
+                href="/browse"
+                className="self-start md:self-auto inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs sm:text-sm border border-white/15 transition-all shadow-md group"
+              >
+                <span>Explore All Titles</span>
+                <ArrowRight className="w-4 h-4 text-[#FFA84A] group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+
+            {/* 3 Premium Feature Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 pt-2">
+              <div className="p-5 sm:p-6 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3 hover:border-[#FF5C00]/30 transition-colors">
+                <div className="w-10 h-10 rounded-xl bg-[#FF5C00]/15 flex items-center justify-center text-[#FF5C00]">
+                  <Film className="w-5 h-5" />
+                </div>
+                <h4 className="text-base font-bold text-white tracking-wide">
+                  True 4K Ultra HD
+                </h4>
+                <p className="text-xs sm:text-sm text-[#9A9284] leading-relaxed">
+                  Pristine resolution and color depth calibrated for high-performance OLED and big-screen displays.
+                </p>
+              </div>
+
+              <div className="p-5 sm:p-6 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3 hover:border-[#FF5C00]/30 transition-colors">
+                <div className="w-10 h-10 rounded-xl bg-[#FF5C00]/15 flex items-center justify-center text-[#FF8A00]">
+                  <Volume2 className="w-5 h-5" />
+                </div>
+                <h4 className="text-base font-bold text-white tracking-wide">
+                  Dolby Atmos® Spatial Sound
+                </h4>
+                <p className="text-xs sm:text-sm text-[#9A9284] leading-relaxed">
+                  Three-dimensional acoustics that envelop you in the scene with crystal-clear dialogue and punchy dynamics.
+                </p>
+              </div>
+
+              <div className="p-5 sm:p-6 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3 hover:border-[#FF5C00]/30 transition-colors">
+                <div className="w-10 h-10 rounded-xl bg-[#FF5C00]/15 flex items-center justify-center text-[#FFA84A]">
+                  <Tv className="w-5 h-5" />
+                </div>
+                <h4 className="text-base font-bold text-white tracking-wide">
+                  Continuous Cross-Device Sync
+                </h4>
+                <p className="text-xs sm:text-sm text-[#9A9284] leading-relaxed">
+                  Start on your television, resume instantly on your mobile or tablet with synchronized watch progress.
+                </p>
               </div>
             </div>
           </div>

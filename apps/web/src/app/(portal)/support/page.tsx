@@ -15,12 +15,12 @@ const FAQS: FAQItem[] = [
   {
     category: 'Account & Subscription',
     question: 'How do I cancel my V19Plus subscription?',
-    answer: 'V19Plus is currently operating on a free tier, meaning all registered accounts can stream without active paid subscriptions. If we introduce premium plans in the future, you will be able to cancel at any time from your Account Settings page under "Billing".'
+    answer: 'You can easily manage or cancel your subscription at any time directly from your Account Settings under "Subscription". There are no contracts, commitments, or cancellation fees.'
   },
   {
     category: 'Account & Subscription',
     question: 'How can I permanently delete my account and data?',
-    answer: 'You can request account deletion by navigating to the "Delete Account" option in your settings menu, or by emailing our legal team at support@v19plus.app. Deletion requests are processed within 7 business days.'
+    answer: 'You can request account deletion by navigating to the "Delete Account" option in your settings menu, or by emailing our support desk at support@v19plus.com.'
   },
   {
     category: 'Streaming & Playback',

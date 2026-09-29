@@ -75,7 +75,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen relative flex flex-col justify-between bg-[#070605] text-white select-none overflow-x-hidden">
+    <div className="min-h-screen relative flex flex-col justify-between bg-[#070605] text-white overflow-x-hidden">
       {/* Cinematic Ambient Background */}
       <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
         <div className="absolute inset-0 bg-gradient-to-t from-[#070605] via-[#070605]/80 to-transparent" />

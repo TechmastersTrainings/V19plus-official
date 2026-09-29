@@ -39,8 +39,8 @@ const FAQ_LIST: FaqItem[] = [
     a: 'Watch anywhere, anytime. Sign in to your V19Plus account to stream instantly on the web from your personal computer or on any smartphone, tablet, or Smart TV connected to the internet.',
   },
   {
-    q: 'How are videos uploaded and published?',
-    a: 'Every single title on V19Plus is directly ingested and published by the platform studio admin desk from high-bitrate masters and external storage vaults. There is zero synthetic filler or automated web scraping.',
+    q: 'What kind of content can I watch on V19Plus?',
+    a: 'V19Plus features a premier, handpicked selection of original feature films, world-class masterclasses, hard-hitting documentaries, and exclusive entertainment events—all presented in stunning 4K Ultra HD with spatial audio.',
   },
   {
     q: 'What video and audio quality is supported?',
@@ -123,7 +123,7 @@ export function DedicatedLandingHome() {
             transition={{ duration: 0.7, delay: 0.2 }}
             className="text-base sm:text-xl md:text-2xl text-[#C8C2B8] max-w-2xl mx-auto font-medium leading-relaxed"
           >
-            Watch anywhere in master bitrate quality. Zero compression loss, zero buffering, cancel anytime.
+            Stream anywhere in stunning 4K Ultra HD. Cinema-grade storytelling, pristine spatial audio, cancel anytime.
           </motion.p>
 
           {/* Call to Action Form */}
@@ -314,54 +314,53 @@ export function DedicatedLandingHome() {
         </div>
       </section>
 
-      {/* 4. Feature Section: Studio Ingestion & Architecture */}
+      {/* 4. Feature Section: Cinematic Fidelity & Immersion */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 border-b border-white/5 bg-[#0A0807]/60">
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-6 space-y-5">
             <span className="text-xs font-black uppercase tracking-widest text-[#FF5C00]">
-              STUDIO MASTER ARCHIVE
+              CINEMATIC FIDELITY
             </span>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white leading-tight">
-              Direct master ingestion. Zero artificial compression.
+              True 4K Ultra HD. Pure acoustic immersion.
             </h2>
             <p className="text-base sm:text-lg text-[#C8C2B8] leading-relaxed">
-              Every video on V19Plus is uploaded directly from studio masters and hard drives by the platform
-              team. We preserve original bitrates and transcode with adaptive multi-rendition precision.
+              Every production on V19Plus is mastered to exacting cinema standards. Experience pristine visuals, dynamic HDR contrast, and spatial audio that puts you right inside the atmosphere of each story.
             </p>
             <div className="space-y-3 pt-2">
               <div className="flex items-center gap-3 text-sm text-[#E5E0D8]">
                 <div className="w-5 h-5 rounded-full bg-[#FF5C00]/20 flex items-center justify-center text-[#FF5C00]">
                   <Check className="w-3 h-3" />
                 </div>
-                <span>Direct large-file multipart upload (64MB chunking)</span>
+                <span>4K Ultra HD resolution with wide color gamut</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-[#E5E0D8]">
                 <div className="w-5 h-5 rounded-full bg-[#FF5C00]/20 flex items-center justify-center text-[#FF5C00]">
                   <Check className="w-3 h-3" />
                 </div>
-                <span>Low-latency HLS with byte-range instant seeking</span>
+                <span>Instant buffer-free playback with intelligent adaptive streaming</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-[#E5E0D8]">
                 <div className="w-5 h-5 rounded-full bg-[#FF5C00]/20 flex items-center justify-center text-[#FF5C00]">
                   <Check className="w-3 h-3" />
                 </div>
-                <span>Global Anycast CDN distribution from Singapore edge origin</span>
+                <span>Dolby Atmos® compatible spatial multi-channel audio</span>
               </div>
             </div>
           </div>
 
           <div className="lg:col-span-6 flex justify-center">
             <Card
-              title="V19Plus Master Quality"
-              paragraph="Best way to experience uncompressed 4K streaming."
+              title="V19Plus Cinema Pass"
+              paragraph="The premier way to experience world-class streaming."
               items={[
-                'Direct Master Ingest (Lossless ProRes/MP4)',
-                'Adaptive 4K Multi-Rendition HLS',
-                'Lossless Multi-Channel Spatial Audio',
-                'Global Anycast Singapore Edge CDN',
-                'Instant Byte-Range Scrubbing & Playback',
+                '4K Ultra HD Resolution & HDR',
+                'Dolby Atmos® Spatial Sound',
+                'Ad-Free Uninterrupted Streaming',
+                'Simultaneous Multi-Device Play',
+                'Watchlist & Seamless Resume Sync',
               ]}
-              buttonText="Experience Studio Quality"
+              buttonText="Start Watching Now"
               theme="orange"
               onClick={() => router.push('/signup')}
             />

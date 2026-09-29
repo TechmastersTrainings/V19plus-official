@@ -86,14 +86,18 @@ export function ContentCard({
 
   // 4 authentic specs matching the card list
   const cardListItems = [
-    '4K Ultra HD Direct Master',
-    'Dolby Atmos 5.1 Spatial Audio',
-    'Lossless Anycast Edge Stream',
+    '4K Ultra HD Master',
+    'Dolby Atmos Spatial Audio',
+    'Ad-Free Cinema Experience',
     durationMins > 0 ? `${Math.floor(durationMins / 60)}h ${durationMins % 60}m Runtime` : `${primaryGenre} Feature`,
   ];
 
+  const effectivePoster =
+    posterSrc ||
+    'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=600&q=80';
+
   return (
-    <div className="flex-shrink-0 select-none my-1">
+    <div className="flex-shrink-0 my-1">
       <div className={`card ${theme === 'cyan' ? 'theme-cyan' : ''}`}>
         <div className="card__border" />
 
@@ -102,9 +106,9 @@ export function ContentCard({
           className="relative aspect-video w-full rounded-lg overflow-hidden bg-[#120E0A] border border-white/10 shadow-inner group/media cursor-pointer z-10"
           onClick={handlePlay}
         >
-          {posterSrc && !imgError ? (
+          {!imgError ? (
             <img
-              src={posterSrc}
+              src={effectivePoster}
               alt={content.title}
               className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
               loading="lazy"
