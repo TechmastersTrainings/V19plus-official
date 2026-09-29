@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Content } from '../../api/content';
@@ -19,6 +19,9 @@ interface HeroBannerProps {
 export function HeroBanner({ content, contents, isLoading, hideContent = false }: HeroBannerProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isMuted, setIsMuted] = useState(true);
+  const [hasVideoError, setHasVideoError] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const openDetail = useUiStore((s) => s.openDetail);
   const { data: watchlist } = useWatchlist();
@@ -37,9 +40,26 @@ export function HeroBanner({ content, contents, isLoading, hideContent = false }
     return () => clearInterval(interval);
   }, [items.length]);
 
-  if (isLoading && items.length === 0) return <HeroBannerSkeleton />;
-
   const current = items[activeIndex] || items[0];
+
+  const videoSrc =
+    current?.trailer_url ||
+    current?.trailerUrl ||
+    current?.video_url ||
+    current?.videoUrl ||
+    '';
+
+  useEffect(() => {
+    setHasVideoError(false);
+  }, [activeIndex, videoSrc]);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = isMuted;
+    }
+  }, [isMuted]);
+
+  if (isLoading && items.length === 0) return <HeroBannerSkeleton />;
   if (!current) return null;
 
   const inList = !!watchlist?.some(
@@ -98,31 +118,46 @@ export function HeroBanner({ content, contents, isLoading, hideContent = false }
     'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=1920&q=80';
 
   return (
-    <section className="relative w-full h-[520px] sm:h-[600px] md:h-[680px] lg:h-[720px] overflow-hidden bg-[#070605]">
-      {/* Background Poster / Backdrop with Ken Burns effect */}
-      <div className="absolute inset-0 z-0">
+    <section className="relative w-full h-[520px] sm:h-[600px] md:h-[660px] lg:h-[700px] overflow-hidden bg-[#070605]">
+      {/* Background Poster / Trailer Video with Balanced Cinematic Framing */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.div
             key={current.id || activeIndex}
-            initial={{ opacity: 0, scale: 1.05 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.98 }}
-            transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.9, ease: 'easeInOut' }}
             className="w-full h-full relative"
           >
-            <img
-              src={effectiveBackdrop}
-              alt={current.title}
-              className="w-full h-full object-cover object-top sm:object-center transform scale-100 transition-transform duration-[10000ms] hover:scale-105"
-              loading="eager"
-            />
+            {videoSrc && !hasVideoError ? (
+              <video
+                ref={videoRef}
+                key={videoSrc}
+                src={videoSrc}
+                poster={effectiveBackdrop}
+                autoPlay
+                muted={isMuted}
+                loop
+                playsInline
+                onError={() => setHasVideoError(true)}
+                className="w-full h-full object-cover object-center pointer-events-none"
+              />
+            ) : (
+              <img
+                src={effectiveBackdrop}
+                alt={current.title}
+                className="w-full h-full object-cover object-center pointer-events-none"
+                loading="eager"
+              />
+            )}
 
-            {/* Studio Multi-Layered Vignettes */}
-            <div className="hidden md:block absolute inset-0 bg-gradient-to-r from-[#070605] via-[#070605]/85 to-transparent z-10 w-[68%]" />
-            <div className="md:hidden absolute inset-0 bg-gradient-to-t from-[#070605] via-[#070605]/85 to-transparent z-10" />
-            <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[#070605] via-[#070605]/95 to-transparent z-10 pointer-events-none" />
-            <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-[#070605]/90 via-[#070605]/30 to-transparent z-10 pointer-events-none" />
-            <div className="absolute top-1/4 left-8 w-[320px] h-[320px] rounded-full bg-[#FF5C00]/10 blur-[120px] pointer-events-none z-10" />
+            {/* Studio Multi-Layered Vignettes - Balanced so the video is clearly visible and centered */}
+            <div className="hidden md:block absolute inset-0 bg-gradient-to-r from-[#070605] via-[#070605]/55 to-transparent z-10 w-[52%] lg:w-[46%] pointer-events-none" />
+            <div className="md:hidden absolute inset-0 bg-gradient-to-t from-[#070605] via-[#070605]/65 to-transparent z-10 pointer-events-none" />
+            <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#070605] to-transparent z-10 pointer-events-none" />
+            <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-[#070605]/75 via-[#070605]/20 to-transparent z-10 pointer-events-none" />
+            <div className="absolute top-1/4 left-8 w-[280px] h-[280px] rounded-full bg-[#FF5C00]/10 blur-[100px] pointer-events-none z-10" />
           </motion.div>
         </AnimatePresence>
       </div>
@@ -134,26 +169,34 @@ export function HeroBanner({ content, contents, isLoading, hideContent = false }
             <AnimatePresence mode="wait">
               <motion.div
                 key={current.id || activeIndex}
-                initial={{ opacity: 0, y: 25 }}
+                initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -15 }}
-                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                 className="max-w-2xl"
               >
-                {/* Main Hero Title */}
-                <h1 className="text-3xl sm:text-5xl md:text-6xl font-black leading-tight text-white mb-3 tracking-tight drop-shadow-xl">
+                {/* Brand Tag / Kicker */}
+                <div className="inline-flex items-center gap-2 mb-2 sm:mb-2.5">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[#FF8A00] text-[11px] font-medium tracking-wide">
+                    <Sparkles className="w-3 h-3 text-[#FF5C00]" />
+                    {isOriginal ? 'V19Plus Original' : 'Featured Presentation'}
+                  </span>
+                </div>
+
+                {/* Main Hero Title - Refined, cinematic, not oversized or overly bold */}
+                <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-[3.25rem] font-bold font-display tracking-tight text-white mb-3 leading-[1.12] drop-shadow-lg">
                   {current.title}
                 </h1>
 
                 {/* Metadata Row */}
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm mb-3.5 text-[#B8B0A2] font-semibold">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm mb-3.5 text-[#B8B0A2] font-medium">
                   {current.imdbScore && (
-                    <span className="flex items-center gap-1 text-[#FFB800] font-black bg-[#FFB800]/15 border border-[#FFB800]/30 px-2 py-0.5 rounded text-xs">
+                    <span className="flex items-center gap-1 text-[#FFB800] font-semibold bg-[#FFB800]/10 border border-[#FFB800]/25 px-2 py-0.5 rounded text-xs">
                       ★ {current.imdbScore} IMDb
                     </span>
                   )}
-                  <span className="text-white/95">{releaseYear}</span>
-                  <span className="border border-white/25 px-1.5 py-0.5 text-[10px] rounded bg-white/10 text-white font-bold">
+                  <span className="text-white/90">{releaseYear}</span>
+                  <span className="border border-white/20 px-1.5 py-0.5 text-[10px] rounded bg-white/10 text-white font-medium">
                     {rating}
                   </span>
                   {durationMins > 0 && (
@@ -162,14 +205,14 @@ export function HeroBanner({ content, contents, isLoading, hideContent = false }
                     </span>
                   )}
                   {genreList.length > 0 && (
-                    <span className="text-[#FF8A00] font-bold">
+                    <span className="text-[#FF8A00]/90">
                       • {genreList.slice(0, 2).join(' • ')}
                     </span>
                   )}
                 </div>
 
                 {/* Description Synopsis */}
-                <p className="text-xs sm:text-sm text-[#D4CDC3] mb-6 line-clamp-2 max-w-xl leading-relaxed drop-shadow-md">
+                <p className="text-xs sm:text-sm md:text-base text-[#D4CDC3]/90 font-normal mb-6 line-clamp-3 max-w-xl leading-relaxed drop-shadow-md">
                   {current.description}
                 </p>
 
@@ -178,29 +221,29 @@ export function HeroBanner({ content, contents, isLoading, hideContent = false }
                   {/* Primary Netflix-Style Play Button */}
                   <Link
                     href={`/watch/${current.slug}`}
-                    className="flex items-center justify-center gap-2.5 px-7 sm:px-8 py-3 bg-white hover:bg-white/90 active:scale-95 text-black font-black rounded-xl text-sm sm:text-base transition-all duration-200 shadow-[0_4px_25px_rgba(255,255,255,0.25)]"
+                    className="flex items-center justify-center gap-2.5 px-6 sm:px-7 py-2.5 sm:py-3 bg-white hover:bg-neutral-200 active:scale-95 text-black font-semibold rounded-xl text-sm sm:text-base transition-all duration-200 shadow-[0_4px_20px_rgba(255,255,255,0.2)]"
                   >
-                    <Play className="w-5 h-5 fill-black text-black" />
+                    <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-black text-black" />
                     <span>Play</span>
                   </Link>
 
                   {/* Details / Specs Button */}
                   <button
                     onClick={handleMoreInfo}
-                    className="flex items-center justify-center gap-2.5 px-6 sm:px-7 py-3 bg-[#181411]/90 hover:bg-[#26201B] active:scale-95 text-white font-bold rounded-xl text-sm sm:text-base border border-white/20 transition-all backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.6)]"
+                    className="flex items-center justify-center gap-2.5 px-5 sm:px-6 py-2.5 sm:py-3 bg-[#181411]/90 hover:bg-[#26201B] active:scale-95 text-white font-medium rounded-xl text-sm sm:text-base border border-white/20 transition-all backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.6)]"
                   >
-                    <Info className="w-5 h-5 text-white" />
+                    <Info className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                     <span>More Info</span>
                   </button>
 
                   {/* Add to Watchlist Button */}
                   <button
                     onClick={handleWatchlist}
-                    className="p-3 rounded-xl bg-[#181411]/90 hover:bg-[#26201B] border border-white/20 text-white transition-all active:scale-95 backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.6)]"
+                    className="p-2.5 sm:p-3 rounded-xl bg-[#181411]/90 hover:bg-[#26201B] border border-white/20 text-white transition-all active:scale-95 backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.6)]"
                     title={inList ? 'Remove from My List' : 'Add to My List'}
                     aria-label="Add to My List"
                   >
-                    {inList ? <Check className="w-5 h-5 text-[#FF8A00]" /> : <Plus className="w-5 h-5 text-white" />}
+                    {inList ? <Check className="w-4 h-4 sm:w-5 sm:h-5 text-[#FF8A00]" /> : <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-white" />}
                   </button>
                 </div>
               </motion.div>
@@ -228,15 +271,17 @@ export function HeroBanner({ content, contents, isLoading, hideContent = false }
           </div>
         )}
 
-        <button
-          onClick={() => setIsMuted(!isMuted)}
-          className="w-10 h-10 rounded-full border border-white/20 bg-[#181411]/90 hover:bg-[#26201B] text-white flex items-center justify-center backdrop-blur-xl transition-all active:scale-95 shadow-xl"
-          aria-label="Toggle Sound"
-        >
-          {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-        </button>
+        {videoSrc && (
+          <button
+            onClick={() => setIsMuted(!isMuted)}
+            className="w-10 h-10 rounded-full border border-white/20 bg-[#181411]/90 hover:bg-[#26201B] text-white flex items-center justify-center backdrop-blur-xl transition-all active:scale-95 shadow-xl"
+            aria-label="Toggle Sound"
+          >
+            {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+          </button>
+        )}
 
-        <div className="px-3.5 py-1.5 rounded-lg bg-[#181411]/90 border border-white/20 border-l-4 border-l-[#FF5C00] text-xs font-black text-white backdrop-blur-xl shadow-xl">
+        <div className="px-3.5 py-1.5 rounded-lg bg-[#181411]/90 border border-white/20 border-l-4 border-l-[#FF5C00] text-xs font-semibold text-white backdrop-blur-xl shadow-xl">
           {rating}
         </div>
       </div>

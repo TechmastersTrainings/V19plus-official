@@ -1,5 +1,20 @@
+import { Plus_Jakarta_Sans, Outfit } from 'next/font/google';
 import { Providers } from '../components/Providers';
 import '../index.css';
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-sans',
+  weight: ['300', '400', '500', '600', '700', '800'],
+});
+
+const outfit = Outfit({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-display',
+  weight: ['400', '500', '600', '700', '800'],
+});
 
 export const metadata = {
   metadataBase: new URL('https://v19-plus.web.app'),
@@ -112,14 +127,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${plusJakartaSans.variable} ${outfit.variable}`}>
       <head>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className="min-h-screen bg-[#0a0a0a] text-[#e5e5e5] antialiased">
+      <body className="min-h-screen bg-[#070605] text-[#FAF6EF] font-sans antialiased selection:bg-[#FF5C00]/30 selection:text-white">
         <Providers>
           {children}
         </Providers>

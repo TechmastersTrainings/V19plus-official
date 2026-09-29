@@ -108,7 +108,7 @@ export function DedicatedLandingHome() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1 }}
-            className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[1.08] text-white drop-shadow-2xl"
+            className="text-3xl sm:text-5xl md:text-6xl font-bold font-display tracking-tight leading-[1.12] text-white drop-shadow-2xl"
           >
             Unlimited Movies, TV Shows, and{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF5C00] via-[#FF8A00] to-[#FFA726]">
@@ -197,10 +197,10 @@ export function DedicatedLandingHome() {
       <section className="py-20 px-4 sm:px-6 lg:px-8 border-b border-white/5 bg-[#0A0807]/60">
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-6 space-y-5">
-            <span className="text-xs font-black uppercase tracking-widest text-[#FF5C00]">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#FF5C00]">
               BIG SCREEN IMMERSION
             </span>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white leading-tight">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold font-display text-white leading-tight">
               Enjoy on your TV.
             </h2>
             <p className="text-base sm:text-lg text-[#C8C2B8] leading-relaxed">
@@ -291,10 +291,10 @@ export function DedicatedLandingHome() {
           </div>
 
           <div className="lg:col-span-6 space-y-5 order-1 lg:order-2">
-            <span className="text-xs font-black uppercase tracking-widest text-[#FF5C00]">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#FF5C00]">
               CONTINUOUS MULTI-DEVICE
             </span>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white leading-tight">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold font-display text-white leading-tight">
               Watch everywhere, anytime.
             </h2>
             <p className="text-base sm:text-lg text-[#C8C2B8] leading-relaxed">
@@ -318,10 +318,10 @@ export function DedicatedLandingHome() {
       <section className="py-20 px-4 sm:px-6 lg:px-8 border-b border-white/5 bg-[#0A0807]/60">
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-6 space-y-5">
-            <span className="text-xs font-black uppercase tracking-widest text-[#FF5C00]">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#FF5C00]">
               CURATED ENTERTAINMENT
             </span>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white leading-tight">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold font-display text-white leading-tight">
               Stories that move you. On every screen.
             </h2>
             <p className="text-base sm:text-lg text-[#C8C2B8] leading-relaxed">
@@ -372,10 +372,10 @@ export function DedicatedLandingHome() {
       <section className="py-20 px-4 sm:px-6 lg:px-8 border-b border-white/5 bg-[#070605]">
         <div className="max-w-4xl mx-auto space-y-10">
           <div className="text-center space-y-3">
-            <span className="text-xs font-black uppercase tracking-widest text-[#FF5C00]">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#FF5C00]">
               QUESTIONS & ANSWERS
             </span>
-            <h2 className="text-3xl sm:text-4xl font-black text-white">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold font-display text-white">
               Frequently Asked Questions
             </h2>
             <p className="text-sm text-[#A49C90]">
@@ -427,7 +427,7 @@ export function DedicatedLandingHome() {
       {/* 6. Ready to Watch CTA Bottom Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-[#0A0807] to-[#070605] text-center">
         <div className="max-w-3xl mx-auto space-y-6">
-          <h2 className="text-2xl sm:text-4xl font-black text-white leading-tight">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold font-display text-white leading-tight">
             Ready to experience masterclass streaming?
           </h2>
           <p className="text-sm sm:text-base text-[#C8C2B8]">

@@ -119,7 +119,7 @@ export function DetailModal() {
                         closeDetail();
                         router.push(`/watch/${content.slug}`);
                       }}
-                      className="flex items-center gap-2.5 px-6 py-3 bg-gradient-to-r from-[#FF5C00] via-[#FF7A00] to-[#FFA726] hover:from-[#FF7A00] hover:to-[#FFB74D] text-white font-black rounded-xl text-sm transition-all shadow-[0_0_24px_rgba(255,92,0,0.5)] active:scale-95"
+                      className="flex items-center gap-2.5 px-6 py-3 bg-gradient-to-r from-[#FF5C00] via-[#FF7A00] to-[#FFA726] hover:from-[#FF7A00] hover:to-[#FFB74D] text-white font-semibold rounded-xl text-sm transition-all shadow-[0_0_24px_rgba(255,92,0,0.5)] active:scale-95"
                     >
                       <Play className="w-4 h-4 fill-white text-white" />
                       <span>Play Now</span>
@@ -142,7 +142,7 @@ export function DetailModal() {
                 {/* Content Info Body */}
                 <div className="p-6 sm:p-8">
                   <div className="flex items-start justify-between gap-4 mb-3">
-                    <h2 className="text-2xl sm:text-3xl font-black text-white leading-tight">
+                    <h2 className="text-2xl sm:text-3xl font-bold font-display text-white leading-tight">
                       {content.title}
                     </h2>
                   </div>
@@ -150,7 +150,7 @@ export function DetailModal() {
                   {/* Metadata Row */}
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs sm:text-sm text-[#C8C2B8] font-medium mb-4">
                     {content.imdbScore && (
-                      <span className="text-[#FFB800] font-black bg-[#FFB800]/10 border border-[#FFB800]/30 px-2 py-0.5 rounded shadow-sm">
+                      <span className="text-[#FFB800] font-semibold bg-[#FFB800]/10 border border-[#FFB800]/30 px-2 py-0.5 rounded shadow-sm">
                         ★ {content.imdbScore} IMDb
                       </span>
                     )}
