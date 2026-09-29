@@ -50,6 +50,8 @@ export function VideoPlayer({
   const hlsRef = useRef<Hls | null>(null);
   const retryCount = useRef(0);
   const MAX_AUTO_RETRIES = 3;
+  const bufferTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastClickTimeRef = useRef(0);
 
   const [activeSrc, setActiveSrc] = useState<string>(() => {
     const raw =
@@ -65,10 +67,33 @@ export function VideoPlayer({
   const [volume, setVolume] = useState(1);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [bufferedEnd, setBufferedEnd] = useState(0);
   const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [hoverTime, setHoverTime] = useState<number | null>(null);
+  const [hoverX, setHoverX] = useState<number>(0);
+
+  const clearBuffering = useCallback(() => {
+    if (bufferTimeoutRef.current) {
+      clearTimeout(bufferTimeoutRef.current);
+      bufferTimeoutRef.current = null;
+    }
+    setIsBuffering(false);
+    setIsLoading(false);
+  }, []);
+
+  const triggerBuffering = useCallback(() => {
+    if (bufferTimeoutRef.current) clearTimeout(bufferTimeoutRef.current);
+    bufferTimeoutRef.current = setTimeout(() => {
+      const video = videoRef.current;
+      if (video && !video.paused) {
+        setIsBuffering(true);
+      }
+    }, 350);
+  }, []);
 
   // Derive poster and title
   const poster =
@@ -436,20 +461,20 @@ export function VideoPlayer({
 
   const handlePlay = () => {
     setIsPlaying(true);
-    setIsLoading(false);
+    clearBuffering();
     setHasError(false);
   };
 
   const handlePlaying = () => {
     setIsPlaying(true);
-    setIsLoading(false);
+    clearBuffering();
     setHasError(false);
     retryCount.current = 0;
   };
 
   const handlePause = () => {
     setIsPlaying(false);
-    setIsLoading(false);
+    clearBuffering();
     setShowControls(true);
 
     if (hideControlsTimer.current) {
@@ -461,7 +486,25 @@ export function VideoPlayer({
     const video = videoRef.current;
     if (!video) return;
 
+    // Video is advancing, so clear any lingering buffering state immediately
+    if (isBuffering || isLoading) {
+      clearBuffering();
+    }
+
     setCurrentTime(video.currentTime);
+
+    // Update ahead buffer calculation
+    try {
+      const buffered = video.buffered;
+      if (buffered && buffered.length > 0) {
+        for (let i = 0; i < buffered.length; i++) {
+          if (buffered.start(i) <= video.currentTime && video.currentTime <= buffered.end(i)) {
+            setBufferedEnd(buffered.end(i));
+            break;
+          }
+        }
+      }
+    } catch {}
 
     // Debounced watch history reporting
     if (!saveTimeout.current && video.currentTime > 0) {
@@ -477,7 +520,7 @@ export function VideoPlayer({
     if (!video) return;
 
     setDuration(video.duration);
-    setIsLoading(false);
+    clearBuffering();
     setHasError(false);
 
     // Initial resume seek
@@ -489,17 +532,19 @@ export function VideoPlayer({
   };
 
   const handleWaiting = () => {
-    setIsLoading(true);
+    if (isPlaying) {
+      triggerBuffering();
+    }
   };
 
   const handleStalled = () => {
     if (isPlaying) {
-      setIsLoading(true);
+      triggerBuffering();
     }
   };
 
   const handleCanPlay = () => {
-    setIsLoading(false);
+    clearBuffering();
     setHasError(false);
   };
 
@@ -658,16 +703,26 @@ export function VideoPlayer({
   const handleVideoAreaClick = (
     event: React.MouseEvent<HTMLDivElement>
   ) => {
-    /*
-     * Do NOT call togglePlayPause() here.
-     * Clicking the video itself only reveals controls.
-     * Playback is controlled by the actual Play/Pause button.
-     */
     event.stopPropagation();
-    showPlayerControls();
+    const now = Date.now();
+    // Double click -> Toggle Fullscreen (YouTube style)
+    if (now - lastClickTimeRef.current < 300) {
+      toggleFullscreen();
+      lastClickTimeRef.current = 0;
+      return;
+    }
+    lastClickTimeRef.current = now;
+
+    // Single click -> Toggle controls visibility
+    if (showControls && isPlaying) {
+      setShowControls(false);
+    } else {
+      showPlayerControls();
+    }
   };
 
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const bufferPercent = duration > 0 ? Math.min(100, (bufferedEnd / duration) * 100) : 0;
 
   /*
    * ---------------------------------------------------------
@@ -678,7 +733,9 @@ export function VideoPlayer({
   return (
     <div
       ref={containerRef}
-      className={`relative w-full h-full overflow-hidden bg-black select-none group ${className}`}
+      className={`relative w-full h-full overflow-hidden bg-black select-none group ${
+        !showControls && isPlaying ? "cursor-none" : "cursor-default"
+      } ${className}`}
       onMouseMove={showPlayerControls}
       onMouseEnter={showPlayerControls}
       onMouseLeave={() => {
@@ -716,11 +773,14 @@ export function VideoPlayer({
         onEnded={handleEnded}
       />
 
-      {/* ACTIVE PLAYBACK BUFFERING INDICATOR */}
+      {/* ACTIVE PLAYBACK BUFFERING INDICATOR (NETFLIX STYLE) */}
 
-      {isLoading && !hasError && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center z-20">
-          <div className="h-12 w-12 sm:h-14 sm:w-14 animate-spin rounded-full border-4 border-white/20 border-t-white shadow-[0_0_20px_rgba(255,255,255,0.4)]" />
+      {isBuffering && isPlaying && !hasError && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center z-20 transition-all duration-300">
+          <div className="flex flex-col items-center gap-3 rounded-2xl bg-black/60 backdrop-blur-md px-6 py-4 shadow-2xl border border-white/10">
+            <div className="h-10 w-10 sm:h-12 sm:w-12 animate-spin rounded-full border-3 sm:border-4 border-white/20 border-t-white shadow-[0_0_20px_rgba(255,255,255,0.6)]" />
+            <span className="text-xs font-semibold text-white/90 tracking-wider">Buffering...</span>
+          </div>
         </div>
       )}
 
@@ -809,11 +869,37 @@ export function VideoPlayer({
         <div className="relative px-3 sm:px-6 pb-4 sm:pb-6 pt-8 sm:pt-12">
           {/* HIGH CONTRAST WHITE PROGRESS / SEEKING BAR */}
 
-          <div className="relative w-full mb-3 sm:mb-4 group/scrubber flex items-center">
-            {/* Visual Custom White Progress Track */}
-            <div className="w-full h-1.5 sm:h-2 bg-white/25 rounded-full overflow-hidden transition-all group-hover/scrubber:h-3">
+          <div
+            className="relative w-full mb-3 sm:mb-4 group/scrubber flex items-center py-2 cursor-pointer"
+            onMouseMove={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+              setHoverX(e.clientX - rect.left);
+              setHoverTime(pos * (duration || 0));
+            }}
+            onMouseLeave={() => setHoverTime(null)}
+          >
+            {/* Hover Time Tooltip (YouTube/Netflix style) */}
+            {hoverTime !== null && duration > 0 && (
               <div
-                className="h-full bg-white rounded-full shadow-[0_0_12px_rgba(255,255,255,0.9)]"
+                className="absolute -top-7 -translate-x-1/2 rounded-md bg-black/90 px-2 py-0.5 text-[11px] font-mono font-bold text-white border border-white/20 shadow-lg pointer-events-none z-30"
+                style={{ left: `${hoverX}px` }}
+              >
+                {formatTime(hoverTime)}
+              </div>
+            )}
+
+            {/* Visual Custom White Progress Track Container */}
+            <div className="relative w-full h-1.5 sm:h-2 bg-white/20 rounded-full overflow-hidden transition-all group-hover/scrubber:h-3">
+              {/* Buffered Ahead Track (Light Gray / Semi-Transparent White) */}
+              <div
+                className="absolute inset-y-0 left-0 bg-white/40 rounded-full transition-all duration-150"
+                style={{ width: `${bufferPercent}%` }}
+              />
+
+              {/* Played Progress Track (Pure White with Glow) */}
+              <div
+                className="absolute inset-y-0 left-0 bg-white rounded-full shadow-[0_0_12px_rgba(255,255,255,0.9)]"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
