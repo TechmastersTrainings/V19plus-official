@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '../../../store/authStore';
 import toast from 'react-hot-toast';
-import { Play, Mail, Lock, User, Eye, EyeOff, ArrowRight, AlertCircle, Sparkles } from 'lucide-react';
+import { Play, Mail, Lock, User, Eye, EyeOff, ArrowRight, AlertCircle } from 'lucide-react';
 
 function formatAuthError(error: any): string {
   if (!error) return 'An unexpected error occurred. Please try again.';
@@ -115,16 +115,9 @@ export default function SignupPage() {
 
             {/* Header Titles */}
             <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FF5C00]/10 border border-[#FF5C00]/25 text-[#FF8A00] text-[11px] font-bold tracking-wide uppercase mb-3">
-                <Sparkles className="w-3 h-3" />
-                <span>Unlimited Access</span>
-              </div>
               <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
                 Create Account
               </h1>
-              <p className="text-xs sm:text-sm text-[#A8A095] mt-2">
-                Join V19Plus to stream curated movies, original series, and masterclasses ad-free.
-              </p>
             </div>
 
             {/* Error Banner */}

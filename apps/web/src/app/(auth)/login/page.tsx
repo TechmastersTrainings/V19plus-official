@@ -115,11 +115,8 @@ export default function LoginPage() {
             {/* Header Titles */}
             <div className="text-center mb-8">
               <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-                Welcome Back
+                Sign In
               </h1>
-              <p className="text-xs sm:text-sm text-[#A8A095] mt-2">
-                Sign in to continue watching your favorite movies, series, and masterclasses.
-              </p>
             </div>
 
             {/* Error Banner */}
