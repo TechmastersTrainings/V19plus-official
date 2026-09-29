@@ -124,33 +124,33 @@ export function PlayerControls({
       onClick={(e) => e.stopPropagation()}
     >
       {/* Dark gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/60 to-transparent pointer-events-none h-48 -top-20" />
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/80 to-transparent pointer-events-none h-60" />
 
-      <div className="relative px-6 sm:px-12 pb-6 pt-10">
+      <div className="relative px-6 sm:px-12 pb-6 pt-12">
         {/* Seek Bar */}
         <div
           ref={progressRef}
-          className="relative h-1.5 bg-white/20 rounded-full mb-5 cursor-pointer group/progress transition-all hover:h-2.5"
+          className="relative h-2 bg-black/70 border border-white/20 rounded-full mb-5 cursor-pointer group/progress transition-all hover:h-3 shadow-inner"
           onMouseMove={handleProgressMouseMove}
           onMouseLeave={() => setHoverTime(null)}
           onClick={handleProgressClick}
         >
           {/* Filled with brand orange */}
           <div
-            className="absolute left-0 top-0 h-full bg-[#FF5C00] rounded-full shadow-[0_0_12px_#FF5C00]"
+            className="absolute left-0 top-0 h-full bg-gradient-to-r from-[#FF5C00] via-[#FF7A00] to-[#FFA84A] rounded-full shadow-[0_0_12px_#FF5C00]"
             style={{ width: `${pct}%` }}
           />
 
           {/* Scrubber Knob */}
           <div
-            className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full -translate-x-1/2 opacity-0 group-hover/progress:opacity-100 transition-opacity shadow-[0_0_10px_rgba(255,92,0,0.8)] border-2 border-[#FF5C00]"
+            className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full -translate-x-1/2 opacity-0 group-hover/progress:opacity-100 transition-opacity shadow-[0_0_10px_rgba(0,0,0,0.9)] border-2 border-[#FF5C00]"
             style={{ left: `${pct}%` }}
           />
 
           {/* Hover Time Tooltip & Sprite Preview */}
           {hoverTime !== null && (
             <div
-              className={`absolute -translate-x-1/2 bg-[#14110D]/95 border border-white/20 text-white text-xs font-mono font-bold px-2 py-1.5 rounded-lg pointer-events-none shadow-2xl backdrop-blur-md flex flex-col items-center gap-1.5 z-30 ${
+              className={`absolute -translate-x-1/2 bg-black/95 border border-white/20 text-white text-xs font-mono font-bold px-2.5 py-1.5 rounded-lg pointer-events-none shadow-2xl backdrop-blur-md flex flex-col items-center gap-1.5 z-30 ${
                 spriteVttUrl ? '-top-32' : '-top-9'
               }`}
               style={{ left: `${(hoverTime / duration) * 100}%` }}
@@ -180,11 +180,11 @@ export function PlayerControls({
         {/* Controls Row */}
         <div className="flex items-center justify-between gap-4">
           {/* Left Controls */}
-          <div className="flex items-center gap-3 sm:gap-5">
+          <div className="flex items-center gap-2.5 sm:gap-3">
             {/* Play / Pause Toggle */}
             <button
               onClick={handleTogglePlay}
-              className="w-10 h-10 rounded-xl bg-[#FF5C00] hover:bg-[#FF7A00] text-white flex items-center justify-center transition-all shadow-[0_0_15px_rgba(255,92,0,0.4)] active:scale-95"
+              className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-[#FF5C00] to-[#E04800] hover:from-[#FF7A00] hover:to-[#FF5C00] text-white flex items-center justify-center transition-all shadow-[0_0_20px_rgba(255,92,0,0.5)] border border-white/30 active:scale-95 flex-shrink-0"
               aria-label={isPlaying ? 'Pause' : 'Play'}
             >
               {isPlaying ? (
@@ -197,32 +197,32 @@ export function PlayerControls({
             {/* Rewind 10s */}
             <button
               onClick={() => onSeek(Math.max(0, progress - 10))}
-              className="text-[#C8C2B8] hover:text-white p-2 rounded-xl hover:bg-white/5 transition-colors hidden sm:flex items-center justify-center"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-black/60 hover:bg-black/90 text-white border border-white/20 hover:border-white/40 shadow-xl backdrop-blur-xl transition active:scale-95 hidden sm:flex items-center justify-center flex-shrink-0"
               aria-label="Rewind 10 seconds"
             >
-              <RotateCcw className="w-5 h-5" />
+              <RotateCcw className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
 
             {/* Forward 10s */}
             <button
               onClick={() => onSeek(Math.min(duration, progress + 10))}
-              className="text-[#C8C2B8] hover:text-white p-2 rounded-xl hover:bg-white/5 transition-colors hidden sm:flex items-center justify-center"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-black/60 hover:bg-black/90 text-white border border-white/20 hover:border-white/40 shadow-xl backdrop-blur-xl transition active:scale-95 hidden sm:flex items-center justify-center flex-shrink-0"
               aria-label="Forward 10 seconds"
             >
-              <RotateCw className="w-5 h-5" />
+              <RotateCw className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
 
             {/* Volume Control */}
-            <div className="flex items-center gap-2 group/vol">
+            <div className="flex items-center gap-1.5 sm:gap-2 bg-black/60 px-2.5 py-1.5 rounded-xl border border-white/20 shadow-xl backdrop-blur-xl group/vol flex-shrink-0">
               <button
                 onClick={handleToggleMute}
-                className="text-[#C8C2B8] hover:text-white p-2 rounded-xl hover:bg-white/5 transition-colors"
+                className="text-white hover:text-[#FF8A00] transition-colors"
                 aria-label="Toggle mute"
               >
                 {isMuted || volume === 0 ? (
-                  <VolumeX className="w-5 h-5 text-rose-400" />
+                  <VolumeX className="w-4 h-4 sm:w-5 sm:h-5 text-rose-400" />
                 ) : (
-                  <Volume2 className="w-5 h-5" />
+                  <Volume2 className="w-4 h-4 sm:w-5 sm:h-5" />
                 )}
               </button>
               <div className="hidden sm:block w-0 group-hover/vol:w-24 overflow-hidden transition-all duration-300">
@@ -233,23 +233,25 @@ export function PlayerControls({
                   step={0.05}
                   value={isMuted ? 0 : volume}
                   onChange={(e) => handleSetVolume(Number(e.target.value))}
-                  className="w-full h-1 bg-white/20 rounded-full appearance-none cursor-pointer"
+                  className="w-full h-1 bg-white/25 rounded-full appearance-none cursor-pointer"
                   style={{ accentColor: '#FF5C00' }}
                 />
               </div>
             </div>
 
             {/* Playback Time */}
-            <span className="text-xs sm:text-sm text-[#A49C90] font-mono font-medium hidden sm:inline-block">
-              <span className="text-white font-bold">{formatTime(progress)}</span> / {formatTime(duration)}
-            </span>
+            <div className="ml-1 whitespace-nowrap px-3 py-1.5 rounded-xl bg-black/60 border border-white/20 shadow-xl backdrop-blur-xl text-xs font-mono font-bold text-white hidden sm:flex items-center gap-1">
+              <span>{formatTime(progress)}</span>
+              <span className="text-white/40">/</span>
+              <span className="text-white/80">{formatTime(duration)}</span>
+            </div>
           </div>
 
           {/* Skip Intro Button */}
           {progress > 10 && progress < 85 && duration > 150 && (
             <button
               onClick={() => onSeek(85)}
-              className="absolute right-8 sm:right-14 -top-14 z-30 px-5 py-2.5 bg-[#14110D]/90 border border-white/20 hover:border-[#FF5C00] text-white text-xs sm:text-sm font-black rounded-xl backdrop-blur-xl transition-all active:scale-95 shadow-2xl flex items-center gap-2 hover:text-[#FF5C00]"
+              className="absolute right-8 sm:right-14 -top-14 z-30 px-5 py-2.5 bg-black/90 border border-white/20 hover:border-[#FF5C00] text-white text-xs sm:text-sm font-black rounded-xl backdrop-blur-xl transition-all active:scale-95 shadow-2xl flex items-center gap-2 hover:text-[#FF5C00]"
             >
               <FastForward className="w-4 h-4 text-[#FF5C00]" />
               <span>Skip Intro</span>
@@ -257,12 +259,12 @@ export function PlayerControls({
           )}
 
           {/* Right Controls */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-2.5">
             {/* Next Episode Button */}
             {showNext && onNextEpisode && (
               <button
                 onClick={onNextEpisode}
-                className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 bg-white/10 hover:bg-[#FF5C00] text-white rounded-xl transition-colors border border-white/10"
+                className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 bg-black/60 hover:bg-[#FF5C00] text-white rounded-xl transition-colors border border-white/20 shadow-xl backdrop-blur-xl"
               >
                 <span>Next Ep</span>
                 <FastForward className="w-3.5 h-3.5" />
@@ -272,9 +274,9 @@ export function PlayerControls({
             {/* Subtitles CC */}
             <button
               onClick={handleToggleSubtitles}
-              className={`text-xs font-black px-2.5 py-1.5 rounded-xl border transition-all ${subtitles
-                  ? 'bg-[#FF5C00] text-white border-[#FF5C00] shadow-[0_0_10px_rgba(255,92,0,0.4)]'
-                  : 'text-[#C8C2B8] border-white/15 hover:border-white/30 hover:text-white bg-white/5'
+              className={`text-xs font-black px-3 py-2 rounded-xl border transition-all shadow-xl backdrop-blur-xl ${subtitles
+                  ? 'bg-[#FF5C00] text-white border-[#FF5C00] shadow-[0_0_10px_rgba(255,92,0,0.5)]'
+                  : 'text-white border-white/20 hover:border-white/40 bg-black/60 hover:bg-black/90'
                 }`}
               aria-label="Toggle Subtitles"
             >
@@ -285,16 +287,18 @@ export function PlayerControls({
             <div className="relative">
               <button
                 onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); }}
-                className={`p-2 rounded-xl transition-colors ${showSettings ? 'text-[#FF5C00] bg-white/10' : 'text-[#C8C2B8] hover:text-white hover:bg-white/5'
+                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center border shadow-xl backdrop-blur-xl transition active:scale-95 ${showSettings
+                    ? 'text-white bg-[#FF5C00] border-[#FF5C00]'
+                    : 'text-white bg-black/60 hover:bg-black/90 border-white/20 hover:border-white/40'
                   }`}
                 aria-label="Player Settings"
               >
-                <Settings className="w-5 h-5" />
+                <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
 
               {showSettings && (
                 <div
-                  className="absolute bottom-full right-0 mb-3 bg-[#14110D]/98 border border-white/10 rounded-2xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.9)] backdrop-blur-2xl min-w-[220px] flex flex-col p-3 gap-2.5 text-white z-50"
+                  className="absolute bottom-full right-0 mb-3 bg-[#14110E] border border-white/20 rounded-2xl overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.95)] backdrop-blur-2xl min-w-[240px] flex flex-col p-3.5 gap-3 text-white z-50"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {/* Speed Selector */}
@@ -372,20 +376,20 @@ export function PlayerControls({
             {onPiP && (
               <button
                 onClick={onPiP}
-                className="text-[#C8C2B8] hover:text-white p-2 rounded-xl hover:bg-white/5 transition-colors hidden md:block"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-black/60 hover:bg-black/90 text-white border border-white/20 hover:border-white/40 shadow-xl backdrop-blur-xl transition active:scale-95 hidden md:flex items-center justify-center flex-shrink-0"
                 aria-label="Picture-in-Picture"
               >
-                <PictureInPicture2 className="w-5 h-5" />
+                <PictureInPicture2 className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             )}
 
             {/* Fullscreen Toggle */}
             <button
               onClick={handleToggleFullscreen}
-              className="text-[#C8C2B8] hover:text-white p-2 rounded-xl hover:bg-white/5 transition-colors"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-black/60 hover:bg-black/90 text-white border border-white/20 hover:border-white/40 shadow-xl backdrop-blur-xl transition active:scale-95 flex items-center justify-center flex-shrink-0"
               aria-label="Toggle Fullscreen"
             >
-              {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
+              {isFullscreen ? <Minimize className="w-4 h-4 sm:w-5 sm:h-5" /> : <Maximize className="w-4 h-4 sm:w-5 sm:h-5" />}
             </button>
           </div>
         </div>

@@ -187,7 +187,7 @@ export function HeroBanner({ content, contents, isLoading, hideContent = false }
                   {/* Details / Specs Button */}
                   <button
                     onClick={handleMoreInfo}
-                    className="flex items-center justify-center gap-2.5 px-6 sm:px-7 py-3 bg-white/20 hover:bg-white/30 active:scale-95 text-white font-bold rounded-xl text-sm sm:text-base border border-white/20 transition-all backdrop-blur-md shadow-lg"
+                    className="flex items-center justify-center gap-2.5 px-6 sm:px-7 py-3 bg-[#181411]/90 hover:bg-[#26201B] active:scale-95 text-white font-bold rounded-xl text-sm sm:text-base border border-white/20 transition-all backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.6)]"
                   >
                     <Info className="w-5 h-5 text-white" />
                     <span>More Info</span>
@@ -196,7 +196,7 @@ export function HeroBanner({ content, contents, isLoading, hideContent = false }
                   {/* Add to Watchlist Button */}
                   <button
                     onClick={handleWatchlist}
-                    className="p-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white transition-all active:scale-95 backdrop-blur-md shadow-lg"
+                    className="p-3 rounded-xl bg-[#181411]/90 hover:bg-[#26201B] border border-white/20 text-white transition-all active:scale-95 backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.6)]"
                     title={inList ? 'Remove from My List' : 'Add to My List'}
                     aria-label="Add to My List"
                   >
@@ -212,7 +212,7 @@ export function HeroBanner({ content, contents, isLoading, hideContent = false }
       {/* Bottom Right Rating & Audio Control */}
       <div className="absolute bottom-8 sm:bottom-12 right-4 sm:right-8 md:right-12 z-30 flex items-center gap-3">
         {items.length > 1 && (
-          <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-xl px-3 py-1.5 rounded-full border border-white/10">
+          <div className="flex items-center gap-1.5 bg-[#181411]/90 backdrop-blur-xl px-3 py-1.5 rounded-full border border-white/15 shadow-xl">
             {items.map((it, i) => (
               <button
                 key={it.id || i}
@@ -230,13 +230,13 @@ export function HeroBanner({ content, contents, isLoading, hideContent = false }
 
         <button
           onClick={() => setIsMuted(!isMuted)}
-          className="w-9 h-9 rounded-full border border-white/25 bg-black/40 hover:bg-black/70 text-white flex items-center justify-center backdrop-blur-md transition-all active:scale-95 shadow-lg"
+          className="w-10 h-10 rounded-full border border-white/20 bg-[#181411]/90 hover:bg-[#26201B] text-white flex items-center justify-center backdrop-blur-xl transition-all active:scale-95 shadow-xl"
           aria-label="Toggle Sound"
         >
           {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
         </button>
 
-        <div className="px-3 py-1 bg-black/60 border-l-2 border-[#FF5C00] text-xs font-black text-white/95 backdrop-blur-md shadow-lg">
+        <div className="px-3.5 py-1.5 rounded-lg bg-[#181411]/90 border border-white/20 border-l-4 border-l-[#FF5C00] text-xs font-black text-white backdrop-blur-xl shadow-xl">
           {rating}
         </div>
       </div>

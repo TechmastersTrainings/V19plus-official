@@ -147,7 +147,7 @@ export function Topbar() {
           {/* Search Trigger */}
           <button
             onClick={() => router.push('/search')}
-            className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 text-[#C8C2B8] hover:text-white flex items-center justify-center border border-white/5 hover:border-white/20 transition-all active:scale-95"
+            className="w-10 h-10 rounded-xl bg-black/60 hover:bg-black/85 text-white flex items-center justify-center border border-white/20 hover:border-white/40 shadow-xl backdrop-blur-xl transition-all active:scale-95"
             aria-label="Search Catalog"
           >
             <Search className="w-4 h-4" />
@@ -156,8 +156,8 @@ export function Topbar() {
           {/* Notifications Indicator (for authenticated) */}
           {isAuth && (
             <button
-              onClick={() => toast.success('All masters are up to date in your vault.')}
-              className="hidden sm:flex relative w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 text-[#C8C2B8] hover:text-white items-center justify-center border border-white/5 hover:border-white/20 transition-all active:scale-95"
+              onClick={() => toast.success('You are all caught up!')}
+              className="hidden sm:flex relative w-10 h-10 rounded-xl bg-black/60 hover:bg-black/85 text-white items-center justify-center border border-white/20 hover:border-white/40 shadow-xl backdrop-blur-xl transition-all active:scale-95"
               aria-label="Notifications"
             >
               <Bell className="w-4 h-4" />
@@ -170,7 +170,7 @@ export function Topbar() {
             <div className="relative" ref={profileRef}>
               <button
                 onClick={() => setProfileOpen(!profileOpen)}
-                className="flex items-center gap-2 p-1 rounded-xl hover:bg-white/5 transition-colors border border-transparent hover:border-white/10"
+                className="flex items-center gap-2 p-1 rounded-xl bg-black/40 hover:bg-black/70 transition-colors border border-white/15 hover:border-white/30 shadow-lg backdrop-blur-xl"
                 aria-label="Account Menu"
               >
                 <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl overflow-hidden bg-gradient-to-tr from-[#FF5C00] to-[#FF8A00] p-0.5 shadow-[0_0_15px_rgba(255,92,0,0.3)]">
@@ -192,15 +192,15 @@ export function Topbar() {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: 10 }}
                     transition={{ duration: 0.18 }}
-                    className="absolute right-0 top-full mt-3 w-64 bg-[#120F0C]/98 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.9)] overflow-hidden z-50 p-2"
+                    className="absolute right-0 top-full mt-3 w-64 bg-[#14110E] border border-white/20 rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.95)] overflow-hidden z-50 p-2"
                   >
                     {/* User summary */}
-                    <div className="px-3.5 py-3 border-b border-white/5 mb-1 bg-white/5 rounded-xl">
-                      <p className="text-sm font-bold text-white truncate">{user?.name || 'Studio Member'}</p>
-                      <p className="text-xs text-[#8C8478] truncate mt-0.5">{user?.email}</p>
-                      <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#FF5C00]/15 text-[#FFA84A] text-[10px] font-black uppercase tracking-wider">
+                    <div className="px-3.5 py-3 border border-white/10 mb-1.5 bg-[#1C1814] rounded-xl">
+                      <p className="text-sm font-bold text-white truncate">{user?.name || 'V19Plus Member'}</p>
+                      <p className="text-xs text-[#A8A095] truncate mt-0.5">{user?.email}</p>
+                      <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#FF5C00]/20 border border-[#FF5C00]/30 text-[#FFA84A] text-[10px] font-black uppercase tracking-wider">
                         <Sparkles className="w-3 h-3 text-[#FF5C00]" />
-                        {user?.role === 'ADMIN' ? 'STUDIO ARCHITECT' : 'VIP PASS'}
+                        {user?.role === 'ADMIN' ? 'ACCOUNT OWNER' : 'VIP PASS'}
                       </div>
                     </div>
 
@@ -209,7 +209,7 @@ export function Topbar() {
                       <Link
                         href="/settings"
                         onClick={() => setProfileOpen(false)}
-                        className="flex items-center gap-3 px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-[#C8C2B8] hover:text-white hover:bg-white/5 rounded-xl transition-colors"
+                        className="flex items-center gap-3 px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-white hover:bg-white/10 rounded-xl transition-colors"
                       >
                         <Settings className="w-4 h-4 text-[#A49C90]" />
                         <span>Account & Playback</span>
@@ -217,7 +217,7 @@ export function Topbar() {
                       <Link
                         href="/subscription"
                         onClick={() => setProfileOpen(false)}
-                        className="flex items-center gap-3 px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-[#FFA84A] hover:bg-white/5 rounded-xl transition-colors"
+                        className="flex items-center gap-3 px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-white hover:bg-white/10 rounded-xl transition-colors"
                       >
                         <Sparkles className="w-4 h-4 text-[#FF5C00]" />
                         <span>Passes & Billing</span>
@@ -226,7 +226,7 @@ export function Topbar() {
                         <Link
                           href="/admin"
                           onClick={() => setProfileOpen(false)}
-                          className="flex items-center gap-3 px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-[#FF5C00] hover:bg-[#FF5C00]/10 rounded-xl transition-colors"
+                          className="flex items-center gap-3 px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-white hover:bg-[#FF5C00]/15 rounded-xl transition-colors"
                         >
                           <ShieldAlert className="w-4 h-4 text-[#FF5C00]" />
                           <span>Admin Studio Desk</span>
@@ -235,14 +235,14 @@ export function Topbar() {
                     </div>
 
                     {/* Sign out */}
-                    <div className="border-t border-white/5 mt-1 pt-1">
+                    <div className="border-t border-white/10 mt-1.5 pt-1.5">
                       <button
                         onClick={() => {
                           setProfileOpen(false);
                           logout();
                           router.push('/login');
                         }}
-                        className="w-full flex items-center gap-3 px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-xl transition-colors text-left"
+                        className="w-full flex items-center gap-3 px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-rose-400 hover:text-rose-300 hover:bg-rose-500/15 rounded-xl transition-colors text-left"
                       >
                         <LogOut className="w-4 h-4" />
                         <span>Sign Out</span>
