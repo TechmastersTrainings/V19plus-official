@@ -36,6 +36,7 @@ coverage/
 *.tsbuildinfo
 
 # Misc
+bin/
 *.apk
 *.aab
 # Python

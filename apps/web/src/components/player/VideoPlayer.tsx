@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { streamingApi } from "../../api/streaming";
 import { historyApi } from "../../api/history";
 import { Content } from "../../api/content";
+import Hls from "hls.js";
 
 export interface VideoPlayerProps {
   src?: string;
@@ -38,6 +39,9 @@ export function VideoPlayer({
   const hideControlsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasResumed = useRef(false);
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hlsRef = useRef<Hls | null>(null);
+  const retryCount = useRef(0);
+  const MAX_AUTO_RETRIES = 3;
 
   const [activeSrc, setActiveSrc] = useState<string>(() => {
     return (
@@ -98,11 +102,86 @@ export function VideoPlayer({
     };
   }, [content?.id, episodeId, propSrc, content?.videoUrl]);
 
-  // Ensure video element loads when source becomes available
+  // Attach media stream (Adaptive HLS with Hls.js or Native Safari HLS / MP4)
   useEffect(() => {
-    if (activeSrc && videoRef.current) {
-      videoRef.current.load();
+    const video = videoRef.current;
+    if (!video || !activeSrc) return;
+
+    setHasError(false);
+    setIsLoading(true);
+    retryCount.current = 0;
+
+    // Destroy existing Hls instance if present
+    if (hlsRef.current) {
+      hlsRef.current.destroy();
+      hlsRef.current = null;
     }
+
+    const isHls = activeSrc.includes(".m3u8") || activeSrc.includes("/hls/");
+
+    if (isHls) {
+      if (video.canPlayType("application/vnd.apple.mpegurl")) {
+        // Native HLS for Safari (macOS & iOS)
+        video.src = activeSrc;
+        video.load();
+      } else if (Hls.isSupported()) {
+        // Hls.js for Chrome, Firefox, Edge, Android
+        const hls = new Hls({
+          enableWorker: true,
+          lowLatencyMode: false,
+          backBufferLength: 90,
+          maxBufferLength: 30,
+          maxMaxBufferLength: 60,
+          maxBufferSize: 60 * 1000 * 1000,
+        });
+
+        hls.loadSource(activeSrc);
+        hls.attachMedia(video);
+
+        hls.on(Hls.Events.ERROR, (_event, data) => {
+          if (data.fatal) {
+            console.warn("HLS fatal error occurred:", data.type, data.details);
+            switch (data.type) {
+              case Hls.ErrorTypes.NETWORK_ERROR:
+                if (retryCount.current < MAX_AUTO_RETRIES) {
+                  retryCount.current += 1;
+                  console.info(`HLS network error recovery attempt ${retryCount.current}/${MAX_AUTO_RETRIES}...`);
+                  hls.startLoad();
+                } else {
+                  setHasError(true);
+                  setIsLoading(false);
+                }
+                break;
+              case Hls.ErrorTypes.MEDIA_ERROR:
+                console.info("HLS media error, recovering media stream...");
+                hls.recoverMediaError();
+                break;
+              default:
+                hls.destroy();
+                setHasError(true);
+                setIsLoading(false);
+                break;
+            }
+          }
+        });
+
+        hlsRef.current = hls;
+      } else {
+        video.src = activeSrc;
+        video.load();
+      }
+    } else {
+      // Standard Progressive MP4 video
+      video.src = activeSrc;
+      video.load();
+    }
+
+    return () => {
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+    };
   }, [activeSrc]);
 
   /*
@@ -357,6 +436,7 @@ export function VideoPlayer({
     setIsPlaying(true);
     setIsLoading(false);
     setHasError(false);
+    retryCount.current = 0;
   };
 
   const handlePause = () => {
@@ -401,6 +481,10 @@ export function VideoPlayer({
   };
 
   const handleWaiting = () => {
+    setIsLoading(true);
+  };
+
+  const handleStalled = () => {
     if (isPlaying) {
       setIsLoading(true);
     }
@@ -408,17 +492,51 @@ export function VideoPlayer({
 
   const handleCanPlay = () => {
     setIsLoading(false);
+    setHasError(false);
   };
 
   const handleError = () => {
     const video = videoRef.current;
-    // Autoplay or abort is not a real stream failure
-    if (video && video.error && video.error.code !== 1) {
-      console.error("V19Plus video playback error:", video.error);
-      setIsLoading(false);
-      setHasError(true);
-      setIsPlaying(false);
+    if (!video || !video.error) return;
+
+    // Code 1 is MEDIA_ERR_ABORTED (user paused, changed video, or navigated away)
+    if (video.error.code === 1) return;
+
+    console.warn("V19Plus media playback warning (code):", video.error.code);
+
+    // Resilient auto-recovery on network stall or dropped connection
+    if (retryCount.current < MAX_AUTO_RETRIES) {
+      retryCount.current += 1;
+      const resumePos = video.currentTime || currentTime;
+      console.info(`Attempting seamless stream reconnection ${retryCount.current}/${MAX_AUTO_RETRIES} at ${resumePos.toFixed(1)}s...`);
+      setIsLoading(true);
+
+      setTimeout(() => {
+        const v = videoRef.current;
+        if (!v) return;
+
+        if (hlsRef.current) {
+          hlsRef.current.startLoad();
+        } else {
+          v.load();
+          if (resumePos > 0) {
+            v.currentTime = resumePos;
+          }
+        }
+
+        v.play().catch(() => {
+          // Play promise rejection will be caught safely
+        });
+      }, 1200);
+
+      return;
     }
+
+    // Only show fatal error if repeated retries fail
+    console.error("V19Plus video playback exhausted auto-retries:", video.error);
+    setIsLoading(false);
+    setHasError(true);
+    setIsPlaying(false);
   };
 
   const handleEnded = () => {
@@ -572,10 +690,11 @@ export function VideoPlayer({
 
       <video
         ref={videoRef}
-        src={activeSrc}
+        src={activeSrc && !activeSrc.includes(".m3u8") ? activeSrc : undefined}
         poster={poster}
-        preload="metadata"
+        preload="auto"
         playsInline
+        crossOrigin="anonymous"
         className="block h-full w-full object-contain bg-black"
         onPlay={handlePlay}
         onPlaying={handlePlaying}
@@ -583,6 +702,7 @@ export function VideoPlayer({
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onWaiting={handleWaiting}
+        onStalled={handleStalled}
         onCanPlay={handleCanPlay}
         onError={handleError}
         onEnded={handleEnded}
@@ -590,9 +710,9 @@ export function VideoPlayer({
 
       {/* ACTIVE PLAYBACK BUFFERING INDICATOR */}
 
-      {isLoading && isPlaying && !hasError && (
+      {isLoading && !hasError && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center z-20">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-white/20 border-t-white" />
+          <div className="h-12 w-12 sm:h-14 sm:w-14 animate-spin rounded-full border-4 border-white/20 border-t-white shadow-[0_0_20px_rgba(255,255,255,0.4)]" />
         </div>
       )}
 
@@ -616,7 +736,18 @@ export function VideoPlayer({
 
               setHasError(false);
               setIsLoading(true);
-              video.load();
+              retryCount.current = 0;
+
+              const resumePos = currentTime;
+              if (hlsRef.current) {
+                hlsRef.current.startLoad();
+              } else {
+                video.load();
+                if (resumePos > 0) {
+                  video.currentTime = resumePos;
+                }
+              }
+
               video
                 .play()
                 .then(() => {
@@ -624,11 +755,11 @@ export function VideoPlayer({
                   setIsLoading(false);
                 })
                 .catch((error) => {
-                  console.error("Retry playback error:", error);
+                  console.warn("Retry playback caught rejected promise:", error);
                   setIsLoading(false);
                 });
             }}
-            className="rounded-xl bg-white px-6 py-2.5 font-bold text-black transition hover:bg-white/90 shadow-xl active:scale-95"
+            className="rounded-xl bg-white px-6 py-2.5 font-bold text-black transition hover:bg-white/90 shadow-xl active:scale-95 cursor-pointer"
           >
             Retry Playback
           </button>
