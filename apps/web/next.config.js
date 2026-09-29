@@ -30,6 +30,10 @@ const nextConfig = {
         source: '/api/:path*',
         destination: `${backendUrl}/api/:path*`,
       },
+      {
+        source: '/r2-stream/:path*',
+        destination: 'https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev/:path*',
+      },
     ];
   },
   async headers() {

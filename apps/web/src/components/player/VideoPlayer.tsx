@@ -23,6 +23,14 @@ export interface VideoPlayerProps {
   onNextEpisode?: () => void;
 }
 
+function formatStreamUrl(url: string): string {
+  if (!url) return "";
+  if (url.includes("pub-2b3faff7804a4ba8b00830cca1749352.r2.dev")) {
+    return url.replace("https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev", "/r2-stream");
+  }
+  return url;
+}
+
 export function VideoPlayer({
   src: propSrc,
   poster: propPoster,
@@ -44,12 +52,12 @@ export function VideoPlayer({
   const MAX_AUTO_RETRIES = 3;
 
   const [activeSrc, setActiveSrc] = useState<string>(() => {
-    return (
+    const raw =
       propSrc ||
       content?.videoUrl ||
       (content as any)?.hls_manifest_key ||
-      ""
-    );
+      "";
+    return formatStreamUrl(raw);
   });
 
   const [isPlaying, setIsPlaying] = useState(false);
@@ -73,7 +81,7 @@ export function VideoPlayer({
   // Fetch authorized streaming URL from backend if not provided directly
   useEffect(() => {
     if (propSrc) {
-      setActiveSrc(propSrc);
+      setActiveSrc(formatStreamUrl(propSrc));
       return;
     }
 
@@ -85,7 +93,7 @@ export function VideoPlayer({
       .then((res) => {
         if (!isMounted) return;
         if (res.data?.stream_url) {
-          setActiveSrc(res.data.stream_url);
+          setActiveSrc(formatStreamUrl(res.data.stream_url));
         }
       })
       .catch(() => {
@@ -94,7 +102,7 @@ export function VideoPlayer({
           content.videoUrl ||
           (content as any)?.hls_manifest_key ||
           "";
-        if (fallback) setActiveSrc(fallback);
+        if (fallback) setActiveSrc(formatStreamUrl(fallback));
       });
 
     return () => {
