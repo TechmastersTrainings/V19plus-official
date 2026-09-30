@@ -26,6 +26,7 @@ import {
   ShieldCheck,
   Check,
   X,
+  Menu,
   Clock,
   Calendar,
   Tag,
@@ -64,6 +65,7 @@ export default function AdminStudioDesk() {
   const { user, isAuthenticated, login, logout } = useAuthStore();
 
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // Login Gate State (for unauthenticated or non-admin visitors)
   const [adminEmail, setAdminEmail] = useState('');
@@ -723,25 +725,52 @@ export default function AdminStudioDesk() {
   // ─── MAIN ADMIN STUDIO CONSOLE ─────────────────────────────────────────────
 
   return (
-    <div className="flex h-screen w-full bg-[#070605] text-white overflow-hidden">
-      {/* ─── DEDICATED ADMIN SIDEBAR (No user navbar!) ─────────────────────── */}
-      <aside className="w-64 bg-[#0E0C0A] border-r border-white/10 flex flex-col justify-between shrink-0 select-none">
+    <div className="flex h-screen w-full bg-[#070605] text-white overflow-hidden relative">
+      {/* ─── MOBILE DRAWER BACKDROP (screens < md) ─────────────────────────── */}
+      {mobileSidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm md:hidden animate-fade-in"
+          onClick={() => setMobileSidebarOpen(false)}
+        />
+      )}
+
+      {/* ─── DEDICATED ADMIN SIDEBAR ───────────────────────────────────────── */}
+      <aside
+        className={`
+          fixed inset-y-0 left-0 z-50 w-72 bg-[#0E0C0A] border-r border-white/10 flex flex-col justify-between shrink-0 select-none transition-transform duration-300 ease-in-out
+          md:static md:translate-x-0 md:w-64
+          ${mobileSidebarOpen ? 'translate-x-0 shadow-2xl shadow-orange-500/10' : '-translate-x-full md:translate-x-0'}
+        `}
+      >
         <div>
           {/* Admin Console Brand Header */}
           <div className="p-6 border-b border-white/10">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#FF5C00] to-[#D94500] shadow-[0_0_20px_rgba(255,92,0,0.4)] flex items-center justify-center">
-                <Play className="w-4 h-4 fill-white text-white ml-0.5" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#FF5C00] to-[#D94500] shadow-[0_0_20px_rgba(255,92,0,0.4)] flex items-center justify-center">
+                  <Play className="w-4 h-4 fill-white text-white ml-0.5" />
+                </div>
+                <div>
+                  <span className="text-lg font-black tracking-tight text-white">
+                    V19<span className="text-[#FF5C00]">Studio</span>
+                  </span>
+                  <span className="block text-[10px] font-black uppercase tracking-widest text-[#FF8A00]">
+                    Admin Console
+                  </span>
+                </div>
               </div>
-              <div>
-                <span className="text-lg font-black tracking-tight text-white">
-                  V19<span className="text-[#FF5C00]">Studio</span>
-                </span>
-                <span className="block text-[10px] font-black uppercase tracking-widest text-[#FF8A00]">
-                  Admin Console
-                </span>
-              </div>
+
+              {/* Close Button on Mobile Drawer */}
+              <button
+                type="button"
+                onClick={() => setMobileSidebarOpen(false)}
+                className="md:hidden text-[#9E9689] hover:text-white p-1 rounded-lg"
+                aria-label="Close navigation"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
+
             <div className="mt-3.5 flex items-center gap-2 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-semibold">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               <span>Connected • Singapore Edge</span>
@@ -769,7 +798,10 @@ export default function AdminStudioDesk() {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as AdminTab)}
+                  onClick={() => {
+                    setActiveTab(tab.id as AdminTab);
+                    setMobileSidebarOpen(false);
+                  }}
                   className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     isActive
                       ? 'bg-[#FF5C00] text-white shadow-lg shadow-orange-500/20'
@@ -823,11 +855,21 @@ export default function AdminStudioDesk() {
       </aside>
 
       {/* ─── DEDICATED ADMIN MAIN CONTENT SHELL ───────────────────────────── */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-[#070605]">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#070605]">
         {/* Top Header Bar */}
-        <header className="h-16 border-b border-white/10 px-8 flex items-center justify-between bg-[#0E0C0A]/60 backdrop-blur-md shrink-0">
-          <div className="flex items-center gap-3">
-            <h2 className="text-base font-black text-white capitalize tracking-tight">
+        <header className="h-16 border-b border-white/10 px-4 sm:px-6 lg:px-8 flex items-center justify-between bg-[#0E0C0A]/80 backdrop-blur-md shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            {/* Hamburger Button for Mobile/Tablet */}
+            <button
+              type="button"
+              onClick={() => setMobileSidebarOpen(true)}
+              className="md:hidden p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white transition-colors"
+              aria-label="Open Admin Navigation"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
+            <h2 className="text-sm sm:text-base font-black text-white capitalize tracking-tight truncate">
               {activeTab === 'overview' && 'Live Platform Performance'}
               {activeTab === 'catalog' && 'Video Catalog Management'}
               {activeTab === 'upload' && 'Upload Video Master'}
@@ -838,15 +880,16 @@ export default function AdminStudioDesk() {
             </h2>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* Quick Action Button */}
             {activeTab !== 'upload' && (
               <button
                 onClick={() => setActiveTab('upload')}
-                className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#FF5C00] hover:bg-[#FF6B1A] text-white text-xs font-bold transition-all shadow-md shadow-orange-500/20 cursor-pointer"
+                className="flex items-center gap-2 px-3 sm:px-3.5 py-1.5 rounded-xl bg-[#FF5C00] hover:bg-[#FF6B1A] text-white text-xs font-bold transition-all shadow-md shadow-orange-500/20 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Upload New Video</span>
+                <span className="hidden sm:inline">Upload New Video</span>
+                <span className="sm:hidden">Upload</span>
               </button>
             )}
 

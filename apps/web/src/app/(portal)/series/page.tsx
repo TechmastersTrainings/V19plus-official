@@ -158,13 +158,13 @@ export default function WebSeriesPage() {
 
       {/* Series Grid */}
       {isLoading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 sm:gap-5">
           {Array.from({ length: 12 }).map((_, i) => (
             <Skeleton key={i} className="aspect-[2/3] rounded-xl bg-white/5" />
           ))}
         </div>
       ) : filteredAndSortedItems.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 sm:gap-5">
           {filteredAndSortedItems.map((item) => (
             <ContentCard key={item.id} content={item as any} size="md" />
           ))}

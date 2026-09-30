@@ -358,7 +358,7 @@ function SearchContent() {
       {/* Main Results or Empty Previews */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 sm:gap-5">
             {Array.from({ length: 12 }).map((_, i) => (
               <Skeleton key={i} className="aspect-[2/3] rounded-2xl" />
             ))}
@@ -368,7 +368,7 @@ function SearchContent() {
             <p className="text-xs sm:text-sm text-[#A49C90] mb-4">
               Showing {filtered.length} matching cinematic release{filtered.length !== 1 ? 's' : ''}
             </p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 sm:gap-5">
               {filtered.map((item) => (
                 <ContentCard key={item.id} content={item} size="sm" />
               ))}

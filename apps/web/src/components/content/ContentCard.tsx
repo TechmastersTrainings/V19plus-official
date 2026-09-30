@@ -97,8 +97,8 @@ export function ContentCard({
     'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=600&q=80';
 
   return (
-    <div className="flex-shrink-0 my-1">
-      <div className={`card ${theme === 'cyan' ? 'theme-cyan' : ''}`}>
+    <div className="flex-shrink-0 my-1 w-full min-w-0">
+      <div className={`card ${theme === 'cyan' ? 'theme-cyan' : ''} w-full`}>
         <div className="card__border" />
 
         {/* Top Media / Thumbnail Preview */}

@@ -253,17 +253,17 @@ export function HeroBanner({ content, contents, isLoading, hideContent = false }
       )}
 
       {/* Bottom Right Rating & Audio Control */}
-      <div className="absolute bottom-8 sm:bottom-12 right-4 sm:right-8 md:right-12 z-30 flex items-center gap-3">
+      <div className="absolute bottom-6 sm:bottom-12 right-4 sm:right-8 md:right-12 z-30 flex items-center gap-2 sm:gap-3">
         {items.length > 1 && (
-          <div className="flex items-center gap-1.5 bg-[#181411]/90 backdrop-blur-xl px-3 py-1.5 rounded-full border border-white/15 shadow-xl">
+          <div className="flex items-center gap-1.5 bg-[#181411]/90 backdrop-blur-xl px-2.5 sm:px-3 py-1.5 rounded-full border border-white/15 shadow-xl">
             {items.map((it, i) => (
               <button
                 key={it.id || i}
                 onClick={() => setActiveIndex(i)}
                 className={`h-1.5 rounded-full transition-all duration-300 ${
                   i === activeIndex
-                    ? 'w-6 bg-[#FF5C00]'
-                    : 'w-2 bg-white/30 hover:bg-white/60'
+                    ? 'w-5 sm:w-6 bg-[#FF5C00]'
+                    : 'w-1.5 sm:w-2 bg-white/30 hover:bg-white/60'
                 }`}
                 aria-label={`Slide ${i + 1}: ${it.title}`}
               />
@@ -274,14 +274,15 @@ export function HeroBanner({ content, contents, isLoading, hideContent = false }
         {videoSrc && (
           <button
             onClick={() => setIsMuted(!isMuted)}
-            className="w-10 h-10 rounded-full border border-white/20 bg-[#181411]/90 hover:bg-[#26201B] text-white flex items-center justify-center backdrop-blur-xl transition-all active:scale-95 shadow-xl"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-white/20 bg-[#181411]/90 hover:bg-[#26201B] text-white flex items-center justify-center backdrop-blur-xl transition-all active:scale-95 shadow-xl"
             aria-label="Toggle Sound"
           >
-            {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+            {isMuted ? <VolumeX className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
           </button>
         )}
 
-        <div className="px-3.5 py-1.5 rounded-lg bg-[#181411]/90 border border-white/20 border-l-4 border-l-[#FF5C00] text-xs font-semibold text-white backdrop-blur-xl shadow-xl">
+        {/* Rating Badge (displayed on sm+ screens; on mobile it is in the metadata row) */}
+        <div className="hidden sm:block px-3.5 py-1.5 rounded-lg bg-[#181411]/90 border border-white/20 border-l-4 border-l-[#FF5C00] text-xs font-semibold text-white backdrop-blur-xl shadow-xl">
           {rating}
         </div>
       </div>
