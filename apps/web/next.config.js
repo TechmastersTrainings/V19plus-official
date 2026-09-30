@@ -3,7 +3,7 @@ const withPWA = require('@ducanh2912/next-pwa').default({
   dest: 'public',
   disable: process.env.NODE_ENV === 'development',
 });
-const backendUrl = process.env.BACKEND_URL || (process.env.NODE_ENV === 'production' ? 'https://v19plus-official.onrender.com' : 'http://127.0.0.1:8001');
+const backendUrl = process.env.BACKEND_URL || 'https://v19plus-official.onrender.com';
 
 const nextConfig = {
   reactStrictMode: true,

@@ -79,19 +79,25 @@ export const mediaApi = {
       details?: { currentPart: number; totalParts: number; uploadedBytes: number; totalBytes: number }
     ) => void
   ) => {
-    const backendBase =
-      typeof window !== 'undefined' &&
-      !window.location.hostname.includes('localhost') &&
-      !window.location.hostname.includes('127.0.0.1')
-        ? 'https://v19plus-official.onrender.com/api'
-        : '/api';
+    const getChunkEndpoint = (endpoint: string) => {
+      // In production, upload directly to Render backend to bypass serverless 4.5MB limits
+      if (
+        typeof window !== 'undefined' &&
+        !window.location.hostname.includes('localhost') &&
+        !window.location.hostname.includes('127.0.0.1')
+      ) {
+        return `https://v19plus-official.onrender.com/api/media/upload/chunked/${endpoint}`;
+      }
+      // On localhost, proxy cleanly via Next.js /api rewrite (avoiding double /api/api)
+      return `/media/upload/chunked/${endpoint}`;
+    };
 
     const CHUNK_SIZE = 20 * 1024 * 1024; // 20 MB chunks
     const totalParts = Math.max(1, Math.ceil(file.size / CHUNK_SIZE));
 
     // 1. Initiate chunked multipart upload
     const initRes = await api.post<{ upload_id: string; key: string; chunk_size: number }>(
-      `${backendBase}/media/upload/chunked/initiate`,
+      getChunkEndpoint('initiate'),
       {
         filename: file.name,
         file_size_bytes: file.size,
@@ -123,11 +129,10 @@ export const mediaApi = {
           chunkForm.append('chunk', chunkBlob, file.name);
 
           const partRes = await api.post<{ part_number: number; etag: string }>(
-            `${backendBase}/media/upload/chunked/part`,
+            getChunkEndpoint('part'),
             chunkForm,
             {
               timeout: 0,
-              headers: { 'Content-Type': undefined },
               onUploadProgress: (pEvent) => {
                 if (pEvent.total && onProgress) {
                   const currentChunkLoaded = pEvent.loaded;
@@ -178,7 +183,7 @@ export const mediaApi = {
       stream_url: string;
       file_size_bytes: number;
     }>(
-      `${backendBase}/media/upload/chunked/complete`,
+      getChunkEndpoint('complete'),
       {
         upload_id,
         key,

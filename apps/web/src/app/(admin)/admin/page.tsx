@@ -404,7 +404,15 @@ export default function AdminStudioDesk() {
     } catch (err: any) {
       console.error('Push error:', err);
       const detail = err.response?.data?.detail;
-      toast.error(typeof detail === 'string' ? detail : 'Failed to push video content.');
+      let errorMsg = 'Failed to push video content.';
+      if (typeof detail === 'string') {
+        errorMsg = detail;
+      } else if (Array.isArray(detail)) {
+        errorMsg = detail.map((d: any) => d.msg || d.message || JSON.stringify(d)).join(', ');
+      } else if (err.message) {
+        errorMsg = err.message;
+      }
+      toast.error(errorMsg);
     } finally {
       setUploadSubmitting(false);
     }

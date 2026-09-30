@@ -76,6 +76,8 @@ class Settings(BaseSettings):
         "https://v19plus.com",
         "https://www.v19plus.com",
         "https://admin.v19plus.com",
+        "https://v19-plus.web.app",
+        "https://v19plus.web.app",
         "capacitor://localhost",
     ]
 

@@ -23,7 +23,12 @@ api.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
   // If sending FormData, delete Content-Type so browser sets multipart/form-data with boundary
   if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
     if (config.headers) {
+      if (typeof (config.headers as any).delete === 'function') {
+        (config.headers as any).delete('Content-Type');
+        (config.headers as any).delete('content-type');
+      }
       delete config.headers['Content-Type'];
+      delete config.headers['content-type'];
     }
   }
 
