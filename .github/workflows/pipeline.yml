@@ -44,7 +44,6 @@ jobs:
         run: |
           npm run build --workspace=apps/web --if-present
           npm run build --workspace=apps/admin --if-present
-          npm run build --workspace=apps/backend --if-present
         env:
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
@@ -52,12 +51,10 @@ jobs:
 
       - name: Check Backend Test Execution
         run: |
-          HAS_TEST=$(node -e "const pkg = require('./apps/backend/package.json'); console.log(!!(pkg.scripts && pkg.scripts.test));")
-          if [ "$HAS_TEST" = "true" ]; then
-            echo "Running backend tests..."
-            npm run test --workspace=apps/backend
+          if [ -f "./apps/backend/package.json" ]; then
+            npm run test --workspace=apps/backend --if-present
           else
-            echo "No test script found in apps/backend, skipping tests."
+            echo "Python backend, skipping npm tests."
           fi
 
   deploy-cloud:
@@ -133,7 +130,6 @@ jobs:
         run: |
           npm run build --workspace=apps/web --if-present
           npm run build --workspace=apps/admin --if-present
-          npm run build --workspace=apps/backend --if-present
         env:
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
 
