@@ -271,6 +271,19 @@ export default function AdminStudioDesk() {
     }
   }, [isAuthenticated, isAdmin, activeTab]);
 
+  // ─── Filtered Views (Hooks must always run unconditionally at top level) ──
+  const filteredCatalog = useMemo(() => {
+    return catalogItems.filter((item) => {
+      const matchType =
+        catalogTypeFilter === 'ALL' ||
+        (item.content_type || item.type || '').toUpperCase() === catalogTypeFilter;
+      const matchSearch =
+        !catalogSearch.trim() ||
+        item.title.toLowerCase().includes(catalogSearch.toLowerCase().trim());
+      return matchType && matchSearch;
+    });
+  }, [catalogItems, catalogTypeFilter, catalogSearch]);
+
   // ─── Handlers: Video & Content CRUD ────────────────────────────────────────
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -706,20 +719,6 @@ export default function AdminStudioDesk() {
       </div>
     );
   }
-
-  // ─── Filtered Views ────────────────────────────────────────────────────────
-
-  const filteredCatalog = useMemo(() => {
-    return catalogItems.filter((item) => {
-      const matchType =
-        catalogTypeFilter === 'ALL' ||
-        (item.content_type || item.type || '').toUpperCase() === catalogTypeFilter;
-      const matchSearch =
-        !catalogSearch.trim() ||
-        item.title.toLowerCase().includes(catalogSearch.toLowerCase().trim());
-      return matchType && matchSearch;
-    });
-  }, [catalogItems, catalogTypeFilter, catalogSearch]);
 
   // ─── MAIN ADMIN STUDIO CONSOLE ─────────────────────────────────────────────
 
