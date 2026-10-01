@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
-from typing import List, Optional
-from pydantic import BaseModel, Field
+from typing import List, Optional, Union
+from pydantic import BaseModel, Field, field_validator
 from src.modules.content.models import ContentStatus, ContentType
 
 
@@ -73,7 +73,7 @@ class ContentCreate(BaseModel):
     content_type: ContentType = ContentType.MOVIE
     release_year: int = 2026
     rating: str = "U/A 13+"
-    duration_seconds: Optional[int] = None
+    duration_seconds: Optional[Union[int, float]] = None
     thumbnail_url: Optional[str] = None
     backdrop_url: Optional[str] = None
     trailer_url: Optional[str] = None
@@ -85,13 +85,23 @@ class ContentCreate(BaseModel):
     status: Optional[ContentStatus] = None
     genre_ids: List[uuid.UUID] = []
 
+    @field_validator("duration_seconds", mode="before")
+    @classmethod
+    def parse_duration_create(cls, v):
+        if v is not None and v != "":
+            try:
+                return int(round(float(v)))
+            except (ValueError, TypeError):
+                return None
+        return None
+
 
 class ContentUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     release_year: Optional[int] = None
     rating: Optional[str] = None
-    duration_seconds: Optional[int] = None
+    duration_seconds: Optional[Union[int, float]] = None
     thumbnail_url: Optional[str] = None
     backdrop_url: Optional[str] = None
     trailer_url: Optional[str] = None
@@ -103,6 +113,16 @@ class ContentUpdate(BaseModel):
     hls_manifest_key: Optional[str] = None
     sprite_vtt_key: Optional[str] = None
     genre_ids: Optional[List[uuid.UUID]] = None
+
+    @field_validator("duration_seconds", mode="before")
+    @classmethod
+    def parse_duration_update(cls, v):
+        if v is not None and v != "":
+            try:
+                return int(round(float(v)))
+            except (ValueError, TypeError):
+                return None
+        return None
 
 
 class SeasonCreate(BaseModel):

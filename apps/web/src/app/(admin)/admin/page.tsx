@@ -378,6 +378,8 @@ export default function AdminStudioDesk() {
 
         finalMasterKey = uploadRes.data.storage_key;
         finalHlsKey = uploadRes.data.stream_url;
+        setMasterStorageKey(uploadRes.data.storage_key);
+        setStreamManifestKey(uploadRes.data.stream_url);
         setUploadProgress(100);
         setUploadStep('Video securely stored in Cloudflare R2 and verified!');
       } else {
@@ -391,9 +393,9 @@ export default function AdminStudioDesk() {
         title: title.trim(),
         description: description.trim(),
         content_type: contentType,
-        release_year: releaseYear,
+        release_year: Math.round(Number(releaseYear) || 2026),
         rating: rating,
-        duration_seconds: durationMinutes * 60,
+        duration_seconds: Math.round(Number(durationMinutes || 0) * 60),
         thumbnail_url: thumbnailUrl.trim() || undefined,
         backdrop_url: backdropUrl.trim() || undefined,
         trailer_url: trailerUrl.trim() || undefined,
@@ -462,9 +464,9 @@ export default function AdminStudioDesk() {
         title: editTitle.trim(),
         description: editDescription.trim(),
         content_type: editType,
-        release_year: editYear,
+        release_year: Math.round(Number(editYear) || 2026),
         rating: editRating,
-        duration_seconds: editDurationMinutes * 60,
+        duration_seconds: Math.round(Number(editDurationMinutes || 0) * 60),
         thumbnail_url: editThumbnailUrl.trim() || undefined,
         backdrop_url: editBackdropUrl.trim() || undefined,
         trailer_url: editTrailerUrl.trim() || undefined,
