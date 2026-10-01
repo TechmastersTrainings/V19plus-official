@@ -25,7 +25,14 @@ export interface VideoPlayerProps {
 
 function formatStreamUrl(url: string): string {
   if (!url) return "";
-  if (url.includes("pub-2b3faff7804a4ba8b00830cca1749352.r2.dev")) {
+  // Only HLS manifests and HLS segments (.m3u8, .ts, /hls/) require the CORS proxy route
+  // because Hls.js uses JavaScript fetch() to request them.
+  // Direct video files (MP4, MOV) should stream directly from the CDN edge
+  // without routing through Vercel serverless proxy to prevent timeouts and buffering.
+  if (
+    url.includes("pub-2b3faff7804a4ba8b00830cca1749352.r2.dev") &&
+    (url.includes(".m3u8") || url.includes("/hls/") || url.includes(".ts"))
+  ) {
     return url.replace("https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev", "/r2-stream");
   }
   return url;
@@ -757,9 +764,9 @@ export function VideoPlayer({
         ref={videoRef}
         src={activeSrc && !activeSrc.includes(".m3u8") ? activeSrc : undefined}
         poster={poster}
-        preload="auto"
+        preload="metadata"
         playsInline
-        crossOrigin="anonymous"
+        crossOrigin={activeSrc && (activeSrc.includes(".m3u8") || activeSrc.includes("/hls/")) ? "anonymous" : undefined}
         className="block h-full w-full object-contain bg-black"
         onPlay={handlePlay}
         onPlaying={handlePlaying}
