@@ -37,6 +37,7 @@ import {
   FileVideo,
   Smartphone,
   Laptop,
+  Image as ImageIcon,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { contentApi, Content, Genre } from '../../../api/content';
@@ -123,6 +124,8 @@ export default function AdminStudioDesk() {
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [uploadStep, setUploadStep] = useState<string>('');
   const [uploadSubmitting, setUploadSubmitting] = useState(false);
+  const [uploadingPoster, setUploadingPoster] = useState(false);
+  const [uploadingBackdrop, setUploadingBackdrop] = useState(false);
 
   // 3. Users Management State
   const [usersList, setUsersList] = useState<AdminUser[]>([]);
@@ -296,6 +299,38 @@ export default function AdminStudioDesk() {
         const clean = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
         setTitle(clean.charAt(0).toUpperCase() + clean.slice(1));
       }
+    }
+  };
+
+  const handleUploadPosterImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingPoster(true);
+    try {
+      const res = await mediaApi.uploadDirectFile(file);
+      const url = res.data.stream_url;
+      setThumbnailUrl(url);
+      toast.success('Poster uploaded to Cloudflare R2!');
+    } catch (err: any) {
+      toast.error('Failed to upload poster image: ' + (err.message || 'Error'));
+    } finally {
+      setUploadingPoster(false);
+    }
+  };
+
+  const handleUploadBackdropImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingBackdrop(true);
+    try {
+      const res = await mediaApi.uploadDirectFile(file);
+      const url = res.data.stream_url;
+      setBackdropUrl(url);
+      toast.success('Backdrop uploaded to Cloudflare R2!');
+    } catch (err: any) {
+      toast.error('Failed to upload backdrop image: ' + (err.message || 'Error'));
+    } finally {
+      setUploadingBackdrop(false);
     }
   };
 
@@ -1357,46 +1392,101 @@ export default function AdminStudioDesk() {
                     </div>
                   </div>
 
-                  {/* Artwork URLs */}
+                  {/* Artwork URLs with Direct Cloudflare R2 Image Upload */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
-                        Poster Thumbnail URL
-                      </label>
-                      <input
-                        type="url"
-                        value={thumbnailUrl}
-                        onChange={(e) => setThumbnailUrl(e.target.value)}
-                        placeholder="https://images.unsplash.com/..."
-                        className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3 text-sm text-white outline-none"
-                      />
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5]">
+                          Poster Thumbnail (Portrait 2:3)
+                        </label>
+                        <label className="text-[11px] font-bold text-[#FF8A00] hover:text-[#FFA033] cursor-pointer flex items-center gap-1.5 transition-colors">
+                          <UploadCloud className="w-3.5 h-3.5" />
+                          <span>{uploadingPoster ? 'Uploading to R2...' : 'Upload Image'}</span>
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/*"
+                            disabled={uploadingPoster}
+                            onChange={handleUploadPosterImage}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="url"
+                          value={thumbnailUrl}
+                          onChange={(e) => setThumbnailUrl(e.target.value)}
+                          placeholder="https://... or click 'Upload Image'"
+                          className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] rounded-xl px-4 py-3 text-sm text-white placeholder-[#787065] outline-none"
+                        />
+                        {thumbnailUrl && (
+                          <div className="w-11 h-11 shrink-0 rounded-lg overflow-hidden border border-white/20 bg-black shadow-md">
+                            <img src={thumbnailUrl} alt="Poster preview" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-[11px] text-[#8C8478] mt-1.5 block">
+                        Vertical poster for cards & mobile (auto-uploaded to Cloudflare R2 or paste URL).
+                      </span>
                     </div>
+
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
-                        Backdrop Landscape URL
-                      </label>
-                      <input
-                        type="url"
-                        value={backdropUrl}
-                        onChange={(e) => setBackdropUrl(e.target.value)}
-                        placeholder="https://images.unsplash.com/..."
-                        className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3 text-sm text-white outline-none"
-                      />
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5]">
+                          Backdrop Landscape (16:9 Hero)
+                        </label>
+                        <label className="text-[11px] font-bold text-[#FF8A00] hover:text-[#FFA033] cursor-pointer flex items-center gap-1.5 transition-colors">
+                          <UploadCloud className="w-3.5 h-3.5" />
+                          <span>{uploadingBackdrop ? 'Uploading to R2...' : 'Upload Image'}</span>
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/*"
+                            disabled={uploadingBackdrop}
+                            onChange={handleUploadBackdropImage}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="url"
+                          value={backdropUrl}
+                          onChange={(e) => setBackdropUrl(e.target.value)}
+                          placeholder="https://... or click 'Upload Image'"
+                          className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] rounded-xl px-4 py-3 text-sm text-white placeholder-[#787065] outline-none"
+                        />
+                        {backdropUrl && (
+                          <div className="w-16 h-11 shrink-0 rounded-lg overflow-hidden border border-white/20 bg-black shadow-md">
+                            <img src={backdropUrl} alt="Backdrop preview" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-[11px] text-[#8C8478] mt-1.5 block">
+                        Wide banner shown on the homepage hero carousel & title details.
+                      </span>
                     </div>
                   </div>
 
                   {/* Direct Stream Manifest Option */}
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
-                      External Stream Key (Optional if uploading file)
-                    </label>
+                  <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-4 space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5]">
+                        External Stream Key or HLS Manifest (Optional)
+                      </label>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        Leave blank if uploading video file above
+                      </span>
+                    </div>
                     <input
                       type="text"
                       value={streamManifestKey}
                       onChange={(e) => setStreamManifestKey(e.target.value)}
-                      placeholder="e.g. content/403a6233-6f33-47ef-8354-8d4ee80b7c0e/master.m3u8"
-                      className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3 text-sm text-white outline-none"
+                      placeholder="e.g. hls/second-task-race-to-the-finish/master.m3u8"
+                      className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] rounded-xl px-4 py-3 text-sm text-white placeholder-[#787065] outline-none"
                     />
+                    <p className="text-[11px] text-[#8C8478] leading-relaxed">
+                      💡 <strong>When to use:</strong> Only fill this if your video is already transcoded into HLS in Cloudflare R2 (like <code>hls/second-task-race-to-the-finish/master.m3u8</code>) or hosted on an external CDN. If you selected a video file above, leave this field completely empty — the platform generates the stream key automatically.
+                    </p>
                   </div>
 
                   {/* Checkboxes */}
