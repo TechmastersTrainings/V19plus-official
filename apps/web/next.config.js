@@ -2,6 +2,19 @@
 const withPWA = require('@ducanh2912/next-pwa').default({
   dest: 'public',
   disable: process.env.NODE_ENV === 'development',
+  workboxOptions: {
+    runtimeCaching: [
+      {
+        urlPattern: ({ url }) =>
+          url.pathname.endsWith('.m3u8') ||
+          url.pathname.endsWith('.ts') ||
+          url.hostname.includes('r2.dev') ||
+          url.pathname.startsWith('/r2-stream/'),
+        handler: 'NetworkOnly',
+      },
+      ...require('@ducanh2912/next-pwa').runtimeCaching,
+    ],
+  },
 });
 const backendUrl = process.env.BACKEND_URL || 'https://v19plus-official.onrender.com';
 

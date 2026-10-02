@@ -25,16 +25,9 @@ export interface VideoPlayerProps {
 
 function formatStreamUrl(url: string): string {
   if (!url) return "";
-  // Only HLS manifests and HLS segments (.m3u8, .ts, /hls/) require the CORS proxy route
-  // because Hls.js uses JavaScript fetch() to request them.
-  // Direct video files (MP4, MOV) should stream directly from the CDN edge
-  // without routing through Vercel serverless proxy to prevent timeouts and buffering.
-  if (
-    url.includes("pub-2b3faff7804a4ba8b00830cca1749352.r2.dev") &&
-    (url.includes(".m3u8") || url.includes("/hls/") || url.includes(".ts"))
-  ) {
-    return url.replace("https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev", "/r2-stream");
-  }
+  // Direct Cloudflare R2 Delivery:
+  // With CORS active on bucket v19plus-r2-backend, Hls.js and native players
+  // download manifests and .ts segments directly from Cloudflare R2 Anycast CDN.
   return url;
 }
 
@@ -199,6 +192,12 @@ export function VideoPlayer({
                   retryCount.current += 1;
                   console.info(`HLS network error recovery attempt ${retryCount.current}/${MAX_AUTO_RETRIES}...`);
                   hls.startLoad();
+                } else if (
+                  activeSrc.includes("pub-2b3faff7804a4ba8b00830cca1749352.r2.dev")
+                ) {
+                  console.warn("Direct R2 network error, activating fallback to /r2-stream proxy...");
+                  retryCount.current = 0;
+                  setActiveSrc(activeSrc.replace("https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev", "/r2-stream"));
                 } else {
                   setHasError(true);
                   setIsLoading(false);
