@@ -79,16 +79,23 @@ export function VideoPlayer({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
+  const [isProlongedBuffer, setIsProlongedBuffer] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
   const [hoverX, setHoverX] = useState<number>(0);
+  const prolongedBufferTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearBuffering = useCallback(() => {
     if (bufferTimeoutRef.current) {
       clearTimeout(bufferTimeoutRef.current);
       bufferTimeoutRef.current = null;
     }
+    if (prolongedBufferTimeoutRef.current) {
+      clearTimeout(prolongedBufferTimeoutRef.current);
+      prolongedBufferTimeoutRef.current = null;
+    }
     setIsBuffering(false);
+    setIsProlongedBuffer(false);
     setIsLoading(false);
   }, []);
 
@@ -98,6 +105,11 @@ export function VideoPlayer({
       const video = videoRef.current;
       if (video && !video.paused) {
         setIsBuffering(true);
+        if (!prolongedBufferTimeoutRef.current) {
+          prolongedBufferTimeoutRef.current = setTimeout(() => {
+            setIsProlongedBuffer(true);
+          }, 8000);
+        }
       }
     }, 350);
   }, []);
@@ -783,10 +795,33 @@ export function VideoPlayer({
       {/* ACTIVE PLAYBACK BUFFERING INDICATOR (NETFLIX STYLE) */}
 
       {isBuffering && isPlaying && !hasError && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center z-20 transition-all duration-300">
-          <div className="flex flex-col items-center gap-3 rounded-2xl bg-black/60 backdrop-blur-md px-6 py-4 shadow-2xl border border-white/10">
+        <div className="absolute inset-0 flex items-center justify-center z-20 transition-all duration-300 pointer-events-none">
+          <div className="flex flex-col items-center gap-3 rounded-2xl bg-black/75 backdrop-blur-md px-7 py-5 shadow-2xl border border-white/10 max-w-sm text-center pointer-events-auto">
             <div className="h-10 w-10 sm:h-12 sm:w-12 animate-spin rounded-full border-3 sm:border-4 border-white/20 border-t-white shadow-[0_0_20px_rgba(255,255,255,0.6)]" />
-            <span className="text-xs font-semibold text-white/90 tracking-wider">Buffering...</span>
+            <span className="text-xs font-semibold text-white/90 tracking-wider">
+              {isProlongedBuffer ? "Buffering high-bitrate stream..." : "Buffering..."}
+            </span>
+            {isProlongedBuffer && (
+              <div className="flex flex-col items-center gap-2 mt-1">
+                <p className="text-[11px] text-white/60 leading-relaxed">
+                  This video stream is waiting on incoming packets.
+                </p>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const v = videoRef.current;
+                    if (v) {
+                      v.currentTime = Math.max(0, v.currentTime - 0.5);
+                      v.play().catch(() => {});
+                    }
+                  }}
+                  className="mt-1 px-3 py-1 bg-white/15 hover:bg-white/25 active:scale-95 text-white rounded-lg text-xs font-medium transition cursor-pointer border border-white/10"
+                >
+                  Force Resume
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

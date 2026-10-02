@@ -108,6 +108,8 @@ class ChunkCompleteRequest(BaseModel):
     key: str
     parts: List[PartInfo]
     file_size_bytes: int
+    content_id: Optional[str] = None
+    episode_id: Optional[str] = None
 
 
 @router.post("/upload/chunked/initiate")
@@ -171,9 +173,12 @@ async def upload_chunked_part(
 @router.post("/upload/chunked/complete")
 async def complete_chunked_upload(
     req: ChunkCompleteRequest,
+    db: AsyncSession = Depends(get_db_session),
 ):
     """
-    Finalize multipart assembly in Cloudflare R2 and return the public CDN streaming URL.
+    Finalize multipart assembly in Cloudflare R2 and queue background ABR HLS transcoding.
+    Follows Netflix/YouTube ingest pipeline: raw master is stored safely, and an
+    asynchronous multi-rendition HLS transcoding job is dispatched to eliminate buffering.
     """
     storage = MediaStorageService()
     bucket = settings.R2_STREAMING_BUCKET or settings.R2_MASTERS_BUCKET
@@ -187,13 +192,56 @@ async def complete_chunked_upload(
         parts_payload,
     )
 
+    clean_key_name = re.sub(r"[^\w\.-]", "_", req.key).replace(".mp4", "").replace(".mov", "")
+    target_id = req.content_id or req.episode_id or clean_key_name
+    hls_prefix = f"hls/{target_id}"
+    cdn_base = (settings.CDN_STREAMING_BASE_URL or "").rstrip("/")
+
     stream_url = f"/api/media/stream/{req.key}"
-    if settings.CDN_STREAMING_BASE_URL:
-        stream_url = f"{settings.CDN_STREAMING_BASE_URL.rstrip('/')}/{req.key}"
+    if cdn_base:
+        stream_url = f"{cdn_base}/{req.key}"
+
+    hls_manifest_url = f"{cdn_base}/{hls_prefix}/master.m3u8" if cdn_base else stream_url
+
+    # Automatically queue VideoJob for transcoding master into adaptive HLS
+    job_id = None
+    try:
+        content_uuid = uuid.UUID(req.content_id) if req.content_id else None
+        episode_uuid = uuid.UUID(req.episode_id) if req.episode_id else None
+
+        job = VideoJob(
+            content_id=content_uuid,
+            episode_id=episode_uuid,
+            source_bucket=bucket,
+            source_file_key=req.key,
+            source_file_size_bytes=req.file_size_bytes,
+            target_bucket=bucket,
+            target_hls_prefix=hls_prefix,
+            status=JobStatus.QUEUED,
+            progress_percent=0,
+        )
+        db.add(job)
+        await db.commit()
+        await db.refresh(job)
+        job_id = str(job.id)
+
+        # Dispatch to Redis queue for video-worker
+        redis_client: Any = get_redis_client()
+        if redis_client:
+            try:
+                queue_task: Any = redis_client.lpush("v19plus:video_jobs", str(job.id))
+                if inspect.isawaitable(queue_task):
+                    await queue_task
+            except Exception as e:
+                logger.warning(f"Could not push chunked video job to Redis: {e}")
+    except Exception as e:
+        logger.warning(f"Notice during chunked upload VideoJob registration: {e}")
 
     return {
         "storage_key": req.key,
         "stream_url": stream_url,
+        "hls_manifest_url": hls_manifest_url,
+        "job_id": job_id,
         "file_size_bytes": req.file_size_bytes,
     }
 

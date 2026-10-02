@@ -45,7 +45,7 @@ export function HeroBanner({ content, contents, isLoading, hideContent = false }
   const videoSrc =
     current?.trailer_url ||
     current?.trailerUrl ||
-    current?.video_url ||
+    (current as any)?.video_url ||
     current?.videoUrl ||
     '';
 
