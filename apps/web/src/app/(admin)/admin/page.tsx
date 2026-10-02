@@ -697,19 +697,19 @@ export default function AdminStudioDesk() {
           <div className="w-12 h-1 bg-gradient-to-r from-[#FF5C00] to-[#FF8A00] rounded-full mx-auto mb-6" />
 
           <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FF5C00]/15 border border-[#FF5C00]/30 text-[#FF8A00] text-xs font-bold tracking-wider uppercase mb-3">
-              <ShieldCheck className="w-3.5 h-3.5" />
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#FF5C00]/15 border border-[#FF5C00]/30 text-[#FF8A00] text-sm font-bold tracking-wider uppercase mb-3">
+              <ShieldCheck className="w-4 h-4" />
               <span>Restricted Access</span>
             </div>
-            <h1 className="text-2xl font-black text-white">V19Plus Admin Console</h1>
-            <p className="text-xs text-[#9E9689] mt-2">
+            <h1 className="text-2xl sm:text-3xl font-black text-white">V19Plus Admin Console</h1>
+            <p className="text-sm text-[#A8A095] mt-2">
               Sign in with administrative credentials to access platform controls, user management, and video ingestion.
             </p>
           </div>
 
-          <form onSubmit={handleAdminLogin} className="space-y-4">
+          <form onSubmit={handleAdminLogin} className="space-y-5">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
+              <label className="block text-sm font-bold uppercase tracking-wider text-white/90 mb-2">
                 Admin Email
               </label>
               <input
@@ -718,12 +718,12 @@ export default function AdminStudioDesk() {
                 value={adminEmail}
                 onChange={(e) => setAdminEmail(e.target.value)}
                 placeholder="admin@v19plus.com"
-                className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] focus:ring-2 focus:ring-[#FF5C00]/25 rounded-xl px-4 py-3.5 text-sm text-white placeholder-[#787065] outline-none"
+                className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] focus:ring-2 focus:ring-[#FF5C00]/25 rounded-xl px-4 py-3.5 text-base sm:text-sm text-white placeholder-[#8E8679] outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
+              <label className="block text-sm font-bold uppercase tracking-wider text-white/90 mb-2">
                 Password
               </label>
               <input
@@ -732,14 +732,14 @@ export default function AdminStudioDesk() {
                 value={adminPassword}
                 onChange={(e) => setAdminPassword(e.target.value)}
                 placeholder="••••••••••••"
-                className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] focus:ring-2 focus:ring-[#FF5C00]/25 rounded-xl px-4 py-3.5 text-sm text-white placeholder-[#787065] outline-none"
+                className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] focus:ring-2 focus:ring-[#FF5C00]/25 rounded-xl px-4 py-3.5 text-base sm:text-sm text-white placeholder-[#8E8679] outline-none"
               />
             </div>
 
             <button
               type="submit"
               disabled={loginSubmitting}
-              className="w-full py-3.5 px-6 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-[#FF5C00] to-[#E04800] hover:from-[#FF6B1A] hover:to-[#EB5505] shadow-[0_4px_25px_rgba(255,92,0,0.35)] transition-all cursor-pointer disabled:opacity-50 mt-2"
+              className="w-full py-4 px-6 rounded-xl font-bold text-base text-white bg-gradient-to-r from-[#FF5C00] to-[#E04800] hover:from-[#FF6B1A] hover:to-[#EB5505] shadow-[0_4px_25px_rgba(255,92,0,0.35)] transition-all cursor-pointer disabled:opacity-50 mt-2"
             >
               {loginSubmitting ? 'Authenticating...' : 'Enter Admin Console'}
             </button>
@@ -748,10 +748,10 @@ export default function AdminStudioDesk() {
           <div className="text-center mt-6">
             <Link
               href="/"
-              className="text-xs text-[#8C8478] hover:text-white inline-flex items-center gap-1.5 transition-colors"
+              className="text-sm text-[#A8A095] hover:text-white inline-flex items-center gap-1.5 transition-colors"
             >
               <span>Return to Public Platform</span>
-              <ExternalLink className="w-3 h-3" />
+              <ExternalLink className="w-3.5 h-3.5" />
             </Link>
           </div>
         </div>
@@ -784,14 +784,14 @@ export default function AdminStudioDesk() {
           <div className="p-6 border-b border-white/10">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#FF5C00] to-[#D94500] shadow-[0_0_20px_rgba(255,92,0,0.4)] flex items-center justify-center">
-                  <Play className="w-4 h-4 fill-white text-white ml-0.5" />
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF5C00] to-[#D94500] shadow-[0_0_20px_rgba(255,92,0,0.4)] flex items-center justify-center">
+                  <Play className="w-5 h-5 fill-white text-white ml-0.5" />
                 </div>
                 <div>
-                  <span className="text-lg font-black tracking-tight text-white">
+                  <span className="text-xl font-black tracking-tight text-white">
                     V19<span className="text-[#FF5C00]">Studio</span>
                   </span>
-                  <span className="block text-[10px] font-black uppercase tracking-widest text-[#FF8A00]">
+                  <span className="block text-xs font-black uppercase tracking-wider text-[#FF8A00]">
                     Admin Console
                   </span>
                 </div>
@@ -808,14 +808,14 @@ export default function AdminStudioDesk() {
               </button>
             </div>
 
-            <div className="mt-3.5 flex items-center gap-2 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <div className="mt-3.5 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <span>Connected • Singapore Edge</span>
             </div>
           </div>
 
           {/* Navigation Items */}
-          <nav className="p-4 space-y-1">
+          <nav className="p-4 space-y-1.5">
             {[
               { id: 'overview', label: 'Dashboard Overview', icon: BarChart3 },
               { id: 'catalog', label: 'Videos & Catalog', icon: Film },
@@ -839,18 +839,18 @@ export default function AdminStudioDesk() {
                     setActiveTab(tab.id as AdminTab);
                     setMobileSidebarOpen(false);
                   }}
-                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
                     isActive
                       ? 'bg-[#FF5C00] text-white shadow-lg shadow-orange-500/20'
-                      : 'text-[#9E9689] hover:bg-white/5 hover:text-white'
+                      : 'text-[#C8C2B8] hover:bg-white/5 hover:text-white'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon className="w-4 h-4 shrink-0" />
+                    <Icon className="w-5 h-5 shrink-0" />
                     <span>{tab.label}</span>
                   </div>
                   {tab.badge && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-white/20 text-white animate-pulse">
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-white/20 text-white animate-pulse">
                       {tab.badge}
                     </span>
                   )}
@@ -863,13 +863,13 @@ export default function AdminStudioDesk() {
         {/* Sidebar Footer: User details & Exit */}
         <div className="p-4 border-t border-white/10 space-y-3">
           <div className="flex items-center justify-between px-2">
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-full bg-white/10 border border-white/20 flex items-center justify-center font-bold text-xs text-white">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center font-bold text-sm text-white">
                 {user?.name?.[0]?.toUpperCase() || 'A'}
               </div>
-              <div className="truncate max-w-[120px]">
-                <div className="text-xs font-bold text-white truncate">{user?.name || 'Admin'}</div>
-                <div className="text-[10px] text-[#8C8478] truncate">{user?.email}</div>
+              <div className="truncate max-w-[125px]">
+                <div className="text-sm font-bold text-white truncate">{user?.name || 'Admin'}</div>
+                <div className="text-xs text-[#A8A095] truncate">{user?.email}</div>
               </div>
             </div>
             <button
@@ -877,16 +877,16 @@ export default function AdminStudioDesk() {
               title="Sign Out"
               className="text-[#8C8478] hover:text-red-400 p-1.5 rounded-lg transition-colors cursor-pointer"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-4.5 h-4.5" />
             </button>
           </div>
 
           <Link
             href="/"
-            className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-[#C8C2B8] hover:text-white text-xs font-semibold border border-white/10 transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-[#D4CDC5] hover:text-white text-sm font-semibold border border-white/10 transition-colors"
           >
             <span>Exit to Consumer App</span>
-            <ExternalLink className="w-3 h-3 text-[#FF5C00]" />
+            <ExternalLink className="w-3.5 h-3.5 text-[#FF5C00]" />
           </Link>
         </div>
       </aside>
@@ -906,7 +906,7 @@ export default function AdminStudioDesk() {
               <Menu className="w-5 h-5" />
             </button>
 
-            <h2 className="text-sm sm:text-base font-black text-white capitalize tracking-tight truncate">
+            <h2 className="text-base sm:text-lg font-black text-white capitalize tracking-tight truncate">
               {activeTab === 'overview' && 'Live Platform Performance'}
               {activeTab === 'catalog' && 'Video Catalog Management'}
               {activeTab === 'upload' && 'Upload Video Master'}
@@ -922,9 +922,9 @@ export default function AdminStudioDesk() {
             {activeTab !== 'upload' && (
               <button
                 onClick={() => setActiveTab('upload')}
-                className="flex items-center gap-2 px-3 sm:px-3.5 py-1.5 rounded-xl bg-[#FF5C00] hover:bg-[#FF6B1A] text-white text-xs font-bold transition-all shadow-md shadow-orange-500/20 cursor-pointer"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#FF5C00] hover:bg-[#FF6B1A] text-white text-sm font-bold transition-all shadow-md shadow-orange-500/20 cursor-pointer"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-4 h-4" />
                 <span className="hidden sm:inline">Upload New Video</span>
                 <span className="sm:hidden">Upload</span>
               </button>
@@ -942,9 +942,9 @@ export default function AdminStudioDesk() {
                 toast.success('Data reloaded from database.');
               }}
               title="Refresh Data"
-              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-[#C8C2B8] hover:text-white border border-white/10 transition-colors cursor-pointer"
+              className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-[#C8C2B8] hover:text-white border border-white/10 transition-colors cursor-pointer"
             >
-              <RefreshCw className="w-3.5 h-3.5" />
+              <RefreshCw className="w-4 h-4" />
             </button>
           </div>
         </header>
@@ -959,45 +959,45 @@ export default function AdminStudioDesk() {
               {/* Top Stats Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 {/* Total Users */}
-                <div className="bg-[#120F0D] border border-white/10 rounded-2xl p-5 shadow-lg">
-                  <div className="flex items-center justify-between text-[#8C8478] mb-3">
-                    <span className="text-xs font-bold uppercase tracking-wider">Registered Users</span>
-                    <Users className="w-4 h-4 text-[#FF8A00]" />
+                <div className="bg-[#120F0D] border border-white/10 rounded-2xl p-5 sm:p-6 shadow-lg">
+                  <div className="flex items-center justify-between text-[#B8B0A2] mb-3">
+                    <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">Registered Users</span>
+                    <Users className="w-5 h-5 text-[#FF8A00]" />
                   </div>
-                  <div className="text-3xl font-black text-white">{stats?.total_users ?? '—'}</div>
-                  <p className="text-[11px] text-[#8C8478] mt-1.5">Real users in PostgreSQL database</p>
+                  <div className="text-3xl sm:text-4xl font-black text-white">{stats?.total_users ?? '—'}</div>
+                  <p className="text-xs sm:text-sm text-[#A8A095] mt-2">Real users in PostgreSQL database</p>
                 </div>
 
                 {/* Active Sessions */}
-                <div className="bg-[#120F0D] border border-white/10 rounded-2xl p-5 shadow-lg">
-                  <div className="flex items-center justify-between text-[#8C8478] mb-3">
-                    <span className="text-xs font-bold uppercase tracking-wider">Active Devices</span>
-                    <Radio className="w-4 h-4 text-emerald-400" />
+                <div className="bg-[#120F0D] border border-white/10 rounded-2xl p-5 sm:p-6 shadow-lg">
+                  <div className="flex items-center justify-between text-[#B8B0A2] mb-3">
+                    <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">Active Devices</span>
+                    <Radio className="w-5 h-5 text-emerald-400" />
                   </div>
-                  <div className="text-3xl font-black text-emerald-400">{stats?.active_users ?? '—'}</div>
-                  <p className="text-[11px] text-[#8C8478] mt-1.5">Live signed-in active refresh tokens</p>
+                  <div className="text-3xl sm:text-4xl font-black text-emerald-400">{stats?.active_users ?? '—'}</div>
+                  <p className="text-xs sm:text-sm text-[#A8A095] mt-2">Live signed-in active refresh tokens</p>
                 </div>
 
                 {/* Catalog Titles */}
-                <div className="bg-[#120F0D] border border-white/10 rounded-2xl p-5 shadow-lg">
-                  <div className="flex items-center justify-between text-[#8C8478] mb-3">
-                    <span className="text-xs font-bold uppercase tracking-wider">Catalog Titles</span>
-                    <Film className="w-4 h-4 text-[#FF8A00]" />
+                <div className="bg-[#120F0D] border border-white/10 rounded-2xl p-5 sm:p-6 shadow-lg">
+                  <div className="flex items-center justify-between text-[#B8B0A2] mb-3">
+                    <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">Catalog Titles</span>
+                    <Film className="w-5 h-5 text-[#FF8A00]" />
                   </div>
-                  <div className="text-3xl font-black text-white">{stats?.total_content ?? '—'}</div>
-                  <p className="text-[11px] text-[#8C8478] mt-1.5">Movies, series & masterclasses</p>
+                  <div className="text-3xl sm:text-4xl font-black text-white">{stats?.total_content ?? '—'}</div>
+                  <p className="text-xs sm:text-sm text-[#A8A095] mt-2">Movies, series & masterclasses</p>
                 </div>
 
                 {/* Total Revenue */}
-                <div className="bg-[#120F0D] border border-white/10 rounded-2xl p-5 shadow-lg">
-                  <div className="flex items-center justify-between text-[#8C8478] mb-3">
-                    <span className="text-xs font-bold uppercase tracking-wider">Platform Revenue</span>
-                    <CreditCard className="w-4 h-4 text-emerald-400" />
+                <div className="bg-[#120F0D] border border-white/10 rounded-2xl p-5 sm:p-6 shadow-lg">
+                  <div className="flex items-center justify-between text-[#B8B0A2] mb-3">
+                    <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">Platform Revenue</span>
+                    <CreditCard className="w-5 h-5 text-emerald-400" />
                   </div>
-                  <div className="text-3xl font-black text-white">
+                  <div className="text-3xl sm:text-4xl font-black text-white">
                     ₹{stats?.total_revenue_inr ? stats.total_revenue_inr.toLocaleString() : '0'}
                   </div>
-                  <p className="text-[11px] text-emerald-400/90 mt-1.5 font-semibold">
+                  <p className="text-xs sm:text-sm text-emerald-400/90 mt-2 font-semibold">
                     {stats?.active_subscriptions ?? 0} Active Paid Passes
                   </p>
                 </div>
@@ -1008,13 +1008,13 @@ export default function AdminStudioDesk() {
                 {/* Recent Users */}
                 <div className="bg-[#120F0D] border border-white/10 rounded-2xl p-6 shadow-lg">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
-                      <Users className="w-4 h-4 text-[#FF5C00]" />
+                    <h3 className="text-base font-black text-white uppercase tracking-wider flex items-center gap-2">
+                      <Users className="w-5 h-5 text-[#FF5C00]" />
                       <span>Recently Registered Users</span>
                     </h3>
                     <button
                       onClick={() => setActiveTab('users')}
-                      className="text-xs font-bold text-[#FF8A00] hover:underline"
+                      className="text-sm font-bold text-[#FF8A00] hover:underline cursor-pointer"
                     >
                       View All
                     </button>
@@ -1024,14 +1024,14 @@ export default function AdminStudioDesk() {
                       stats.recent_users.map((u) => (
                         <div key={u.id} className="py-3 flex items-center justify-between">
                           <div>
-                            <div className="text-xs font-bold text-white">{u.name}</div>
-                            <div className="text-[11px] text-[#8C8478]">{u.email}</div>
+                            <div className="text-sm font-bold text-white">{u.name}</div>
+                            <div className="text-xs sm:text-sm text-[#A8A095]">{u.email}</div>
                           </div>
                           <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            className={`px-2.5 py-0.5 rounded text-xs font-bold ${
                               u.role === 'ADMIN'
                                 ? 'bg-orange-500/10 text-[#FF8A00] border border-orange-500/20'
-                                : 'bg-white/5 text-[#8C8478]'
+                                : 'bg-white/5 text-[#A8A095]'
                             }`}
                           >
                             {u.role}
@@ -1039,7 +1039,7 @@ export default function AdminStudioDesk() {
                         </div>
                       ))
                     ) : (
-                      <p className="text-xs text-[#8C8478] py-4">No user records found.</p>
+                      <p className="text-sm text-[#8C8478] py-4">No user records found.</p>
                     )}
                   </div>
                 </div>
@@ -1047,13 +1047,13 @@ export default function AdminStudioDesk() {
                 {/* Recent Payments */}
                 <div className="bg-[#120F0D] border border-white/10 rounded-2xl p-6 shadow-lg">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
-                      <CreditCard className="w-4 h-4 text-emerald-400" />
+                    <h3 className="text-base font-black text-white uppercase tracking-wider flex items-center gap-2">
+                      <CreditCard className="w-5 h-5 text-emerald-400" />
                       <span>Recent Payment Transactions</span>
                     </h3>
                     <button
                       onClick={() => setActiveTab('subscriptions')}
-                      className="text-xs font-bold text-[#FF8A00] hover:underline"
+                      className="text-sm font-bold text-[#FF8A00] hover:underline cursor-pointer"
                     >
                       View Subscriptions
                     </button>
@@ -1063,18 +1063,18 @@ export default function AdminStudioDesk() {
                       stats.recent_payments.map((p) => (
                         <div key={p.id} className="py-3 flex items-center justify-between">
                           <div>
-                            <div className="text-xs font-bold text-white">₹{p.amount_inr}</div>
-                            <div className="text-[10px] text-[#8C8478]">
+                            <div className="text-base font-bold text-white">₹{p.amount_inr}</div>
+                            <div className="text-xs text-[#A8A095]">
                               {p.created_at ? new Date(p.created_at).toLocaleString() : ''}
                             </div>
                           </div>
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                          <span className="px-2.5 py-0.5 rounded text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                             {p.status}
                           </span>
                         </div>
                       ))
                     ) : (
-                      <p className="text-xs text-[#8C8478] py-4">No recent payments recorded.</p>
+                      <p className="text-sm text-[#8C8478] py-4">No recent payments recorded.</p>
                     )}
                   </div>
                 </div>
@@ -1090,13 +1090,13 @@ export default function AdminStudioDesk() {
               {/* Filter & Search Bar */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-[#120F0D] border border-white/10 p-4 rounded-2xl">
                 <div className="relative flex-1">
-                  <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8C8478]" />
+                  <Search className="w-4.5 h-4.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8C8478]" />
                   <input
                     type="text"
                     value={catalogSearch}
                     onChange={(e) => setCatalogSearch(e.target.value)}
                     placeholder="Search titles in database..."
-                    className="w-full bg-[#1A1613] border border-white/10 rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder-[#787065] outline-none focus:border-[#FF5C00]"
+                    className="w-full bg-[#1A1613] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-[#8E8679] outline-none focus:border-[#FF5C00]"
                   />
                 </div>
 
@@ -1104,7 +1104,7 @@ export default function AdminStudioDesk() {
                   <select
                     value={catalogTypeFilter}
                     onChange={(e) => setCatalogTypeFilter(e.target.value)}
-                    className="bg-[#1A1613] border border-white/10 rounded-xl px-3 py-2 text-xs text-white font-semibold outline-none cursor-pointer"
+                    className="bg-[#1A1613] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white font-semibold outline-none cursor-pointer"
                   >
                     <option value="ALL">All Types</option>
                     <option value="MOVIE">Movies</option>
@@ -1114,9 +1114,9 @@ export default function AdminStudioDesk() {
 
                   <button
                     onClick={() => setActiveTab('upload')}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#FF5C00] hover:bg-[#FF6B1A] text-white text-xs font-bold transition-colors cursor-pointer"
+                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#FF5C00] hover:bg-[#FF6B1A] text-white text-sm font-bold transition-colors cursor-pointer"
                   >
-                    <Plus className="w-3.5 h-3.5" />
+                    <Plus className="w-4 h-4" />
                     <span>Upload Title</span>
                   </button>
                 </div>
@@ -1125,14 +1125,14 @@ export default function AdminStudioDesk() {
               {/* Catalog Table */}
               <div className="bg-[#120F0D] border border-white/10 rounded-2xl overflow-hidden shadow-xl">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
+                  <table className="w-full text-left text-sm">
                     <thead>
-                      <tr className="border-b border-white/10 bg-white/[0.02] text-[#8C8478] font-bold uppercase tracking-wider">
-                        <th className="py-3.5 px-4">Title & Details</th>
-                        <th className="py-3.5 px-4">Type</th>
-                        <th className="py-3.5 px-4">Year / Rating</th>
-                        <th className="py-3.5 px-4">Status</th>
-                        <th className="py-3.5 px-4 text-right">Actions</th>
+                      <tr className="border-b border-white/10 bg-white/[0.02] text-[#B8B0A2] text-xs sm:text-sm font-bold uppercase tracking-wider">
+                        <th className="py-4 px-4">Title & Details</th>
+                        <th className="py-4 px-4">Type</th>
+                        <th className="py-4 px-4">Year / Rating</th>
+                        <th className="py-4 px-4">Status</th>
+                        <th className="py-4 px-4 text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5 text-[#D4CDC5]">
@@ -1141,36 +1141,36 @@ export default function AdminStudioDesk() {
                           const isPub = item.status === 'PUBLISHED' || item.is_published;
                           return (
                             <tr key={item.id} className="hover:bg-white/[0.02] transition-colors">
-                              <td className="py-3.5 px-4">
-                                <div className="flex items-center gap-3">
+                              <td className="py-4 px-4">
+                                <div className="flex items-center gap-3.5">
                                   <img
                                     src={item.thumbnail_url || item.thumbnailUrl || '/placeholder.png'}
                                     alt={item.title}
-                                    className="w-14 h-9 object-cover rounded-lg bg-white/5 border border-white/10 shrink-0"
+                                    className="w-16 h-10 object-cover rounded-lg bg-white/5 border border-white/10 shrink-0"
                                   />
                                   <div>
-                                    <div className="font-bold text-white">{item.title}</div>
-                                    <div className="text-[11px] text-[#8C8478] line-clamp-1 max-w-sm">
+                                    <div className="text-sm sm:text-base font-bold text-white">{item.title}</div>
+                                    <div className="text-xs text-[#A8A095] line-clamp-1 max-w-sm mt-0.5">
                                       {item.description}
                                     </div>
                                   </div>
                                 </div>
                               </td>
 
-                              <td className="py-3.5 px-4 font-semibold">
-                                <span className="px-2 py-0.5 rounded bg-white/5 text-[#C8C2B8] text-[10px]">
+                              <td className="py-4 px-4 font-semibold">
+                                <span className="px-2.5 py-1 rounded bg-white/5 text-[#D4CDC5] text-xs font-semibold">
                                   {item.content_type || item.type || 'MOVIE'}
                                 </span>
                               </td>
 
-                              <td className="py-3.5 px-4 font-semibold text-[#8C8478]">
+                              <td className="py-4 px-4 font-medium text-xs sm:text-sm text-[#B0A79B]">
                                 {item.release_year || item.releaseYear || 2026} • {item.rating || 'U/A'}
                               </td>
 
-                              <td className="py-3.5 px-4">
+                              <td className="py-4 px-4">
                                 <button
                                   onClick={() => handleTogglePublish(item)}
-                                  className={`px-2.5 py-1 rounded-full text-[10px] font-bold border transition-colors cursor-pointer ${
+                                  className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors cursor-pointer ${
                                     isPub
                                       ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
                                       : 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20'
@@ -1181,31 +1181,31 @@ export default function AdminStudioDesk() {
                                 </button>
                               </td>
 
-                              <td className="py-3.5 px-4 text-right">
+                              <td className="py-4 px-4 text-right">
                                 <div className="flex items-center justify-end gap-2">
                                   <Link
                                     href={`/watch/${item.slug}`}
                                     target="_blank"
                                     title="Watch / Preview"
-                                    className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-[#C8C2B8] hover:text-white transition-colors"
+                                    className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-[#C8C2B8] hover:text-white transition-colors"
                                   >
-                                    <Play className="w-3.5 h-3.5" />
+                                    <Play className="w-4 h-4" />
                                   </Link>
 
                                   <button
                                     onClick={() => handleOpenEditModal(item)}
                                     title="Edit Metadata"
-                                    className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-[#FF8A00] hover:text-orange-300 transition-colors cursor-pointer"
+                                    className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-[#FF8A00] hover:text-orange-300 transition-colors cursor-pointer"
                                   >
-                                    <Edit3 className="w-3.5 h-3.5" />
+                                    <Edit3 className="w-4 h-4" />
                                   </button>
 
                                   <button
                                     onClick={() => handleDeleteContent(item)}
                                     title="Delete from Database"
-                                    className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors cursor-pointer"
+                                    className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors cursor-pointer"
                                   >
-                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <Trash2 className="w-4 h-4" />
                                   </button>
                                 </div>
                               </td>
@@ -1214,7 +1214,7 @@ export default function AdminStudioDesk() {
                         })
                       ) : (
                         <tr>
-                          <td colSpan={5} className="py-8 text-center text-[#8C8478]">
+                          <td colSpan={5} className="py-8 text-center text-sm text-[#8C8478]">
                             {loadingCatalog ? 'Loading catalog from database...' : 'No titles found.'}
                           </td>
                         </tr>
@@ -1233,28 +1233,28 @@ export default function AdminStudioDesk() {
             <div className="space-y-6 max-w-4xl mx-auto">
               {/* Presets Strip */}
               <div className="bg-[#120F0D] border border-white/10 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
-                <span className="text-xs font-bold text-[#8C8478] uppercase tracking-wider">
+                <span className="text-sm font-bold text-[#B8B0A2] uppercase tracking-wider">
                   Studio Quick Templates:
                 </span>
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
                     onClick={() => applyPresetAssets('cinema')}
-                    className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-colors cursor-pointer"
+                    className="px-4 py-2 rounded-xl text-sm font-semibold bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-colors cursor-pointer"
                   >
                     Cinema Feature
                   </button>
                   <button
                     type="button"
                     onClick={() => applyPresetAssets('masterclass')}
-                    className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-colors cursor-pointer"
+                    className="px-4 py-2 rounded-xl text-sm font-semibold bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-colors cursor-pointer"
                   >
                     Original Masterclass
                   </button>
                   <button
                     type="button"
                     onClick={() => applyPresetAssets('documentary')}
-                    className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-colors cursor-pointer"
+                    className="px-4 py-2 rounded-xl text-sm font-semibold bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-colors cursor-pointer"
                   >
                     Documentary Feature
                   </button>
@@ -1266,7 +1266,7 @@ export default function AdminStudioDesk() {
                 <form onSubmit={handlePushContent} className="space-y-6">
                   {/* File Selection Area */}
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
+                    <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2.5">
                       Master Video File
                     </label>
                     <div className="border-2 border-dashed border-white/15 hover:border-[#FF5C00]/50 rounded-2xl p-6 text-center transition-colors bg-[#1A1613]">
@@ -1278,11 +1278,11 @@ export default function AdminStudioDesk() {
                         id="videoFileInput"
                       />
                       <label htmlFor="videoFileInput" className="cursor-pointer block">
-                        <UploadCloud className="w-8 h-8 text-[#FF5C00] mx-auto mb-2" />
-                        <span className="text-sm font-bold text-white block">
+                        <UploadCloud className="w-9 h-9 text-[#FF5C00] mx-auto mb-2" />
+                        <span className="text-base font-bold text-white block">
                           {selectedFile ? selectedFile.name : 'Select Video File (.mp4, .mov, .mkv)'}
                         </span>
-                        <span className="text-xs text-[#8C8478] mt-1 block">
+                        <span className="text-sm text-[#A8A095] mt-1.5 block">
                           {selectedFile
                             ? `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB selected for upload`
                             : 'Direct chunked upload directly to Cloudflare R2'}
@@ -1294,11 +1294,11 @@ export default function AdminStudioDesk() {
                   {/* Progress Bar (if uploading) */}
                   {uploadSubmitting && (
                     <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
-                      <div className="flex justify-between text-xs font-bold">
+                      <div className="flex justify-between text-sm font-bold">
                         <span className="text-[#FF8A00]">{uploadStep}</span>
                         <span className="text-white">{uploadProgress}%</span>
                       </div>
-                      <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                      <div className="w-full bg-white/10 h-2.5 rounded-full overflow-hidden">
                         <div
                           className="bg-gradient-to-r from-[#FF5C00] to-[#E04800] h-full transition-all duration-300"
                           style={{ width: `${uploadProgress}%` }}
@@ -1310,7 +1310,7 @@ export default function AdminStudioDesk() {
                   {/* Title & Type */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="sm:col-span-2">
-                      <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
+                      <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
                         Title *
                       </label>
                       <input
@@ -1319,18 +1319,18 @@ export default function AdminStudioDesk() {
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="e.g. Shadows of the Peak"
-                        className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] rounded-xl px-4 py-3 text-sm text-white placeholder-[#787065] outline-none"
+                        className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] rounded-xl px-4 py-3.5 text-base sm:text-sm text-white placeholder-[#8E8679] outline-none"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
+                      <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
                         Content Type
                       </label>
                       <select
                         value={contentType}
                         onChange={(e: any) => setContentType(e.target.value)}
-                        className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] rounded-xl px-4 py-3 text-sm text-white outline-none cursor-pointer"
+                        className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] rounded-xl px-4 py-3.5 text-base sm:text-sm text-white outline-none cursor-pointer"
                       >
                         <option value="MOVIE">Movie</option>
                         <option value="SERIES">Series</option>
@@ -1342,7 +1342,7 @@ export default function AdminStudioDesk() {
 
                   {/* Description */}
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
+                    <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
                       Synopsis / Storyline
                     </label>
                     <textarea
@@ -1350,25 +1350,25 @@ export default function AdminStudioDesk() {
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       placeholder="Brief overview of the story..."
-                      className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] rounded-xl px-4 py-3 text-sm text-white placeholder-[#787065] outline-none resize-none"
+                      className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] rounded-xl px-4 py-3.5 text-base sm:text-sm text-white placeholder-[#8E8679] outline-none resize-none leading-relaxed"
                     />
                   </div>
 
                   {/* Release Year, Rating, Duration */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
+                      <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
                         Release Year
                       </label>
                       <input
                         type="number"
                         value={releaseYear}
                         onChange={(e) => setReleaseYear(Number(e.target.value))}
-                        className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3 text-sm text-white outline-none"
+                        className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3.5 text-base sm:text-sm text-white outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
+                      <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
                         Age Rating
                       </label>
                       <input
@@ -1376,18 +1376,18 @@ export default function AdminStudioDesk() {
                         value={rating}
                         onChange={(e) => setRating(e.target.value)}
                         placeholder="U/A 13+"
-                        className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3 text-sm text-white outline-none"
+                        className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3.5 text-base sm:text-sm text-white outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
+                      <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
                         Runtime (Minutes)
                       </label>
                       <input
                         type="number"
                         value={durationMinutes}
                         onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                        className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3 text-sm text-white outline-none"
+                        className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3.5 text-base sm:text-sm text-white outline-none"
                       />
                     </div>
                   </div>
@@ -1396,11 +1396,11 @@ export default function AdminStudioDesk() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5]">
+                        <label className="block text-sm font-bold uppercase tracking-wider text-white/95">
                           Poster Thumbnail (Portrait 2:3)
                         </label>
-                        <label className="text-[11px] font-bold text-[#FF8A00] hover:text-[#FFA033] cursor-pointer flex items-center gap-1.5 transition-colors">
-                          <UploadCloud className="w-3.5 h-3.5" />
+                        <label className="text-sm font-bold text-[#FF8A00] hover:text-[#FFA033] cursor-pointer flex items-center gap-1.5 transition-colors">
+                          <UploadCloud className="w-4 h-4" />
                           <span>{uploadingPoster ? 'Uploading to R2...' : 'Upload Image'}</span>
                           <input
                             type="file"
@@ -1417,26 +1417,26 @@ export default function AdminStudioDesk() {
                           value={thumbnailUrl}
                           onChange={(e) => setThumbnailUrl(e.target.value)}
                           placeholder="https://... or click 'Upload Image'"
-                          className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] rounded-xl px-4 py-3 text-sm text-white placeholder-[#787065] outline-none"
+                          className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] rounded-xl px-4 py-3.5 text-base sm:text-sm text-white placeholder-[#8E8679] outline-none"
                         />
                         {thumbnailUrl && (
-                          <div className="w-11 h-11 shrink-0 rounded-lg overflow-hidden border border-white/20 bg-black shadow-md">
+                          <div className="w-12 h-12 shrink-0 rounded-lg overflow-hidden border border-white/20 bg-black shadow-md">
                             <img src={thumbnailUrl} alt="Poster preview" className="w-full h-full object-cover" />
                           </div>
                         )}
                       </div>
-                      <span className="text-[11px] text-[#8C8478] mt-1.5 block">
+                      <span className="text-xs sm:text-sm text-[#B0A79B] mt-2 block leading-normal">
                         Vertical poster for cards & mobile (auto-uploaded to Cloudflare R2 or paste URL).
                       </span>
                     </div>
 
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5]">
+                        <label className="block text-sm font-bold uppercase tracking-wider text-white/95">
                           Backdrop Landscape (16:9 Hero)
                         </label>
-                        <label className="text-[11px] font-bold text-[#FF8A00] hover:text-[#FFA033] cursor-pointer flex items-center gap-1.5 transition-colors">
-                          <UploadCloud className="w-3.5 h-3.5" />
+                        <label className="text-sm font-bold text-[#FF8A00] hover:text-[#FFA033] cursor-pointer flex items-center gap-1.5 transition-colors">
+                          <UploadCloud className="w-4 h-4" />
                           <span>{uploadingBackdrop ? 'Uploading to R2...' : 'Upload Image'}</span>
                           <input
                             type="file"
@@ -1453,27 +1453,27 @@ export default function AdminStudioDesk() {
                           value={backdropUrl}
                           onChange={(e) => setBackdropUrl(e.target.value)}
                           placeholder="https://... or click 'Upload Image'"
-                          className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] rounded-xl px-4 py-3 text-sm text-white placeholder-[#787065] outline-none"
+                          className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] rounded-xl px-4 py-3.5 text-base sm:text-sm text-white placeholder-[#8E8679] outline-none"
                         />
                         {backdropUrl && (
-                          <div className="w-16 h-11 shrink-0 rounded-lg overflow-hidden border border-white/20 bg-black shadow-md">
+                          <div className="w-16 h-12 shrink-0 rounded-lg overflow-hidden border border-white/20 bg-black shadow-md">
                             <img src={backdropUrl} alt="Backdrop preview" className="w-full h-full object-cover" />
                           </div>
                         )}
                       </div>
-                      <span className="text-[11px] text-[#8C8478] mt-1.5 block">
+                      <span className="text-xs sm:text-sm text-[#B0A79B] mt-2 block leading-normal">
                         Wide banner shown on the homepage hero carousel & title details.
                       </span>
                     </div>
                   </div>
 
                   {/* Direct Stream Manifest Option */}
-                  <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-4 space-y-2">
+                  <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-4 sm:p-5 space-y-2.5">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5]">
+                      <label className="block text-sm font-bold uppercase tracking-wider text-white/95">
                         External Stream Key or HLS Manifest (Optional)
                       </label>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      <span className="text-xs font-bold px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                         Leave blank if uploading video file above
                       </span>
                     </div>
@@ -1482,41 +1482,41 @@ export default function AdminStudioDesk() {
                       value={streamManifestKey}
                       onChange={(e) => setStreamManifestKey(e.target.value)}
                       placeholder="e.g. hls/second-task-race-to-the-finish/master.m3u8"
-                      className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] rounded-xl px-4 py-3 text-sm text-white placeholder-[#787065] outline-none"
+                      className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] rounded-xl px-4 py-3.5 text-base sm:text-sm text-white placeholder-[#8E8679] outline-none"
                     />
-                    <p className="text-[11px] text-[#8C8478] leading-relaxed">
+                    <p className="text-xs sm:text-sm text-[#B0A79B] leading-relaxed">
                       💡 <strong>When to use:</strong> Only fill this if your video is already transcoded into HLS in Cloudflare R2 (like <code>hls/second-task-race-to-the-finish/master.m3u8</code>) or hosted on an external CDN. If you selected a video file above, leave this field completely empty — the platform generates the stream key automatically.
                     </p>
                   </div>
 
                   {/* Checkboxes */}
                   <div className="flex flex-wrap items-center gap-6 pt-2">
-                    <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-white">
+                    <label className="flex items-center gap-2.5 cursor-pointer text-sm font-bold text-white">
                       <input
                         type="checkbox"
                         checked={isOriginal}
                         onChange={(e) => setIsOriginal(e.target.checked)}
-                        className="rounded border-white/20 text-[#FF5C00] focus:ring-0"
+                        className="w-4 h-4 rounded border-white/20 text-[#FF5C00] focus:ring-0"
                       />
                       <span>V19Plus Original</span>
                     </label>
 
-                    <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-white">
+                    <label className="flex items-center gap-2.5 cursor-pointer text-sm font-bold text-white">
                       <input
                         type="checkbox"
                         checked={isFeatured}
                         onChange={(e) => setIsFeatured(e.target.checked)}
-                        className="rounded border-white/20 text-[#FF5C00] focus:ring-0"
+                        className="w-4 h-4 rounded border-white/20 text-[#FF5C00] focus:ring-0"
                       />
                       <span>Featured in Hero Banner</span>
                     </label>
 
-                    <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-white">
+                    <label className="flex items-center gap-2.5 cursor-pointer text-sm font-bold text-white">
                       <input
                         type="checkbox"
                         checked={publishImmediately}
                         onChange={(e) => setPublishImmediately(e.target.checked)}
-                        className="rounded border-white/20 text-[#FF5C00] focus:ring-0"
+                        className="w-4 h-4 rounded border-white/20 text-[#FF5C00] focus:ring-0"
                       />
                       <span>Publish Immediately</span>
                     </label>
@@ -1526,7 +1526,7 @@ export default function AdminStudioDesk() {
                   <button
                     type="submit"
                     disabled={uploadSubmitting}
-                    className="w-full py-3.5 px-6 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-[#FF5C00] to-[#E04800] hover:from-[#FF6B1A] hover:to-[#EB5505] shadow-[0_4px_25px_rgba(255,92,0,0.35)] transition-all cursor-pointer disabled:opacity-50"
+                    className="w-full py-4 px-6 rounded-xl font-black text-base text-white bg-gradient-to-r from-[#FF5C00] to-[#E04800] hover:from-[#FF6B1A] hover:to-[#EB5505] shadow-[0_4px_25px_rgba(255,92,0,0.35)] transition-all cursor-pointer disabled:opacity-50"
                   >
                     {uploadSubmitting ? 'Uploading & Registering...' : 'Upload Video & Publish to Catalog'}
                   </button>
@@ -1543,14 +1543,14 @@ export default function AdminStudioDesk() {
               {/* Filter & Actions Bar */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-[#120F0D] border border-white/10 p-4 rounded-2xl">
                 <div className="relative flex-1">
-                  <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8C8478]" />
+                  <Search className="w-4.5 h-4.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8C8478]" />
                   <input
                     type="text"
                     value={userSearch}
                     onChange={(e) => setUserSearch(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && fetchUsers()}
                     placeholder="Search users by name or email..."
-                    className="w-full bg-[#1A1613] border border-white/10 rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder-[#787065] outline-none focus:border-[#FF5C00]"
+                    className="w-full bg-[#1A1613] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-[#8E8679] outline-none focus:border-[#FF5C00]"
                   />
                 </div>
 
@@ -1560,7 +1560,7 @@ export default function AdminStudioDesk() {
                     onChange={(e) => {
                       setUserRoleFilter(e.target.value);
                     }}
-                    className="bg-[#1A1613] border border-white/10 rounded-xl px-3 py-2 text-xs text-white font-semibold outline-none cursor-pointer"
+                    className="bg-[#1A1613] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white font-semibold outline-none cursor-pointer"
                   >
                     <option value="ALL">All Roles</option>
                     <option value="USER">User</option>
@@ -1569,16 +1569,16 @@ export default function AdminStudioDesk() {
 
                   <button
                     onClick={() => fetchUsers()}
-                    className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-semibold border border-white/10 transition-colors cursor-pointer"
+                    className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm font-semibold border border-white/10 transition-colors cursor-pointer"
                   >
                     Filter
                   </button>
 
                   <button
                     onClick={() => setShowCreateUserModal(true)}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#FF5C00] hover:bg-[#FF6B1A] text-white text-xs font-bold transition-colors cursor-pointer"
+                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#FF5C00] hover:bg-[#FF6B1A] text-white text-sm font-bold transition-colors cursor-pointer"
                   >
-                    <Plus className="w-3.5 h-3.5" />
+                    <Plus className="w-4 h-4" />
                     <span>Create User</span>
                   </button>
                 </div>
@@ -1587,44 +1587,44 @@ export default function AdminStudioDesk() {
               {/* Users Table */}
               <div className="bg-[#120F0D] border border-white/10 rounded-2xl overflow-hidden shadow-xl">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
+                  <table className="w-full text-left text-sm">
                     <thead>
-                      <tr className="border-b border-white/10 bg-white/[0.02] text-[#8C8478] font-bold uppercase tracking-wider">
-                        <th className="py-3.5 px-4">User</th>
-                        <th className="py-3.5 px-4">Role</th>
-                        <th className="py-3.5 px-4">Subscription</th>
-                        <th className="py-3.5 px-4">Status</th>
-                        <th className="py-3.5 px-4">Joined Date</th>
-                        <th className="py-3.5 px-4 text-right">Actions</th>
+                      <tr className="border-b border-white/10 bg-white/[0.02] text-[#B8B0A2] text-xs sm:text-sm font-bold uppercase tracking-wider">
+                        <th className="py-4 px-4">User</th>
+                        <th className="py-4 px-4">Role</th>
+                        <th className="py-4 px-4">Subscription</th>
+                        <th className="py-4 px-4">Status</th>
+                        <th className="py-4 px-4">Joined Date</th>
+                        <th className="py-4 px-4 text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5 text-[#D4CDC5]">
                       {usersList.length > 0 ? (
                         usersList.map((u) => (
                           <tr key={u.id} className="hover:bg-white/[0.02] transition-colors">
-                            <td className="py-3.5 px-4">
-                              <div className="font-bold text-white">{u.name}</div>
-                              <div className="text-[11px] text-[#8C8478]">{u.email}</div>
+                            <td className="py-4 px-4">
+                              <div className="text-sm sm:text-base font-bold text-white">{u.name}</div>
+                              <div className="text-xs sm:text-sm text-[#A8A095] mt-0.5">{u.email}</div>
                             </td>
-                            <td className="py-3.5 px-4">
+                            <td className="py-4 px-4">
                               <span
-                                className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                className={`px-2.5 py-1 rounded text-xs font-bold ${
                                   u.role === 'ADMIN'
                                     ? 'bg-orange-500/10 text-[#FF8A00] border border-orange-500/20'
-                                    : 'bg-white/5 text-[#8C8478]'
+                                    : 'bg-white/5 text-[#A8A095]'
                                 }`}
                               >
                                 {u.role}
                               </span>
                             </td>
-                            <td className="py-3.5 px-4">
-                              <span className="text-[11px] font-semibold text-white">
+                            <td className="py-4 px-4">
+                              <span className="text-xs sm:text-sm font-semibold text-white">
                                 {u.plan_name || 'Free Tier'}
                               </span>
                             </td>
-                            <td className="py-3.5 px-4">
+                            <td className="py-4 px-4">
                               <span
-                                className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                className={`px-2.5 py-1 rounded text-xs font-bold ${
                                   u.is_active
                                     ? 'bg-emerald-500/10 text-emerald-400'
                                     : 'bg-red-500/10 text-red-400'
@@ -1633,10 +1633,10 @@ export default function AdminStudioDesk() {
                                 {u.is_active ? 'Active' : 'Suspended'}
                               </span>
                             </td>
-                            <td className="py-3.5 px-4 text-[#8C8478]">
+                            <td className="py-4 px-4 text-xs sm:text-sm text-[#B0A79B]">
                               {u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}
                             </td>
-                            <td className="py-3.5 px-4 text-right">
+                            <td className="py-4 px-4 text-right">
                               <div className="flex items-center justify-end gap-2">
                                 <button
                                   onClick={() => {
@@ -1647,17 +1647,17 @@ export default function AdminStudioDesk() {
                                     setEditUserIsActive(u.is_active);
                                     setEditUserNewPassword('');
                                   }}
-                                  className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-[#FF8A00] transition-colors cursor-pointer"
+                                  className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-[#FF8A00] transition-colors cursor-pointer"
                                   title="Edit User"
                                 >
-                                  <Edit3 className="w-3.5 h-3.5" />
+                                  <Edit3 className="w-4 h-4" />
                                 </button>
                                 <button
                                   onClick={() => handleDeleteUser(u)}
-                                  className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors cursor-pointer"
+                                  className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors cursor-pointer"
                                   title="Delete User"
                                 >
-                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <Trash2 className="w-4 h-4" />
                                 </button>
                               </div>
                             </td>
@@ -1665,7 +1665,7 @@ export default function AdminStudioDesk() {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={6} className="py-8 text-center text-[#8C8478]">
+                          <td colSpan={6} className="py-8 text-center text-sm text-[#8C8478]">
                             {loadingUsers ? 'Loading users from database...' : 'No users found.'}
                           </td>
                         </tr>
@@ -1683,26 +1683,26 @@ export default function AdminStudioDesk() {
           {activeTab === 'subscriptions' && (
             <div className="space-y-6 max-w-7xl mx-auto">
               {/* Filter */}
-              <div className="flex items-center justify-between gap-4 bg-[#120F0D] border border-white/10 p-4 rounded-2xl">
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-bold text-[#8C8478] uppercase tracking-wider">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-[#120F0D] border border-white/10 p-4 rounded-2xl">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <span className="text-sm font-bold text-[#B8B0A2] uppercase tracking-wider mr-1">
                     Filter by Status:
                   </span>
                   {['ALL', 'ACTIVE', 'CANCELLED', 'EXPIRED'].map((st) => (
                     <button
                       key={st}
                       onClick={() => setSubStatusFilter(st)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
+                      className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors cursor-pointer ${
                         subStatusFilter === st
                           ? 'bg-[#FF5C00] text-white'
-                          : 'bg-white/5 text-[#8C8478] hover:text-white'
+                          : 'bg-white/5 text-[#A8A095] hover:text-white'
                       }`}
                     >
                       {st}
                     </button>
                   ))}
                 </div>
-                <div className="text-xs font-semibold text-emerald-400">
+                <div className="text-sm font-semibold text-emerald-400">
                   {subscriptionsList.length} Active Records
                 </div>
               </div>
@@ -1710,30 +1710,30 @@ export default function AdminStudioDesk() {
               {/* Subscriptions Table */}
               <div className="bg-[#120F0D] border border-white/10 rounded-2xl overflow-hidden shadow-xl">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
+                  <table className="w-full text-left text-sm">
                     <thead>
-                      <tr className="border-b border-white/10 bg-white/[0.02] text-[#8C8478] font-bold uppercase tracking-wider">
-                        <th className="py-3.5 px-4">Subscriber</th>
-                        <th className="py-3.5 px-4">Plan Name</th>
-                        <th className="py-3.5 px-4">Billing Rate</th>
-                        <th className="py-3.5 px-4">Status</th>
-                        <th className="py-3.5 px-4">Valid Until</th>
-                        <th className="py-3.5 px-4 text-right">Actions</th>
+                      <tr className="border-b border-white/10 bg-white/[0.02] text-[#B8B0A2] text-xs sm:text-sm font-bold uppercase tracking-wider">
+                        <th className="py-4 px-4">Subscriber</th>
+                        <th className="py-4 px-4">Plan Name</th>
+                        <th className="py-4 px-4">Billing Rate</th>
+                        <th className="py-4 px-4">Status</th>
+                        <th className="py-4 px-4">Valid Until</th>
+                        <th className="py-4 px-4 text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5 text-[#D4CDC5]">
                       {subscriptionsList.length > 0 ? (
                         subscriptionsList.map((s) => (
                           <tr key={s.id} className="hover:bg-white/[0.02] transition-colors">
-                            <td className="py-3.5 px-4">
-                              <div className="font-bold text-white">{s.user_name}</div>
-                              <div className="text-[11px] text-[#8C8478]">{s.user_email}</div>
+                            <td className="py-4 px-4">
+                              <div className="text-sm sm:text-base font-bold text-white">{s.user_name}</div>
+                              <div className="text-xs sm:text-sm text-[#A8A095] mt-0.5">{s.user_email}</div>
                             </td>
-                            <td className="py-3.5 px-4 font-bold text-white">{s.plan_name}</td>
-                            <td className="py-3.5 px-4 font-semibold text-emerald-400">₹{s.price_inr}</td>
-                            <td className="py-3.5 px-4">
+                            <td className="py-4 px-4 font-bold text-sm sm:text-base text-white">{s.plan_name}</td>
+                            <td className="py-4 px-4 font-bold text-sm sm:text-base text-emerald-400">₹{s.price_inr}</td>
+                            <td className="py-4 px-4">
                               <span
-                                className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                                className={`px-3 py-1 rounded-full text-xs font-bold border ${
                                   s.status === 'ACTIVE'
                                     ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                                     : 'bg-red-500/10 text-red-400 border-red-500/30'
@@ -1742,23 +1742,23 @@ export default function AdminStudioDesk() {
                                 {s.status}
                               </span>
                             </td>
-                            <td className="py-3.5 px-4 text-[#8C8478]">
+                            <td className="py-4 px-4 text-xs sm:text-sm text-[#B0A79B]">
                               {s.current_period_end
                                 ? new Date(s.current_period_end).toLocaleDateString()
                                 : '—'}
                             </td>
-                            <td className="py-3.5 px-4 text-right">
+                            <td className="py-4 px-4 text-right">
                               {s.status === 'ACTIVE' ? (
                                 <button
                                   onClick={() => handleUpdateSubscriptionStatus(s.id, 'CANCELLED')}
-                                  className="px-2.5 py-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[10px] font-bold transition-colors cursor-pointer"
+                                  className="px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-bold transition-colors cursor-pointer"
                                 >
                                   Cancel Pass
                                 </button>
                               ) : (
                                 <button
                                   onClick={() => handleUpdateSubscriptionStatus(s.id, 'ACTIVE')}
-                                  className="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-[10px] font-bold transition-colors cursor-pointer"
+                                  className="px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-bold transition-colors cursor-pointer"
                                 >
                                   Activate
                                 </button>
@@ -1768,7 +1768,7 @@ export default function AdminStudioDesk() {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={6} className="py-8 text-center text-[#8C8478]">
+                          <td colSpan={6} className="py-8 text-center text-sm text-[#8C8478]">
                             {loadingSubscriptions
                               ? 'Loading subscriptions from database...'
                               : 'No subscription records found.'}
@@ -1790,25 +1790,25 @@ export default function AdminStudioDesk() {
               {/* Compose Card */}
               <div className="bg-[#120F0D] border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-[#FF5C00]/10 border border-[#FF5C00]/25 flex items-center justify-center text-[#FF5C00]">
-                    <Bell className="w-4 h-4" />
+                  <div className="w-10 h-10 rounded-xl bg-[#FF5C00]/10 border border-[#FF5C00]/25 flex items-center justify-center text-[#FF5C00]">
+                    <Bell className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-white">Broadcast Push Notification / Reminder</h3>
-                    <p className="text-xs text-[#8C8478]">Send real-time alerts or reminders to platform viewers</p>
+                    <h3 className="text-lg font-black text-white">Broadcast Push Notification / Reminder</h3>
+                    <p className="text-sm text-[#A8A095]">Send real-time alerts or reminders to platform viewers</p>
                   </div>
                 </div>
 
                 <form onSubmit={handleSendBroadcast} className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
+                      <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
                         Notification Type
                       </label>
                       <select
                         value={notifType}
                         onChange={(e) => setNotifType(e.target.value)}
-                        className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3 text-xs text-white outline-none cursor-pointer"
+                        className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3.5 text-base sm:text-sm text-white outline-none cursor-pointer"
                       >
                         <option value="PUSH">Direct Push Alert</option>
                         <option value="REMINDER">Watchlist / Premiere Reminder</option>
@@ -1817,13 +1817,13 @@ export default function AdminStudioDesk() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
+                      <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
                         Target Audience
                       </label>
                       <select
                         value={notifAudience}
                         onChange={(e) => setNotifAudience(e.target.value)}
-                        className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3 text-xs text-white outline-none cursor-pointer"
+                        className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3.5 text-base sm:text-sm text-white outline-none cursor-pointer"
                       >
                         <option value="ALL">All Registered Users</option>
                         <option value="SUBSCRIBED">Active Paid Subscribers Only</option>
@@ -1834,7 +1834,7 @@ export default function AdminStudioDesk() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
+                    <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
                       Title *
                     </label>
                     <input
@@ -1843,12 +1843,12 @@ export default function AdminStudioDesk() {
                       value={notifTitle}
                       onChange={(e) => setNotifTitle(e.target.value)}
                       placeholder="e.g. New Premiere: Shadows of the Peak"
-                      className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3 text-sm text-white placeholder-[#787065] outline-none"
+                      className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3.5 text-base sm:text-sm text-white placeholder-[#8E8679] outline-none"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
+                    <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
                       Message Body *
                     </label>
                     <textarea
@@ -1857,12 +1857,12 @@ export default function AdminStudioDesk() {
                       value={notifMessage}
                       onChange={(e) => setNotifMessage(e.target.value)}
                       placeholder="Enter the push notification message..."
-                      className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3 text-sm text-white placeholder-[#787065] outline-none resize-none"
+                      className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3.5 text-base sm:text-sm text-white placeholder-[#8E8679] outline-none resize-none leading-relaxed"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
+                    <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
                       Deep Link / Action URL (Optional)
                     </label>
                     <input
@@ -1870,16 +1870,16 @@ export default function AdminStudioDesk() {
                       value={notifActionUrl}
                       onChange={(e) => setNotifActionUrl(e.target.value)}
                       placeholder="/movies or /watch/shadows-of-the-peak"
-                      className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3 text-sm text-white placeholder-[#787065] outline-none"
+                      className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3.5 text-base sm:text-sm text-white placeholder-[#8E8679] outline-none"
                     />
                   </div>
 
                   <button
                     type="submit"
                     disabled={notifSubmitting}
-                    className="w-full py-3 px-6 rounded-xl font-bold text-xs text-white bg-gradient-to-r from-[#FF5C00] to-[#E04800] hover:from-[#FF6B1A] hover:to-[#EB5505] shadow-[0_4px_25px_rgba(255,92,0,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                    className="w-full py-4 px-6 rounded-xl font-black text-base text-white bg-gradient-to-r from-[#FF5C00] to-[#E04800] hover:from-[#FF6B1A] hover:to-[#EB5505] shadow-[0_4px_25px_rgba(255,92,0,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                   >
-                    <Send className="w-3.5 h-3.5" />
+                    <Send className="w-4 h-4" />
                     <span>{notifSubmitting ? 'Dispatching...' : 'Dispatch Push Alert to Users'}</span>
                   </button>
                 </form>
@@ -1887,29 +1887,29 @@ export default function AdminStudioDesk() {
 
               {/* History Ledger */}
               <div className="bg-[#120F0D] border border-white/10 rounded-2xl p-6 shadow-xl space-y-4">
-                <h4 className="text-xs font-black text-white uppercase tracking-wider">
+                <h4 className="text-base font-black text-white uppercase tracking-wider">
                   Notification Dispatch Ledger
                 </h4>
                 <div className="divide-y divide-white/5">
                   {notificationsList.length > 0 ? (
                     notificationsList.map((item) => (
-                      <div key={item.id} className="py-3.5 flex items-start justify-between gap-4">
+                      <div key={item.id} className="py-4 flex items-start justify-between gap-4">
                         <div>
-                          <div className="text-xs font-bold text-white">{item.title}</div>
-                          <p className="text-[11px] text-[#8C8478] mt-0.5">{item.message}</p>
-                          <div className="text-[10px] text-[#6E675D] mt-1 flex items-center gap-2">
+                          <div className="text-sm sm:text-base font-bold text-white">{item.title}</div>
+                          <p className="text-xs sm:text-sm text-[#A8A095] mt-1 leading-normal">{item.message}</p>
+                          <div className="text-xs text-[#8C8478] mt-1.5 flex items-center gap-2">
                             <span>Audience: {item.target_audience}</span>
                             <span>•</span>
                             <span>{new Date(item.sent_at).toLocaleString()}</span>
                           </div>
                         </div>
-                        <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-bold shrink-0">
+                        <span className="px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-400 text-xs font-bold shrink-0">
                           {item.recipients_count} Sent
                         </span>
                       </div>
                     ))
                   ) : (
-                    <p className="text-xs text-[#8C8478] py-4">No notifications dispatched yet.</p>
+                    <p className="text-sm text-[#8C8478] py-4">No notifications dispatched yet.</p>
                   )}
                 </div>
               </div>
@@ -1921,16 +1921,16 @@ export default function AdminStudioDesk() {
              ═══════════════════════════════════════════════════════════════════ */}
           {activeTab === 'sessions' && (
             <div className="space-y-6 max-w-7xl mx-auto">
-              <div className="bg-[#120F0D] border border-white/10 rounded-2xl p-5 flex items-center justify-between">
+              <div className="bg-[#120F0D] border border-white/10 rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h3 className="text-sm font-bold text-white">Live Connected Client Devices</h3>
-                  <p className="text-xs text-[#8C8478] mt-1">
+                  <h3 className="text-base sm:text-lg font-black text-white">Live Connected Client Devices</h3>
+                  <p className="text-sm text-[#A8A095] mt-1">
                     Real active sessions with valid, unrevoked access tokens in PostgreSQL
                   </p>
                 </div>
                 <button
                   onClick={() => fetchSessions()}
-                  className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-bold border border-white/10 transition-colors cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm font-bold border border-white/10 transition-colors cursor-pointer self-start sm:self-auto"
                 >
                   Refresh Devices
                 </button>
@@ -1938,44 +1938,44 @@ export default function AdminStudioDesk() {
 
               <div className="bg-[#120F0D] border border-white/10 rounded-2xl overflow-hidden shadow-xl">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
+                  <table className="w-full text-left text-sm">
                     <thead>
-                      <tr className="border-b border-white/10 bg-white/[0.02] text-[#8C8478] font-bold uppercase tracking-wider">
-                        <th className="py-3.5 px-4">User</th>
-                        <th className="py-3.5 px-4">Device Signature</th>
-                        <th className="py-3.5 px-4">Signed In At</th>
-                        <th className="py-3.5 px-4">Expires At</th>
-                        <th className="py-3.5 px-4 text-right">Action</th>
+                      <tr className="border-b border-white/10 bg-white/[0.02] text-[#B8B0A2] text-xs sm:text-sm font-bold uppercase tracking-wider">
+                        <th className="py-4 px-4">User</th>
+                        <th className="py-4 px-4">Device Signature</th>
+                        <th className="py-4 px-4">Signed In At</th>
+                        <th className="py-4 px-4">Expires At</th>
+                        <th className="py-4 px-4 text-right">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5 text-[#D4CDC5]">
                       {sessionsList.length > 0 ? (
                         sessionsList.map((s) => (
                           <tr key={s.id} className="hover:bg-white/[0.02] transition-colors">
-                            <td className="py-3.5 px-4">
-                              <div className="font-bold text-white">{s.user_name}</div>
-                              <div className="text-[11px] text-[#8C8478]">{s.user_email}</div>
+                            <td className="py-4 px-4">
+                              <div className="text-sm sm:text-base font-bold text-white">{s.user_name}</div>
+                              <div className="text-xs sm:text-sm text-[#A8A095] mt-0.5">{s.user_email}</div>
                             </td>
-                            <td className="py-3.5 px-4 font-mono text-[11px] text-[#A8A095]">
-                              <span className="flex items-center gap-1.5">
+                            <td className="py-4 px-4 font-mono text-xs sm:text-sm text-[#D4CDC5]">
+                              <span className="flex items-center gap-2">
                                 {s.device_id.includes('android') || s.device_id.includes('mobile') ? (
-                                  <Smartphone className="w-3.5 h-3.5 text-[#FF8A00]" />
+                                  <Smartphone className="w-4 h-4 text-[#FF8A00]" />
                                 ) : (
-                                  <Laptop className="w-3.5 h-3.5 text-blue-400" />
+                                  <Laptop className="w-4 h-4 text-blue-400" />
                                 )}
                                 <span>{s.device_id}</span>
                               </span>
                             </td>
-                            <td className="py-3.5 px-4 text-[#8C8478]">
+                            <td className="py-4 px-4 text-xs sm:text-sm text-[#B0A79B]">
                               {s.created_at ? new Date(s.created_at).toLocaleString() : '—'}
                             </td>
-                            <td className="py-3.5 px-4 text-[#8C8478]">
+                            <td className="py-4 px-4 text-xs sm:text-sm text-[#B0A79B]">
                               {s.expires_at ? new Date(s.expires_at).toLocaleString() : '—'}
                             </td>
-                            <td className="py-3.5 px-4 text-right">
+                            <td className="py-4 px-4 text-right">
                               <button
                                 onClick={() => handleTerminateSession(s.id)}
-                                className="px-2.5 py-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[10px] font-bold transition-colors cursor-pointer"
+                                className="px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-bold transition-colors cursor-pointer"
                               >
                                 Disconnect
                               </button>
@@ -1984,7 +1984,7 @@ export default function AdminStudioDesk() {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={5} className="py-8 text-center text-[#8C8478]">
+                          <td colSpan={5} className="py-8 text-center text-sm text-[#8C8478]">
                             {loadingSessions
                               ? 'Loading active devices from database...'
                               : 'No active device sessions found.'}
@@ -2005,13 +2005,13 @@ export default function AdminStudioDesk() {
       {/* 1. EDIT CONTENT MODAL */}
       {editingContent && (
         <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4 backdrop-blur-md">
-          <div className="w-full max-w-2xl bg-[#120F0D] border border-white/15 rounded-3xl p-6 sm:p-8 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <h3 className="text-base font-bold text-white">Edit Content Metadata</h3>
+          <div className="w-full max-w-2xl bg-[#120F0D] border border-white/15 rounded-3xl p-6 sm:p-8 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3.5 border-b border-white/10">
+              <h3 className="text-lg sm:text-xl font-black text-white">Edit Content Metadata</h3>
               <button
                 type="button"
                 onClick={() => setEditingContent(null)}
-                className="text-[#8C8478] hover:text-white"
+                className="text-[#8C8478] hover:text-white p-1 rounded-lg"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -2019,7 +2019,7 @@ export default function AdminStudioDesk() {
 
             <form onSubmit={handleSaveEditContent} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
+                <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
                   Title
                 </label>
                 <input
@@ -2027,31 +2027,31 @@ export default function AdminStudioDesk() {
                   required
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
-                  className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white outline-none"
+                  className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3 text-base sm:text-sm text-white outline-none focus:border-[#FF5C00]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
+                <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
                   Description
                 </label>
                 <textarea
                   rows={3}
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
-                  className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-2.5 text-sm text-white outline-none resize-none"
+                  className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3 text-base sm:text-sm text-white outline-none resize-none leading-relaxed focus:border-[#FF5C00]"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
+                  <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
                     Type
                   </label>
                   <select
                     value={editType}
                     onChange={(e) => setEditType(e.target.value)}
-                    className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                    className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-3.5 py-3 text-base sm:text-sm text-white outline-none cursor-pointer"
                   >
                     <option value="MOVIE">Movie</option>
                     <option value="SERIES">Series</option>
@@ -2059,81 +2059,81 @@ export default function AdminStudioDesk() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
+                  <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
                     Year
                   </label>
                   <input
                     type="number"
                     value={editYear}
                     onChange={(e) => setEditYear(Number(e.target.value))}
-                    className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                    className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-3.5 py-3 text-base sm:text-sm text-white outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
+                  <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
                     Runtime (Mins)
                   </label>
                   <input
                     type="number"
                     value={editDurationMinutes}
                     onChange={(e) => setEditDurationMinutes(Number(e.target.value))}
-                    className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                    className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-3.5 py-3 text-base sm:text-sm text-white outline-none"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
+                  <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
                     Thumbnail URL
                   </label>
                   <input
                     type="url"
                     value={editThumbnailUrl}
                     onChange={(e) => setEditThumbnailUrl(e.target.value)}
-                    className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                    className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3 text-base sm:text-sm text-white outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
+                  <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
                     Backdrop URL
                   </label>
                   <input
                     type="url"
                     value={editBackdropUrl}
                     onChange={(e) => setEditBackdropUrl(e.target.value)}
-                    className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                    className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3 text-base sm:text-sm text-white outline-none"
                   />
                 </div>
               </div>
 
               <div className="flex items-center gap-6 pt-2">
-                <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-white">
+                <label className="flex items-center gap-2.5 cursor-pointer text-sm font-bold text-white">
                   <input
                     type="checkbox"
                     checked={editIsPublished}
                     onChange={(e) => setEditIsPublished(e.target.checked)}
-                    className="rounded border-white/20 text-[#FF5C00]"
+                    className="w-4 h-4 rounded border-white/20 text-[#FF5C00]"
                   />
                   <span>Published</span>
                 </label>
 
-                <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-white">
+                <label className="flex items-center gap-2.5 cursor-pointer text-sm font-bold text-white">
                   <input
                     type="checkbox"
                     checked={editIsFeatured}
                     onChange={(e) => setEditIsFeatured(e.target.checked)}
-                    className="rounded border-white/20 text-[#FF5C00]"
+                    className="w-4 h-4 rounded border-white/20 text-[#FF5C00]"
                   />
                   <span>Featured Hero</span>
                 </label>
 
-                <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-white">
+                <label className="flex items-center gap-2.5 cursor-pointer text-sm font-bold text-white">
                   <input
                     type="checkbox"
                     checked={editIsOriginal}
                     onChange={(e) => setEditIsOriginal(e.target.checked)}
-                    className="rounded border-white/20 text-[#FF5C00]"
+                    className="w-4 h-4 rounded border-white/20 text-[#FF5C00]"
                   />
                   <span>V19Plus Original</span>
                 </label>
@@ -2143,14 +2143,14 @@ export default function AdminStudioDesk() {
                 <button
                   type="button"
                   onClick={() => setEditingContent(null)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-[#8C8478] hover:text-white bg-white/5 transition-colors"
+                  className="px-5 py-2.5 rounded-xl text-sm font-semibold text-[#A8A095] hover:text-white bg-white/5 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={editSubmitting}
-                  className="px-6 py-2 rounded-xl text-xs font-bold text-white bg-[#FF5C00] hover:bg-[#FF6B1A] transition-colors cursor-pointer disabled:opacity-50"
+                  className="px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-[#FF5C00] hover:bg-[#FF6B1A] transition-colors cursor-pointer disabled:opacity-50"
                 >
                   {editSubmitting ? 'Saving...' : 'Save Changes'}
                 </button>
@@ -2163,13 +2163,13 @@ export default function AdminStudioDesk() {
       {/* 2. CREATE USER MODAL */}
       {showCreateUserModal && (
         <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4 backdrop-blur-md">
-          <div className="w-full max-w-md bg-[#120F0D] border border-white/15 rounded-3xl p-6 sm:p-8 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <h3 className="text-base font-bold text-white">Register New User</h3>
+          <div className="w-full max-w-md bg-[#120F0D] border border-white/15 rounded-3xl p-6 sm:p-8 space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between pb-3.5 border-b border-white/10">
+              <h3 className="text-lg sm:text-xl font-black text-white">Register New User</h3>
               <button
                 type="button"
                 onClick={() => setShowCreateUserModal(false)}
-                className="text-[#8C8478] hover:text-white"
+                className="text-[#8C8478] hover:text-white p-1 rounded-lg"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -2177,7 +2177,7 @@ export default function AdminStudioDesk() {
 
             <form onSubmit={handleCreateUser} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
+                <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
                   Full Name *
                 </label>
                 <input
@@ -2186,12 +2186,12 @@ export default function AdminStudioDesk() {
                   value={newUserName}
                   onChange={(e) => setNewUserName(e.target.value)}
                   placeholder="e.g. Rahul Sharma"
-                  className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3 text-sm text-white outline-none"
+                  className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3.5 text-base sm:text-sm text-white placeholder-[#8E8679] outline-none focus:border-[#FF5C00]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
+                <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
                   Email Address *
                 </label>
                 <input
@@ -2200,12 +2200,12 @@ export default function AdminStudioDesk() {
                   value={newUserEmail}
                   onChange={(e) => setNewUserEmail(e.target.value)}
                   placeholder="rahul@example.com"
-                  className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3 text-sm text-white outline-none"
+                  className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3.5 text-base sm:text-sm text-white placeholder-[#8E8679] outline-none focus:border-[#FF5C00]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
+                <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
                   Password * (min 6 characters)
                 </label>
                 <input
@@ -2215,18 +2215,18 @@ export default function AdminStudioDesk() {
                   value={newUserPassword}
                   onChange={(e) => setNewUserPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3 text-sm text-white outline-none"
+                  className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3.5 text-base sm:text-sm text-white placeholder-[#8E8679] outline-none focus:border-[#FF5C00]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
+                <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
                   Role
                 </label>
                 <select
                   value={newUserRole}
                   onChange={(e) => setNewUserRole(e.target.value)}
-                  className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3 text-sm text-white outline-none cursor-pointer"
+                  className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3.5 text-base sm:text-sm text-white outline-none cursor-pointer"
                 >
                   <option value="USER">User (Consumer)</option>
                   <option value="ADMIN">Admin (Console Access)</option>
@@ -2237,14 +2237,14 @@ export default function AdminStudioDesk() {
                 <button
                   type="button"
                   onClick={() => setShowCreateUserModal(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-[#8C8478] hover:text-white bg-white/5 transition-colors"
+                  className="px-5 py-2.5 rounded-xl text-sm font-semibold text-[#A8A095] hover:text-white bg-white/5 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={createUserSubmitting}
-                  className="px-6 py-2 rounded-xl text-xs font-bold text-white bg-[#FF5C00] hover:bg-[#FF6B1A] transition-colors cursor-pointer disabled:opacity-50"
+                  className="px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-[#FF5C00] hover:bg-[#FF6B1A] transition-colors cursor-pointer disabled:opacity-50"
                 >
                   {createUserSubmitting ? 'Creating...' : 'Create Account'}
                 </button>
@@ -2257,13 +2257,13 @@ export default function AdminStudioDesk() {
       {/* 3. EDIT USER MODAL */}
       {editingUser && (
         <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4 backdrop-blur-md">
-          <div className="w-full max-w-md bg-[#120F0D] border border-white/15 rounded-3xl p-6 sm:p-8 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <h3 className="text-base font-bold text-white">Edit User: {editingUser.name}</h3>
+          <div className="w-full max-w-md bg-[#120F0D] border border-white/15 rounded-3xl p-6 sm:p-8 space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between pb-3.5 border-b border-white/10">
+              <h3 className="text-lg sm:text-xl font-black text-white">Edit User: {editingUser.name}</h3>
               <button
                 type="button"
                 onClick={() => setEditingUser(null)}
-                className="text-[#8C8478] hover:text-white"
+                className="text-[#8C8478] hover:text-white p-1 rounded-lg"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -2271,7 +2271,7 @@ export default function AdminStudioDesk() {
 
             <form onSubmit={handleSaveEditUser} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
+                <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
                   Full Name
                 </label>
                 <input
@@ -2279,12 +2279,12 @@ export default function AdminStudioDesk() {
                   required
                   value={editUserName}
                   onChange={(e) => setEditUserName(e.target.value)}
-                  className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3 text-sm text-white outline-none"
+                  className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3.5 text-base sm:text-sm text-white outline-none focus:border-[#FF5C00]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
+                <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
                   Email Address
                 </label>
                 <input
@@ -2292,19 +2292,19 @@ export default function AdminStudioDesk() {
                   required
                   value={editUserEmail}
                   onChange={(e) => setEditUserEmail(e.target.value)}
-                  className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3 text-sm text-white outline-none"
+                  className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3.5 text-base sm:text-sm text-white outline-none focus:border-[#FF5C00]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
+                  <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
                     Role
                   </label>
                   <select
                     value={editUserRole}
                     onChange={(e) => setEditUserRole(e.target.value)}
-                    className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-3 py-2 text-xs text-white outline-none cursor-pointer"
+                    className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-3.5 py-3 text-base sm:text-sm text-white outline-none cursor-pointer"
                   >
                     <option value="USER">USER</option>
                     <option value="ADMIN">ADMIN</option>
@@ -2312,13 +2312,13 @@ export default function AdminStudioDesk() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
+                  <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
                     Status
                   </label>
                   <select
                     value={editUserIsActive ? 'active' : 'suspended'}
                     onChange={(e) => setEditUserIsActive(e.target.value === 'active')}
-                    className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-3 py-2 text-xs text-white outline-none cursor-pointer"
+                    className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-3.5 py-3 text-base sm:text-sm text-white outline-none cursor-pointer"
                   >
                     <option value="active">Active</option>
                     <option value="suspended">Suspended</option>
@@ -2327,7 +2327,7 @@ export default function AdminStudioDesk() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#D4CDC5] mb-2">
+                <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
                   Reset Password (Leave blank to keep existing)
                 </label>
                 <input
@@ -2335,7 +2335,7 @@ export default function AdminStudioDesk() {
                   value={editUserNewPassword}
                   onChange={(e) => setEditUserNewPassword(e.target.value)}
                   placeholder="New password (optional)"
-                  className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3 text-sm text-white outline-none"
+                  className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3.5 text-base sm:text-sm text-white placeholder-[#8E8679] outline-none focus:border-[#FF5C00]"
                 />
               </div>
 
@@ -2343,14 +2343,14 @@ export default function AdminStudioDesk() {
                 <button
                   type="button"
                   onClick={() => setEditingUser(null)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-[#8C8478] hover:text-white bg-white/5 transition-colors"
+                  className="px-5 py-2.5 rounded-xl text-sm font-semibold text-[#A8A095] hover:text-white bg-white/5 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={updateUserSubmitting}
-                  className="px-6 py-2 rounded-xl text-xs font-bold text-white bg-[#FF5C00] hover:bg-[#FF6B1A] transition-colors cursor-pointer disabled:opacity-50"
+                  className="px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-[#FF5C00] hover:bg-[#FF6B1A] transition-colors cursor-pointer disabled:opacity-50"
                 >
                   {updateUserSubmitting ? 'Saving...' : 'Save User Changes'}
                 </button>
