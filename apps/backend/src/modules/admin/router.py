@@ -1,11 +1,16 @@
 import uuid
+import time
 import logging
 from datetime import datetime, timezone
 from typing import List, Optional
+import boto3
+from botocore.config import Config
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from starlette.concurrency import run_in_threadpool
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.config import settings
 from src.database import get_db_session
 from src.dependencies import TokenUser, require_admin
 from src.core.security import hash_password
@@ -31,12 +36,139 @@ router = APIRouter(prefix="/admin", tags=["Admin Studio & Operations"])
 # In-memory notification ledger for push broadcast records
 _NOTIFICATION_HISTORY: List[dict] = []
 
+# In-memory cache for Cloudflare R2 bucket telemetry
+_R2_STATS_CACHE = {
+    "data": None,
+    "timestamp": 0
+}
+
+
+def _scan_r2_bucket_sync() -> dict:
+    """Synchronous scan of Cloudflare R2 bucket using S3 ListObjectsV2"""
+    account_id = settings.R2_ACCOUNT_ID
+    access_key = settings.R2_ACCESS_KEY_ID
+    secret_key = settings.R2_SECRET_ACCESS_KEY
+    endpoint = settings.r2_endpoint
+    bucket = settings.R2_STREAMING_BUCKET or settings.R2_MASTERS_BUCKET or "v19plus-r2-backend"
+
+    if not access_key or not secret_key:
+        return {
+            "bucket_name": bucket,
+            "total_objects": 0,
+            "total_size_bytes": 0,
+            "total_size_gb": 0.0,
+            "total_size_mb": 0.0,
+            "hls_segments_count": 0,
+            "master_manifests_count": 0,
+            "master_videos_count": 0,
+            "other_files_count": 0,
+            "recent_uploads": [],
+            "cdn_endpoint": "https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev",
+            "last_scanned_at": datetime.now(timezone.utc).isoformat(),
+            "connected": False,
+        }
+
+    s3 = boto3.client(
+        "s3",
+        endpoint_url=endpoint,
+        aws_access_key_id=access_key,
+        aws_secret_access_key=secret_key,
+        region_name="auto",
+        config=Config(signature_version="s3v4", s3={"addressing_style": "path"}),
+    )
+
+    paginator = s3.get_paginator("list_objects_v2")
+    total_objects = 0
+    total_bytes = 0
+    ts_count = 0
+    m3u8_count = 0
+    video_count = 0
+    other_count = 0
+    all_items = []
+
+    for page in paginator.paginate(Bucket=bucket):
+        for obj in page.get("Contents", []):
+            total_objects += 1
+            size = obj["Size"]
+            total_bytes += size
+            key = obj["Key"]
+            ext = key.split(".")[-1].lower() if "." in key else ""
+            if ext == "ts":
+                ts_count += 1
+            elif ext == "m3u8":
+                m3u8_count += 1
+            elif ext in ["mp4", "mov", "mkv", "webm", "avi"]:
+                video_count += 1
+            else:
+                other_count += 1
+
+            all_items.append({
+                "key": key,
+                "size_mb": round(size / (1024 * 1024), 2),
+                "size_bytes": size,
+                "last_modified": obj["LastModified"].isoformat(),
+                "timestamp": obj["LastModified"].timestamp(),
+            })
+
+    all_items.sort(key=lambda x: x["timestamp"], reverse=True)
+    recent_uploads = [
+        {"key": i["key"], "size_mb": i["size_mb"], "size_bytes": i["size_bytes"], "last_modified": i["last_modified"]}
+        for i in all_items[:10]
+    ]
+
+    return {
+        "bucket_name": bucket,
+        "total_objects": total_objects,
+        "total_size_bytes": total_bytes,
+        "total_size_gb": round(total_bytes / (1024 ** 3), 2),
+        "total_size_mb": round(total_bytes / (1024 ** 2), 0),
+        "hls_segments_count": ts_count,
+        "master_manifests_count": m3u8_count,
+        "master_videos_count": video_count,
+        "other_files_count": other_count,
+        "recent_uploads": recent_uploads,
+        "cdn_endpoint": "https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev",
+        "last_scanned_at": datetime.now(timezone.utc).isoformat(),
+        "connected": True,
+    }
+
+
+async def get_r2_storage_stats(force_refresh: bool = False) -> dict:
+    """Async wrapper with 60-second in-memory caching"""
+    global _R2_STATS_CACHE
+    now = time.time()
+    if not force_refresh and _R2_STATS_CACHE["data"] and (now - _R2_STATS_CACHE["timestamp"] < 60):
+        return _R2_STATS_CACHE["data"]
+
+    try:
+        data = await run_in_threadpool(_scan_r2_bucket_sync)
+        _R2_STATS_CACHE = {"data": data, "timestamp": now}
+        return data
+    except Exception as e:
+        logger.error(f"Error scanning Cloudflare R2 bucket: {e}")
+        return {
+            "bucket_name": "v19plus-r2-backend",
+            "total_objects": 0,
+            "total_size_bytes": 0,
+            "total_size_gb": 0.0,
+            "total_size_mb": 0.0,
+            "hls_segments_count": 0,
+            "master_manifests_count": 0,
+            "master_videos_count": 0,
+            "other_files_count": 0,
+            "recent_uploads": [],
+            "cdn_endpoint": "https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev",
+            "last_scanned_at": datetime.now(timezone.utc).isoformat(),
+            "connected": False,
+            "error": str(e),
+        }
+
 
 # ─── 1. Dashboard Live Analytics ─────────────────────────────────────────────
 
 @router.get("/dashboard", response_model=DashboardStatsResponse, dependencies=[Depends(require_admin)])
 async def get_dashboard_stats(db: AsyncSession = Depends(get_db_session)):
-    """Return aggregated live metrics across PostgreSQL database tables"""
+    """Return aggregated live metrics across PostgreSQL database tables and Cloudflare R2"""
     # 1. Total users
     res_users = await db.execute(select(func.count(User.id)))
     total_users = res_users.scalar() or 0
@@ -104,6 +236,42 @@ async def get_dashboard_stats(db: AsyncSession = Depends(get_db_session)):
         for r in res_recent_payments.all()
     ]
 
+    # 8. Real Content Breakdown by Type & Status
+    res_breakdown = await db.execute(
+        select(Content.type, Content.status, func.count(Content.id)).group_by(Content.type, Content.status)
+    )
+    movies_count = 0
+    series_count = 0
+    docs_count = 0
+    published_count = 0
+    draft_count = 0
+    for r in res_breakdown.all():
+        ctype = str(r[0] or "").upper()
+        cstatus = str(r[1] or "").upper()
+        cnt = r[2] or 0
+        if "MOVIE" in ctype:
+            movies_count += cnt
+        elif "SERIES" in ctype:
+            series_count += cnt
+        elif "DOC" in ctype:
+            docs_count += cnt
+
+        if cstatus == "PUBLISHED":
+            published_count += cnt
+        else:
+            draft_count += cnt
+
+    content_breakdown = {
+        "movies": movies_count,
+        "series": series_count,
+        "documentaries": docs_count,
+        "published": published_count,
+        "draft": draft_count,
+    }
+
+    # 9. Real Cloudflare R2 bucket audit metrics
+    r2_storage = await get_r2_storage_stats()
+
     return {
         "total_users": total_users,
         "active_users": active_users,
@@ -113,7 +281,15 @@ async def get_dashboard_stats(db: AsyncSession = Depends(get_db_session)):
         "total_revenue_paise": total_paise,
         "recent_users": recent_users,
         "recent_payments": recent_payments,
+        "r2_storage": r2_storage,
+        "content_breakdown": content_breakdown,
     }
+
+
+@router.get("/r2-storage", dependencies=[Depends(require_admin)])
+async def get_r2_storage_endpoint():
+    """Return real-time Cloudflare R2 bucket storage telemetry, object counts, and recent file uploads"""
+    return await get_r2_storage_stats(force_refresh=True)
 
 
 # ─── 2. Users CRUD ────────────────────────────────────────────────────────────

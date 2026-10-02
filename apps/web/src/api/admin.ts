@@ -1,5 +1,34 @@
 import api from './axios';
 
+export interface R2StorageStats {
+  bucket_name: string;
+  total_objects: number;
+  total_size_bytes: number;
+  total_size_gb: number;
+  total_size_mb: number;
+  hls_segments_count: number;
+  master_manifests_count: number;
+  master_videos_count: number;
+  other_files_count?: number;
+  recent_uploads: {
+    key: string;
+    size_mb: number;
+    size_bytes: number;
+    last_modified: string;
+  }[];
+  cdn_endpoint: string;
+  last_scanned_at: string;
+  connected?: boolean;
+}
+
+export interface ContentBreakdown {
+  movies: number;
+  series: number;
+  documentaries: number;
+  published: number;
+  draft: number;
+}
+
 export interface DashboardStats {
   total_users: number;
   active_users: number;
@@ -21,6 +50,8 @@ export interface DashboardStats {
     created_at?: string;
     user_id?: string;
   }[];
+  r2_storage?: R2StorageStats;
+  content_breakdown?: ContentBreakdown;
 }
 
 export interface AdminUser {
@@ -84,6 +115,7 @@ export interface BroadcastNotificationRequest {
 export const adminApi = {
   // Live Dashboard Stats
   dashboard: () => api.get<DashboardStats>('/admin/dashboard'),
+  getR2Storage: () => api.get<R2StorageStats>('/admin/r2-storage'),
 
   // Users CRUD
   listUsers: (params?: { query?: string; role?: string; limit?: number; offset?: number }) =>

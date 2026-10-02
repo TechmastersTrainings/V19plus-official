@@ -13,6 +13,8 @@ class DashboardStatsResponse(BaseModel):
     total_revenue_paise: int
     recent_users: List[dict]
     recent_payments: List[dict]
+    r2_storage: Optional[dict] = None
+    content_breakdown: Optional[dict] = None
 
 
 class AdminUserResponse(BaseModel):
