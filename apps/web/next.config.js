@@ -8,8 +8,7 @@ const withPWA = require('@ducanh2912/next-pwa').default({
         urlPattern: ({ url }) =>
           url.pathname.endsWith('.m3u8') ||
           url.pathname.endsWith('.ts') ||
-          url.hostname.includes('r2.dev') ||
-          url.pathname.startsWith('/r2-stream/'),
+          url.hostname.includes('r2.dev'),
         handler: 'NetworkOnly',
       },
       ...require('@ducanh2912/next-pwa').runtimeCaching,
@@ -42,10 +41,6 @@ const nextConfig = {
       {
         source: '/api/:path*',
         destination: `${backendUrl}/api/:path*`,
-      },
-      {
-        source: '/r2-stream/:path*',
-        destination: 'https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev/:path*',
       },
     ];
   },

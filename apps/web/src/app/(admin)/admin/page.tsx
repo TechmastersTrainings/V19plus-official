@@ -219,11 +219,6 @@ export default function AdminStudioDesk() {
         mode: 'cors',
         cache: 'no-store',
         signal: controller.signal,
-      }).catch(async () => {
-        return fetch(`/r2-stream/hls/second-task-race-to-the-finish/master.m3u8?_t=${Date.now()}`, {
-          method: 'HEAD',
-          cache: 'no-store',
-        });
       });
       clearTimeout(timeoutId);
 

@@ -192,12 +192,6 @@ export function VideoPlayer({
                   retryCount.current += 1;
                   console.info(`HLS network error recovery attempt ${retryCount.current}/${MAX_AUTO_RETRIES}...`);
                   hls.startLoad();
-                } else if (
-                  activeSrc.includes("pub-2b3faff7804a4ba8b00830cca1749352.r2.dev")
-                ) {
-                  console.warn("Direct R2 network error, activating fallback to /r2-stream proxy...");
-                  retryCount.current = 0;
-                  setActiveSrc(activeSrc.replace("https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev", "/r2-stream"));
                 } else {
                   setHasError(true);
                   setIsLoading(false);
