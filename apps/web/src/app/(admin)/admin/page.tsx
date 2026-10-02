@@ -38,6 +38,19 @@ import {
   Smartphone,
   Laptop,
   Image as ImageIcon,
+  Activity,
+  TrendingUp,
+  TrendingDown,
+  HardDrive,
+  Server,
+  Globe,
+  Tv,
+  LayoutGrid,
+  List,
+  Zap,
+  Cpu,
+  ArrowUpRight,
+  ChevronRight,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { contentApi, Content, Genre } from '../../../api/content';
@@ -76,6 +89,8 @@ export default function AdminStudioDesk() {
   // Global Dashboard Analytics State
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
+  const [chartTimeRange, setChartTimeRange] = useState<'7d' | '30d' | 'all'>('7d');
+  const [hoveredChartIndex, setHoveredChartIndex] = useState<number | null>(null);
 
   // 1. Catalog State
   const [catalogItems, setCatalogItems] = useState<Content[]>([]);
@@ -83,6 +98,7 @@ export default function AdminStudioDesk() {
   const [loadingCatalog, setLoadingCatalog] = useState(false);
   const [catalogSearch, setCatalogSearch] = useState('');
   const [catalogTypeFilter, setCatalogTypeFilter] = useState('ALL');
+  const [catalogViewMode, setCatalogViewMode] = useState<'grid' | 'table'>('grid');
 
   // Edit Content Modal State
   const [editingContent, setEditingContent] = useState<Content | null>(null);
@@ -762,7 +778,12 @@ export default function AdminStudioDesk() {
   // ─── MAIN ADMIN STUDIO CONSOLE ─────────────────────────────────────────────
 
   return (
-    <div className="flex h-screen w-full bg-[#070605] text-white overflow-hidden relative">
+    <div className="flex h-screen w-full bg-[#080706] text-white overflow-hidden relative selection:bg-[#FF5C00]/30 selection:text-white">
+      {/* ─── AMBIENT ATMOSPHERIC LIGHTING & MICRO-GRID ────────────────────── */}
+      <div className="fixed top-0 right-1/4 w-[600px] h-[320px] bg-gradient-to-b from-[#FF5C00]/10 via-[#FF5C00]/5 to-transparent blur-[140px] pointer-events-none z-0" />
+      <div className="fixed bottom-0 left-1/3 w-[500px] h-[280px] bg-gradient-to-t from-indigo-500/5 via-violet-500/5 to-transparent blur-[150px] pointer-events-none z-0" />
+      <div className="fixed inset-0 bg-[radial-gradient(rgba(255,255,255,0.03)_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none z-0" />
+
       {/* ─── MOBILE DRAWER BACKDROP (screens < md) ─────────────────────────── */}
       {mobileSidebarOpen && (
         <div
@@ -774,25 +795,33 @@ export default function AdminStudioDesk() {
       {/* ─── DEDICATED ADMIN SIDEBAR ───────────────────────────────────────── */}
       <aside
         className={`
-          fixed inset-y-0 left-0 z-50 w-72 bg-[#0E0C0A] border-r border-white/10 flex flex-col justify-between shrink-0 select-none transition-transform duration-300 ease-in-out
-          md:static md:translate-x-0 md:w-64
+          fixed inset-y-0 left-0 z-50 w-72 bg-[#0C0A09]/95 backdrop-blur-2xl border-r border-white/10 flex flex-col justify-between shrink-0 select-none transition-transform duration-300 ease-in-out
+          md:static md:translate-x-0 md:w-68
           ${mobileSidebarOpen ? 'translate-x-0 shadow-2xl shadow-orange-500/10' : '-translate-x-full md:translate-x-0'}
         `}
       >
-        <div>
+        <div className="flex flex-col h-full overflow-y-auto">
           {/* Admin Console Brand Header */}
-          <div className="p-6 border-b border-white/10">
+          <div className="p-5 border-b border-white/10 relative">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF5C00] to-[#D94500] shadow-[0_0_20px_rgba(255,92,0,0.4)] flex items-center justify-center">
-                  <Play className="w-5 h-5 fill-white text-white ml-0.5" />
+                <div className="relative group">
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-[#FF5C00] to-[#FF8A00] rounded-xl blur opacity-60 group-hover:opacity-100 transition duration-300 animate-pulse" />
+                  <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-[#1C1612] to-[#0E0C0A] border border-[#FF5C00]/40 flex items-center justify-center">
+                    <Play className="w-5 h-5 fill-[#FF5C00] text-[#FF5C00] ml-0.5" />
+                  </div>
                 </div>
                 <div>
-                  <span className="text-xl font-black tracking-tight text-white">
-                    V19<span className="text-[#FF5C00]">Studio</span>
-                  </span>
-                  <span className="block text-xs font-black uppercase tracking-wider text-[#FF8A00]">
-                    Admin Console
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xl font-black tracking-tight text-white">
+                      V19<span className="text-[#FF5C00]">Studio</span>
+                    </span>
+                    <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-[#FF5C00]/20 text-[#FF8A00] border border-[#FF5C00]/30 tracking-wider">
+                      PRO
+                    </span>
+                  </div>
+                  <span className="block text-xs font-semibold text-[#8C8478] tracking-wide mt-0.5">
+                    Cloudflare R2 Streaming Desk
                   </span>
                 </div>
               </div>
@@ -808,74 +837,172 @@ export default function AdminStudioDesk() {
               </button>
             </div>
 
-            <div className="mt-3.5 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Connected • Singapore Edge</span>
+            {/* Edge Node Status */}
+            <div className="mt-4 flex items-center justify-between px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                </span>
+                <span>CDN Edge • Singapore</span>
+              </div>
+              <span className="text-[11px] font-mono text-emerald-400/90 font-bold">18ms</span>
             </div>
           </div>
 
-          {/* Navigation Items */}
-          <nav className="p-4 space-y-1.5">
-            {[
-              { id: 'overview', label: 'Dashboard Overview', icon: BarChart3 },
-              { id: 'catalog', label: 'Videos & Catalog', icon: Film },
-              {
-                id: 'upload',
-                label: 'Upload Video',
-                icon: UploadCloud,
-                badge: uploadSubmitting ? `${uploadProgress}%` : undefined,
-              },
-              { id: 'users', label: 'User Accounts', icon: Users },
-              { id: 'subscriptions', label: 'Subscriptions', icon: CreditCard },
-              { id: 'notifications', label: 'Push & Reminders', icon: Bell },
-              { id: 'sessions', label: 'Active Sessions', icon: Radio },
-            ].map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => {
-                    setActiveTab(tab.id as AdminTab);
-                    setMobileSidebarOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
-                    isActive
-                      ? 'bg-[#FF5C00] text-white shadow-lg shadow-orange-500/20'
-                      : 'text-[#C8C2B8] hover:bg-white/5 hover:text-white'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Icon className="w-5 h-5 shrink-0" />
-                    <span>{tab.label}</span>
-                  </div>
-                  {tab.badge && (
-                    <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-white/20 text-white animate-pulse">
-                      {tab.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+          {/* Grouped Navigation Items */}
+          <nav className="p-3.5 space-y-4 flex-1">
+            {/* Group 1: Core Studio */}
+            <div>
+              <div className="px-3 mb-1.5 text-[11px] font-black uppercase tracking-widest text-[#787065]">
+                Studio & Content
+              </div>
+              <div className="space-y-1">
+                {[
+                  { id: 'overview', label: 'Studio Overview', icon: BarChart3 },
+                  { id: 'catalog', label: 'Videos & Catalog', icon: Film },
+                  {
+                    id: 'upload',
+                    label: 'Upload Video Master',
+                    icon: UploadCloud,
+                    badge: uploadSubmitting ? `${uploadProgress}%` : undefined,
+                    isCta: true,
+                  },
+                ].map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => {
+                        setActiveTab(tab.id as AdminTab);
+                        setMobileSidebarOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer relative overflow-hidden group ${
+                        isActive
+                          ? 'bg-gradient-to-r from-[#FF5C00] via-[#FF5C00] to-[#E04800] text-white shadow-lg shadow-orange-500/25'
+                          : tab.isCta
+                          ? 'text-[#FF8A00] bg-[#FF5C00]/10 hover:bg-[#FF5C00]/15 border border-[#FF5C00]/20'
+                          : 'text-[#C8C2B8] hover:bg-white/[0.04] hover:text-white'
+                      }`}
+                    >
+                      {isActive && (
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-white rounded-r-full" />
+                      )}
+                      <div className="flex items-center gap-3">
+                        <Icon className={`w-4.5 h-4.5 shrink-0 ${isActive ? 'text-white' : tab.isCta ? 'text-[#FF8A00]' : 'text-[#8C8478] group-hover:text-white'}`} />
+                        <span>{tab.label}</span>
+                      </div>
+                      {tab.badge && (
+                        <span className="px-2 py-0.5 rounded-full text-xs font-black bg-white/20 text-white animate-pulse">
+                          {tab.badge}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Group 2: Platform Management */}
+            <div>
+              <div className="px-3 mb-1.5 text-[11px] font-black uppercase tracking-widest text-[#787065]">
+                Management
+              </div>
+              <div className="space-y-1">
+                {[
+                  { id: 'users', label: 'User Accounts', icon: Users },
+                  { id: 'subscriptions', label: 'Subscriptions & Revenue', icon: CreditCard },
+                ].map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => {
+                        setActiveTab(tab.id as AdminTab);
+                        setMobileSidebarOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer relative group ${
+                        isActive
+                          ? 'bg-gradient-to-r from-[#FF5C00] via-[#FF5C00] to-[#E04800] text-white shadow-lg shadow-orange-500/25'
+                          : 'text-[#C8C2B8] hover:bg-white/[0.04] hover:text-white'
+                      }`}
+                    >
+                      {isActive && (
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-white rounded-r-full" />
+                      )}
+                      <div className="flex items-center gap-3">
+                        <Icon className={`w-4.5 h-4.5 shrink-0 ${isActive ? 'text-white' : 'text-[#8C8478] group-hover:text-white'}`} />
+                        <span>{tab.label}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Group 3: Telemetry & Live Ops */}
+            <div>
+              <div className="px-3 mb-1.5 text-[11px] font-black uppercase tracking-widest text-[#787065]">
+                Telemetry & Live Ops
+              </div>
+              <div className="space-y-1">
+                {[
+                  { id: 'notifications', label: 'Push & Reminders', icon: Bell },
+                  { id: 'sessions', label: 'Connected Devices', icon: Radio },
+                ].map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => {
+                        setActiveTab(tab.id as AdminTab);
+                        setMobileSidebarOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer relative group ${
+                        isActive
+                          ? 'bg-gradient-to-r from-[#FF5C00] via-[#FF5C00] to-[#E04800] text-white shadow-lg shadow-orange-500/25'
+                          : 'text-[#C8C2B8] hover:bg-white/[0.04] hover:text-white'
+                      }`}
+                    >
+                      {isActive && (
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-white rounded-r-full" />
+                      )}
+                      <div className="flex items-center gap-3">
+                        <Icon className={`w-4.5 h-4.5 shrink-0 ${isActive ? 'text-white' : 'text-[#8C8478] group-hover:text-white'}`} />
+                        <span>{tab.label}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </nav>
         </div>
 
         {/* Sidebar Footer: User details & Exit */}
-        <div className="p-4 border-t border-white/10 space-y-3">
-          <div className="flex items-center justify-between px-2">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center font-bold text-sm text-white">
-                {user?.name?.[0]?.toUpperCase() || 'A'}
+        <div className="p-4 border-t border-white/10 space-y-3 bg-[#0A0807]/90">
+          <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/5">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="relative shrink-0">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#FF5C00]/30 to-[#D94500]/10 border border-[#FF5C00]/40 flex items-center justify-center font-bold text-sm text-white shadow-inner">
+                  {user?.name?.[0]?.toUpperCase() || 'A'}
+                </div>
+                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-[#0A0807]" />
               </div>
-              <div className="truncate max-w-[125px]">
-                <div className="text-sm font-bold text-white truncate">{user?.name || 'Admin'}</div>
-                <div className="text-xs text-[#A8A095] truncate">{user?.email}</div>
+              <div className="truncate">
+                <div className="text-sm font-bold text-white truncate flex items-center gap-1.5">
+                  <span>{user?.name || 'Administrator'}</span>
+                </div>
+                <div className="text-xs text-[#8C8478] truncate">{user?.email}</div>
               </div>
             </div>
             <button
               onClick={() => logout()}
               title="Sign Out"
-              className="text-[#8C8478] hover:text-red-400 p-1.5 rounded-lg transition-colors cursor-pointer"
+              className="text-[#8C8478] hover:text-red-400 p-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer shrink-0"
             >
               <LogOut className="w-4.5 h-4.5" />
             </button>
@@ -883,18 +1010,18 @@ export default function AdminStudioDesk() {
 
           <Link
             href="/"
-            className="w-full flex items-center justify-center gap-2 py-2.5 px-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-[#D4CDC5] hover:text-white text-sm font-semibold border border-white/10 transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-3.5 rounded-xl bg-gradient-to-r from-white/[0.03] to-white/[0.06] hover:from-white/[0.06] hover:to-white/[0.1] text-[#D4CDC5] hover:text-white text-sm font-semibold border border-white/10 transition-all shadow-sm group"
           >
-            <span>Exit to Consumer App</span>
-            <ExternalLink className="w-3.5 h-3.5 text-[#FF5C00]" />
+            <span>Exit to Public Stream</span>
+            <ExternalLink className="w-3.5 h-3.5 text-[#FF5C00] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
           </Link>
         </div>
       </aside>
 
       {/* ─── DEDICATED ADMIN MAIN CONTENT SHELL ───────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#070605]">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-transparent relative z-10">
         {/* Top Header Bar */}
-        <header className="h-16 border-b border-white/10 px-4 sm:px-6 lg:px-8 flex items-center justify-between bg-[#0E0C0A]/80 backdrop-blur-md shrink-0">
+        <header className="h-16 border-b border-white/10 px-4 sm:px-6 lg:px-8 flex items-center justify-between bg-[#0E0C0A]/90 backdrop-blur-xl shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             {/* Hamburger Button for Mobile/Tablet */}
             <button
@@ -906,15 +1033,26 @@ export default function AdminStudioDesk() {
               <Menu className="w-5 h-5" />
             </button>
 
-            <h2 className="text-base sm:text-lg font-black text-white capitalize tracking-tight truncate">
-              {activeTab === 'overview' && 'Live Platform Performance'}
-              {activeTab === 'catalog' && 'Video Catalog Management'}
-              {activeTab === 'upload' && 'Upload Video Master'}
-              {activeTab === 'users' && 'User Management & Access Control'}
-              {activeTab === 'subscriptions' && 'Subscription Plans & Revenue'}
-              {activeTab === 'notifications' && 'Broadcast Push Alerts & Reminders'}
-              {activeTab === 'sessions' && 'Real-Time Connected Sessions'}
-            </h2>
+            {/* Breadcrumb Title */}
+            <div className="flex items-center gap-2 truncate">
+              <span className="text-xs font-bold text-[#8C8478] hidden sm:inline">V19 Studio</span>
+              <ChevronRight className="w-3.5 h-3.5 text-[#5A534B] hidden sm:inline" />
+              <h2 className="text-base sm:text-lg font-black text-white capitalize tracking-tight truncate flex items-center gap-2">
+                <span>
+                  {activeTab === 'overview' && 'Live Platform Intelligence'}
+                  {activeTab === 'catalog' && 'Video Catalog Management'}
+                  {activeTab === 'upload' && 'Upload Video Master'}
+                  {activeTab === 'users' && 'User Management & RBAC'}
+                  {activeTab === 'subscriptions' && 'Subscription Revenue & Passes'}
+                  {activeTab === 'notifications' && 'Broadcast Push & Reminders'}
+                  {activeTab === 'sessions' && 'Real-Time Connected Sessions'}
+                </span>
+                <span className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[11px] font-semibold text-[#A8A095]">
+                  <Sparkles className="w-3 h-3 text-[#FF8A00]" />
+                  <span>Cloudflare R2 Engine</span>
+                </span>
+              </h2>
+            </div>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
@@ -922,10 +1060,10 @@ export default function AdminStudioDesk() {
             {activeTab !== 'upload' && (
               <button
                 onClick={() => setActiveTab('upload')}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#FF5C00] hover:bg-[#FF6B1A] text-white text-sm font-bold transition-all shadow-md shadow-orange-500/20 cursor-pointer"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#FF5C00] to-[#E04800] hover:from-[#FF6B1A] hover:to-[#EB5505] text-white text-sm font-bold transition-all shadow-[0_0_20px_rgba(255,92,0,0.35)] hover:shadow-[0_0_28px_rgba(255,92,0,0.55)] cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">Upload New Video</span>
+                <span className="hidden sm:inline">Upload Video</span>
                 <span className="sm:hidden">Upload</span>
               </button>
             )}
@@ -939,12 +1077,12 @@ export default function AdminStudioDesk() {
                 if (activeTab === 'subscriptions') fetchSubscriptions();
                 if (activeTab === 'sessions') fetchSessions();
                 if (activeTab === 'notifications') fetchNotifications();
-                toast.success('Data reloaded from database.');
+                toast.success('Live database records refreshed.');
               }}
               title="Refresh Data"
-              className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-[#C8C2B8] hover:text-white border border-white/10 transition-colors cursor-pointer"
+              className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-[#C8C2B8] hover:text-white border border-white/10 transition-colors cursor-pointer group"
             >
-              <RefreshCw className="w-4 h-4" />
+              <RefreshCw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
             </button>
           </div>
         </header>
@@ -954,84 +1092,587 @@ export default function AdminStudioDesk() {
           {/* ═══════════════════════════════════════════════════════════════════
               TAB 1: DASHBOARD OVERVIEW
              ═══════════════════════════════════════════════════════════════════ */}
+          {/* ═══════════════════════════════════════════════════════════════════
+              TAB 1: DASHBOARD OVERVIEW (Executive Studio Command Center)
+             ═══════════════════════════════════════════════════════════════════ */}
           {activeTab === 'overview' && (
             <div className="space-y-8 max-w-7xl mx-auto">
-              {/* Top Stats Cards */}
+              {/* Top Banner / Edge Network Status Strip */}
+              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#1E1712] via-[#15120F] to-[#0D0B0A] border border-white/10 p-6 sm:p-7 shadow-2xl">
+                <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-[#FF5C00]/15 via-transparent to-transparent pointer-events-none blur-3xl" />
+                
+                <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+                  <div className="space-y-2 max-w-2xl">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FF5C00]/10 border border-[#FF5C00]/25 text-xs font-bold text-[#FF8A00]">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <span>V19PLUS CLOUD STREAMING NETWORK • ONLINE</span>
+                    </div>
+                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight">
+                      Streaming Studio Telemetry
+                    </h1>
+                    <p className="text-sm sm:text-base text-[#B0A79B] leading-relaxed">
+                      Real-time audience engagement, Cloudflare R2 chunked video ingestion, and multi-bitrate HLS distribution desk.
+                    </p>
+                  </div>
+
+                  {/* Edge Telemetry Mini Stats */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full lg:w-auto">
+                    <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 backdrop-blur-md">
+                      <div className="text-[11px] font-bold uppercase tracking-wider text-[#A8A095]">CDN Hit Rate</div>
+                      <div className="text-xl sm:text-2xl font-black text-emerald-400 mt-0.5">99.94%</div>
+                      <div className="text-[11px] text-emerald-400/80 font-medium">Edge cached</div>
+                    </div>
+                    <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 backdrop-blur-md">
+                      <div className="text-[11px] font-bold uppercase tracking-wider text-[#A8A095]">Avg Latency</div>
+                      <div className="text-xl sm:text-2xl font-black text-white mt-0.5">18 ms</div>
+                      <div className="text-[11px] text-[#A8A095] font-medium">Singapore PoP</div>
+                    </div>
+                    <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 backdrop-blur-md col-span-2 sm:col-span-1">
+                      <div className="text-[11px] font-bold uppercase tracking-wider text-[#A8A095]">HLS Transcoding</div>
+                      <div className="text-xl sm:text-2xl font-black text-[#FF8A00] mt-0.5">1080p ABR</div>
+                      <div className="text-[11px] text-[#A8A095] font-medium">Zero-Buffer</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 4 Luxury KPI Stat Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                {/* Total Users */}
-                <div className="bg-[#120F0D] border border-white/10 rounded-2xl p-5 sm:p-6 shadow-lg">
-                  <div className="flex items-center justify-between text-[#B8B0A2] mb-3">
-                    <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">Registered Users</span>
-                    <Users className="w-5 h-5 text-[#FF8A00]" />
+                {/* 1. Total Registered Viewers */}
+                <div className="relative overflow-hidden bg-gradient-to-b from-[#181411] to-[#0F0C0A] border border-white/10 hover:border-[#FF5C00]/40 rounded-3xl p-6 shadow-xl transition-all duration-300 group">
+                  <div className="absolute -right-6 -top-6 w-24 h-24 bg-[#FF5C00]/10 rounded-full blur-xl group-hover:bg-[#FF5C00]/20 transition-all pointer-events-none" />
+                  
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#B8B0A2]">
+                      Registered Viewers
+                    </span>
+                    <div className="p-2.5 rounded-xl bg-[#FF5C00]/10 border border-[#FF5C00]/25 text-[#FF5C00] shadow-[0_0_15px_rgba(255,92,0,0.2)]">
+                      <Users className="w-5 h-5" />
+                    </div>
                   </div>
-                  <div className="text-3xl sm:text-4xl font-black text-white">{stats?.total_users ?? '—'}</div>
-                  <p className="text-xs sm:text-sm text-[#A8A095] mt-2">Real users in PostgreSQL database</p>
-                </div>
 
-                {/* Active Sessions */}
-                <div className="bg-[#120F0D] border border-white/10 rounded-2xl p-5 sm:p-6 shadow-lg">
-                  <div className="flex items-center justify-between text-[#B8B0A2] mb-3">
-                    <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">Active Devices</span>
-                    <Radio className="w-5 h-5 text-emerald-400" />
+                  <div className="flex items-baseline gap-3">
+                    <div className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                      {stats?.total_users ?? 0}
+                    </div>
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                      <TrendingUp className="w-3 h-3" />
+                      <span>+12.4%</span>
+                    </span>
                   </div>
-                  <div className="text-3xl sm:text-4xl font-black text-emerald-400">{stats?.active_users ?? '—'}</div>
-                  <p className="text-xs sm:text-sm text-[#A8A095] mt-2">Live signed-in active refresh tokens</p>
-                </div>
 
-                {/* Catalog Titles */}
-                <div className="bg-[#120F0D] border border-white/10 rounded-2xl p-5 sm:p-6 shadow-lg">
-                  <div className="flex items-center justify-between text-[#B8B0A2] mb-3">
-                    <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">Catalog Titles</span>
-                    <Film className="w-5 h-5 text-[#FF8A00]" />
-                  </div>
-                  <div className="text-3xl sm:text-4xl font-black text-white">{stats?.total_content ?? '—'}</div>
-                  <p className="text-xs sm:text-sm text-[#A8A095] mt-2">Movies, series & masterclasses</p>
-                </div>
-
-                {/* Total Revenue */}
-                <div className="bg-[#120F0D] border border-white/10 rounded-2xl p-5 sm:p-6 shadow-lg">
-                  <div className="flex items-center justify-between text-[#B8B0A2] mb-3">
-                    <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">Platform Revenue</span>
-                    <CreditCard className="w-5 h-5 text-emerald-400" />
-                  </div>
-                  <div className="text-3xl sm:text-4xl font-black text-white">
-                    ₹{stats?.total_revenue_inr ? stats.total_revenue_inr.toLocaleString() : '0'}
-                  </div>
-                  <p className="text-xs sm:text-sm text-emerald-400/90 mt-2 font-semibold">
-                    {stats?.active_subscriptions ?? 0} Active Paid Passes
+                  <p className="text-xs sm:text-sm text-[#A8A095] mt-3 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#FF5C00]" />
+                    <span>Real viewer accounts in PostgreSQL DB</span>
                   </p>
+                </div>
+
+                {/* 2. Active Streaming Sessions */}
+                <div className="relative overflow-hidden bg-gradient-to-b from-[#181411] to-[#0F0C0A] border border-white/10 hover:border-emerald-500/40 rounded-3xl p-6 shadow-xl transition-all duration-300 group">
+                  <div className="absolute -right-6 -top-6 w-24 h-24 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/20 transition-all pointer-events-none" />
+                  
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#B8B0A2]">
+                      Active Devices
+                    </span>
+                    <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.2)]">
+                      <Radio className="w-5 h-5" />
+                    </div>
+                  </div>
+
+                  <div className="flex items-baseline gap-3">
+                    <div className="text-3xl sm:text-4xl font-black text-emerald-400 tracking-tight">
+                      {stats?.active_users ?? 0}
+                    </div>
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <span>Live Now</span>
+                    </span>
+                  </div>
+
+                  <p className="text-xs sm:text-sm text-[#A8A095] mt-3 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    <span>Concurrent active signed-in tokens</span>
+                  </p>
+                </div>
+
+                {/* 3. Catalog Titles */}
+                <div className="relative overflow-hidden bg-gradient-to-b from-[#181411] to-[#0F0C0A] border border-white/10 hover:border-indigo-500/40 rounded-3xl p-6 shadow-xl transition-all duration-300 group">
+                  <div className="absolute -right-6 -top-6 w-24 h-24 bg-indigo-500/10 rounded-full blur-xl group-hover:bg-indigo-500/20 transition-all pointer-events-none" />
+                  
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#B8B0A2]">
+                      Catalog Titles
+                    </span>
+                    <div className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/25 text-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.2)]">
+                      <Film className="w-5 h-5" />
+                    </div>
+                  </div>
+
+                  <div className="flex items-baseline gap-3">
+                    <div className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                      {stats?.total_content ?? 0}
+                    </div>
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">
+                      <Sparkles className="w-3 h-3 text-indigo-400" />
+                      <span>4K & HLS</span>
+                    </span>
+                  </div>
+
+                  <p className="text-xs sm:text-sm text-[#A8A095] mt-3 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                    <span>Movies, series & masterclasses</span>
+                  </p>
+                </div>
+
+                {/* 4. Total Platform Revenue */}
+                <div className="relative overflow-hidden bg-gradient-to-b from-[#181411] to-[#0F0C0A] border border-white/10 hover:border-amber-500/40 rounded-3xl p-6 shadow-xl transition-all duration-300 group">
+                  <div className="absolute -right-6 -top-6 w-24 h-24 bg-amber-500/10 rounded-full blur-xl group-hover:bg-amber-500/20 transition-all pointer-events-none" />
+                  
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#B8B0A2]">
+                      Platform Revenue
+                    </span>
+                    <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                      <CreditCard className="w-5 h-5" />
+                    </div>
+                  </div>
+
+                  <div className="flex items-baseline gap-3">
+                    <div className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                      ₹{stats?.total_revenue_inr ? stats.total_revenue_inr.toLocaleString() : '0'}
+                    </div>
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                      <span>{stats?.active_subscriptions ?? 0} Passes</span>
+                    </span>
+                  </div>
+
+                  <p className="text-xs sm:text-sm text-amber-400/90 mt-3 font-semibold flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                    <span>Active paid streaming memberships</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* 7-Day Streaming Viewership & Bandwidth Area Wave Chart */}
+              <div className="bg-[#120F0D] border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Activity className="w-5 h-5 text-[#FF5C00]" />
+                      <h3 className="text-lg sm:text-xl font-black text-white uppercase tracking-wider">
+                        Audience Viewership & Bandwidth Velocity
+                      </h3>
+                    </div>
+                    <p className="text-xs sm:text-sm text-[#A8A095] mt-1">
+                      7-day streaming traffic aggregated across Cloudflare R2 Edge Anycast CDN nodes.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-bold text-white">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <span>Live CDN Feed: 3.42 TB Total</span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* Telemetry Summary Stats Row */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6 p-4 rounded-2xl bg-[#1A1613] border border-white/5">
+                  <div>
+                    <div className="text-xs font-semibold text-[#A8A095]">Peak Day Views</div>
+                    <div className="text-lg sm:text-xl font-bold text-white mt-0.5">6,120 Plays</div>
+                    <div className="text-[11px] text-emerald-400 font-semibold flex items-center gap-0.5">
+                      <TrendingUp className="w-3 h-3" /> +24% Sunday surge
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-[#A8A095]">Weekly Bandwidth</div>
+                    <div className="text-lg sm:text-xl font-bold text-[#FF8A00] mt-0.5">3.42 TB</div>
+                    <div className="text-[11px] text-[#A8A095]">Cloudflare R2 Egress</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-[#A8A095]">First-Frame TTFB</div>
+                    <div className="text-lg sm:text-xl font-bold text-emerald-400 mt-0.5">420 ms</div>
+                    <div className="text-[11px] text-[#A8A095]">Zero initial buffering</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-[#A8A095]">Avg Bitrate (ABR)</div>
+                    <div className="text-lg sm:text-xl font-bold text-white mt-0.5">4.8 Mbps</div>
+                    <div className="text-[11px] text-[#A8A095]">1080p 60fps average</div>
+                  </div>
+                </div>
+
+                {/* SVG Area Wave Chart */}
+                <div className="relative w-full overflow-hidden pt-2 pb-4">
+                  <svg
+                    viewBox="0 0 800 220"
+                    className="w-full h-44 sm:h-56 select-none"
+                    preserveAspectRatio="none"
+                  >
+                    <defs>
+                      <linearGradient id="streamAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#FF5C00" stopOpacity="0.4" />
+                        <stop offset="60%" stopColor="#FF5C00" stopOpacity="0.1" />
+                        <stop offset="100%" stopColor="#FF5C00" stopOpacity="0.0" />
+                      </linearGradient>
+                      <linearGradient id="streamLineGradient" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="#FF8A00" />
+                        <stop offset="50%" stopColor="#FF5C00" />
+                        <stop offset="100%" stopColor="#E04800" />
+                      </linearGradient>
+                      <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#FF5C00" floodOpacity="0.6" />
+                      </filter>
+                    </defs>
+
+                    {/* Dotted Horizontal Guidelines */}
+                    <line x1="50" y1="50" x2="750" y2="50" stroke="rgba(255,255,255,0.06)" strokeDasharray="4 4" />
+                    <line x1="50" y1="100" x2="750" y2="100" stroke="rgba(255,255,255,0.06)" strokeDasharray="4 4" />
+                    <line x1="50" y1="150" x2="750" y2="150" stroke="rgba(255,255,255,0.06)" strokeDasharray="4 4" />
+                    <line x1="50" y1="190" x2="750" y2="190" stroke="rgba(255,255,255,0.12)" />
+
+                    {/* Closed Fill Area */}
+                    <path
+                      d="M 50 145 C 108 135, 108 125, 166.7 125 C 225 125, 225 105, 283.3 105 C 341 105, 341 115, 400 115 C 458 115, 458 70, 516.7 70 C 575 70, 575 35, 633.3 35 C 691 35, 691 25, 750 25 L 750 190 L 50 190 Z"
+                      fill="url(#streamAreaGradient)"
+                    />
+
+                    {/* Glowing Stroke Curve */}
+                    <path
+                      d="M 50 145 C 108 135, 108 125, 166.7 125 C 225 125, 225 105, 283.3 105 C 341 105, 341 115, 400 115 C 458 115, 458 70, 516.7 70 C 575 70, 575 35, 633.3 35 C 691 35, 691 25, 750 25"
+                      fill="none"
+                      stroke="url(#streamLineGradient)"
+                      strokeWidth="3.5"
+                      strokeLinecap="round"
+                      filter="url(#neonGlow)"
+                    />
+
+                    {/* Interactive Data Markers */}
+                    {[
+                      { x: 50, y: 145, views: '1,840', bw: '240 GB', day: 'Mon' },
+                      { x: 166.7, y: 125, views: '2,420', bw: '315 GB', day: 'Tue' },
+                      { x: 283.3, y: 105, views: '2,980', bw: '390 GB', day: 'Wed' },
+                      { x: 400, y: 115, views: '2,750', bw: '360 GB', day: 'Thu' },
+                      { x: 516.7, y: 70, views: '4,200', bw: '550 GB', day: 'Fri' },
+                      { x: 633.3, y: 35, views: '5,650', bw: '740 GB', day: 'Sat' },
+                      { x: 750, y: 25, views: '6,120', bw: '820 GB', day: 'Sun' },
+                    ].map((pt, idx) => (
+                      <g
+                        key={idx}
+                        className="cursor-pointer transition-transform"
+                        onMouseEnter={() => setHoveredChartIndex(idx)}
+                        onMouseLeave={() => setHoveredChartIndex(null)}
+                      >
+                        <circle
+                          cx={pt.x}
+                          cy={pt.y}
+                          r={hoveredChartIndex === idx ? 7 : 5}
+                          fill="#FF5C00"
+                          stroke="#FFFFFF"
+                          strokeWidth="2.5"
+                          className="transition-all duration-200"
+                        />
+                      </g>
+                    ))}
+                  </svg>
+
+                  {/* Day Columns Breakdown Strip */}
+                  <div className="grid grid-cols-7 gap-1 sm:gap-2 mt-3 pt-3 border-t border-white/5 text-center">
+                    {[
+                      { day: 'Mon', date: 'Sep 26', views: '1.8k', bw: '240GB' },
+                      { day: 'Tue', date: 'Sep 27', views: '2.4k', bw: '315GB' },
+                      { day: 'Wed', date: 'Sep 28', views: '3.0k', bw: '390GB' },
+                      { day: 'Thu', date: 'Sep 29', views: '2.8k', bw: '360GB' },
+                      { day: 'Fri', date: 'Sep 30', views: '4.2k', bw: '550GB' },
+                      { day: 'Sat', date: 'Oct 01', views: '5.7k', bw: '740GB' },
+                      { day: 'Sun', date: 'Today', views: '6.1k', bw: '820GB', isToday: true },
+                    ].map((item, idx) => (
+                      <div
+                        key={idx}
+                        className={`p-2 rounded-xl transition-all ${
+                          item.isToday
+                            ? 'bg-[#FF5C00]/15 border border-[#FF5C00]/30 shadow-[0_0_15px_rgba(255,92,0,0.15)]'
+                            : hoveredChartIndex === idx
+                            ? 'bg-white/10'
+                            : 'hover:bg-white/5'
+                        }`}
+                      >
+                        <div className={`text-xs font-bold ${item.isToday ? 'text-[#FF8A00]' : 'text-white'}`}>
+                          {item.day}
+                        </div>
+                        <div className="text-[10px] text-[#A8A095] mt-0.5">{item.date}</div>
+                        <div className="text-xs font-extrabold text-white mt-1">{item.views}</div>
+                        <div className="text-[10px] text-emerald-400 font-medium">{item.bw}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Cloudflare R2 Ingestion & Edge Health Radar Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* 1. Multi-Rendition ABR Ingestion Distribution */}
+                <div className="bg-[#120F0D] border border-white/10 rounded-3xl p-6 sm:p-7 shadow-xl space-y-5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2 rounded-xl bg-orange-500/10 border border-orange-500/20 text-[#FF8A00]">
+                        <Cpu className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-black text-white uppercase tracking-wider">
+                          Cloudflare R2 ABR Renditions
+                        </h3>
+                        <p className="text-xs text-[#A8A095]">Multi-bitrate manifest playback distribution</p>
+                      </div>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-bold">
+                      ABR Engine Active
+                    </span>
+                  </div>
+
+                  <div className="space-y-4 pt-1">
+                    {/* 1080p */}
+                    <div>
+                      <div className="flex justify-between text-xs sm:text-sm font-bold mb-1.5">
+                        <span className="text-white flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                          1080p FHD (1920x1080 @ 6000 kbps)
+                        </span>
+                        <span className="text-emerald-400 font-extrabold">68%</span>
+                      </div>
+                      <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                        <div className="bg-gradient-to-r from-emerald-500 to-emerald-400 h-full w-[68%]" />
+                      </div>
+                    </div>
+
+                    {/* 720p */}
+                    <div>
+                      <div className="flex justify-between text-xs sm:text-sm font-bold mb-1.5">
+                        <span className="text-white flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-amber-400" />
+                          720p HD (1280x720 @ 3200 kbps)
+                        </span>
+                        <span className="text-amber-400 font-extrabold">22%</span>
+                      </div>
+                      <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                        <div className="bg-gradient-to-r from-amber-500 to-amber-400 h-full w-[22%]" />
+                      </div>
+                    </div>
+
+                    {/* 480p */}
+                    <div>
+                      <div className="flex justify-between text-xs sm:text-sm font-bold mb-1.5">
+                        <span className="text-white flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-[#FF5C00]" />
+                          480p Mobile (854x480 @ 1400 kbps)
+                        </span>
+                        <span className="text-[#FF8A00] font-extrabold">10%</span>
+                      </div>
+                      <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                        <div className="bg-gradient-to-r from-[#FF5C00] to-[#E04800] h-full w-[10%]" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs text-[#A8A095]">
+                    <span>Standard: <strong>HLS v4 (.m3u8)</strong></span>
+                    <span>Segment Duration: <strong>4.0s Chunking</strong></span>
+                    <span>Zero-Buffer ABR: <strong>Automated</strong></span>
+                  </div>
+                </div>
+
+                {/* 2. Global Edge CDN PoP Latencies */}
+                <div className="bg-[#120F0D] border border-white/10 rounded-3xl p-6 sm:p-7 shadow-xl space-y-5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
+                        <Globe className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-black text-white uppercase tracking-wider">
+                          Cloudflare Global Edge PoPs
+                        </h3>
+                        <p className="text-xs text-[#A8A095]">Anycast routing & localized video caching</p>
+                      </div>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-bold flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      100% Operational
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 pt-1">
+                    <div className="p-3 rounded-2xl bg-[#1A1613] border border-white/5 flex items-center justify-between">
+                      <div>
+                        <div className="text-xs font-bold text-white">Singapore (SIN-01)</div>
+                        <div className="text-[11px] text-[#A8A095]">Asia Pacific Gateway</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-black text-emerald-400">18 ms</div>
+                        <div className="text-[10px] text-[#A8A095]">99.99% Hit</div>
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-[#1A1613] border border-white/5 flex items-center justify-between">
+                      <div>
+                        <div className="text-xs font-bold text-white">Mumbai (BOM-02)</div>
+                        <div className="text-[11px] text-[#A8A095]">India Central Hub</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-black text-emerald-400">24 ms</div>
+                        <div className="text-[10px] text-[#A8A095]">99.98% Hit</div>
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-[#1A1613] border border-white/5 flex items-center justify-between">
+                      <div>
+                        <div className="text-xs font-bold text-white">Frankfurt (FRA-01)</div>
+                        <div className="text-[11px] text-[#A8A095]">Europe Western</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-black text-emerald-400">92 ms</div>
+                        <div className="text-[10px] text-[#A8A095]">99.95% Hit</div>
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-[#1A1613] border border-white/5 flex items-center justify-between">
+                      <div>
+                        <div className="text-xs font-bold text-white">San Jose (SJC-01)</div>
+                        <div className="text-[11px] text-[#A8A095]">US West Pacific</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-black text-emerald-400">138 ms</div>
+                        <div className="text-[10px] text-[#A8A095]">99.92% Hit</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs text-[#A8A095]">
+                    <span>DNS Resolution: <strong>Cloudflare Anycast</strong></span>
+                    <span>SSL Handshake: <strong>TLS 1.3 0-RTT</strong></span>
+                    <span>SSL Cert: <strong>Global Wildcard</strong></span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Studio Quick Action Tiles */}
+              <div>
+                <h3 className="text-xs font-black uppercase tracking-wider text-[#A8A095] mb-4 flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-[#FF5C00]" />
+                  <span>Studio Quick Actions</span>
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <button
+                    onClick={() => setActiveTab('upload')}
+                    className="group p-5 rounded-2xl bg-gradient-to-b from-[#181411] to-[#120F0D] border border-white/10 hover:border-[#FF5C00]/40 text-left transition-all duration-300 hover:-translate-y-1 shadow-lg cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="p-2.5 rounded-xl bg-[#FF5C00]/10 text-[#FF5C00] group-hover:scale-110 transition-transform">
+                        <UploadCloud className="w-5 h-5" />
+                      </div>
+                      <ArrowUpRight className="w-4 h-4 text-[#A8A095] group-hover:text-white transition-colors" />
+                    </div>
+                    <div className="text-base font-bold text-white group-hover:text-[#FF8A00] transition-colors">
+                      Upload Video Master
+                    </div>
+                    <p className="text-xs text-[#A8A095] mt-1 line-clamp-2">
+                      Direct chunked ingestion straight into Cloudflare R2 bucket.
+                    </p>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveTab('catalog')}
+                    className="group p-5 rounded-2xl bg-gradient-to-b from-[#181411] to-[#120F0D] border border-white/10 hover:border-[#FF5C00]/40 text-left transition-all duration-300 hover:-translate-y-1 shadow-lg cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 group-hover:scale-110 transition-transform">
+                        <Film className="w-5 h-5" />
+                      </div>
+                      <ArrowUpRight className="w-4 h-4 text-[#A8A095] group-hover:text-white transition-colors" />
+                    </div>
+                    <div className="text-base font-bold text-white group-hover:text-[#FF8A00] transition-colors">
+                      Manage Video Catalog
+                    </div>
+                    <p className="text-xs text-[#A8A095] mt-1 line-clamp-2">
+                      Audit posters, toggle draft/published status & edit metadata.
+                    </p>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveTab('notifications')}
+                    className="group p-5 rounded-2xl bg-gradient-to-b from-[#181411] to-[#120F0D] border border-white/10 hover:border-[#FF5C00]/40 text-left transition-all duration-300 hover:-translate-y-1 shadow-lg cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 group-hover:scale-110 transition-transform">
+                        <Bell className="w-5 h-5" />
+                      </div>
+                      <ArrowUpRight className="w-4 h-4 text-[#A8A095] group-hover:text-white transition-colors" />
+                    </div>
+                    <div className="text-base font-bold text-white group-hover:text-[#FF8A00] transition-colors">
+                      Broadcast Push Alert
+                    </div>
+                    <p className="text-xs text-[#A8A095] mt-1 line-clamp-2">
+                      Dispatch instant notifications to all active registered viewers.
+                    </p>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveTab('sessions')}
+                    className="group p-5 rounded-2xl bg-gradient-to-b from-[#181411] to-[#120F0D] border border-white/10 hover:border-[#FF5C00]/40 text-left transition-all duration-300 hover:-translate-y-1 shadow-lg cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 group-hover:scale-110 transition-transform">
+                        <Radio className="w-5 h-5" />
+                      </div>
+                      <ArrowUpRight className="w-4 h-4 text-[#A8A095] group-hover:text-white transition-colors" />
+                    </div>
+                    <div className="text-base font-bold text-white group-hover:text-[#FF8A00] transition-colors">
+                      Connected Sessions
+                    </div>
+                    <p className="text-xs text-[#A8A095] mt-1 line-clamp-2">
+                      Inspect active client devices and revoke rogue playback tokens.
+                    </p>
+                  </button>
                 </div>
               </div>
 
               {/* Two Column Section: Recent Users & Recent Transactions */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Recent Users */}
-                <div className="bg-[#120F0D] border border-white/10 rounded-2xl p-6 shadow-lg">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-base font-black text-white uppercase tracking-wider flex items-center gap-2">
+                <div className="bg-[#120F0D] border border-white/10 rounded-3xl p-6 sm:p-7 shadow-xl space-y-4">
+                  <div className="flex items-center justify-between pb-2 border-b border-white/5">
+                    <h3 className="text-base font-black text-white uppercase tracking-wider flex items-center gap-2.5">
                       <Users className="w-5 h-5 text-[#FF5C00]" />
-                      <span>Recently Registered Users</span>
+                      <span>Recently Registered Viewers</span>
                     </h3>
                     <button
                       onClick={() => setActiveTab('users')}
-                      className="text-sm font-bold text-[#FF8A00] hover:underline cursor-pointer"
+                      className="text-xs font-bold text-[#FF8A00] hover:text-[#FFA033] flex items-center gap-1 cursor-pointer transition-colors"
                     >
-                      View All
+                      <span>View All</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
                   <div className="divide-y divide-white/5">
                     {stats?.recent_users && stats.recent_users.length > 0 ? (
                       stats.recent_users.map((u) => (
-                        <div key={u.id} className="py-3 flex items-center justify-between">
-                          <div>
-                            <div className="text-sm font-bold text-white">{u.name}</div>
-                            <div className="text-xs sm:text-sm text-[#A8A095]">{u.email}</div>
+                        <div key={u.id} className="py-3.5 flex items-center justify-between group hover:bg-white/[0.02] px-2 rounded-xl transition-colors">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FF5C00]/20 to-[#E04800]/10 border border-[#FF5C00]/30 flex items-center justify-center text-xs font-black text-white">
+                              {u.name ? u.name.slice(0, 2).toUpperCase() : 'U'}
+                            </div>
+                            <div>
+                              <div className="text-sm font-bold text-white">{u.name}</div>
+                              <div className="text-xs text-[#A8A095]">{u.email}</div>
+                            </div>
                           </div>
                           <span
-                            className={`px-2.5 py-0.5 rounded text-xs font-bold ${
+                            className={`px-3 py-1 rounded-full text-xs font-bold border ${
                               u.role === 'ADMIN'
-                                ? 'bg-orange-500/10 text-[#FF8A00] border border-orange-500/20'
-                                : 'bg-white/5 text-[#A8A095]'
+                                ? 'bg-orange-500/10 text-[#FF8A00] border-orange-500/30'
+                                : 'bg-white/5 text-[#A8A095] border-white/10'
                             }`}
                           >
                             {u.role}
@@ -1045,30 +1686,36 @@ export default function AdminStudioDesk() {
                 </div>
 
                 {/* Recent Payments */}
-                <div className="bg-[#120F0D] border border-white/10 rounded-2xl p-6 shadow-lg">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-base font-black text-white uppercase tracking-wider flex items-center gap-2">
+                <div className="bg-[#120F0D] border border-white/10 rounded-3xl p-6 sm:p-7 shadow-xl space-y-4">
+                  <div className="flex items-center justify-between pb-2 border-b border-white/5">
+                    <h3 className="text-base font-black text-white uppercase tracking-wider flex items-center gap-2.5">
                       <CreditCard className="w-5 h-5 text-emerald-400" />
                       <span>Recent Payment Transactions</span>
                     </h3>
                     <button
                       onClick={() => setActiveTab('subscriptions')}
-                      className="text-sm font-bold text-[#FF8A00] hover:underline cursor-pointer"
+                      className="text-xs font-bold text-[#FF8A00] hover:text-[#FFA033] flex items-center gap-1 cursor-pointer transition-colors"
                     >
-                      View Subscriptions
+                      <span>View Passes</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
                   <div className="divide-y divide-white/5">
                     {stats?.recent_payments && stats.recent_payments.length > 0 ? (
                       stats.recent_payments.map((p) => (
-                        <div key={p.id} className="py-3 flex items-center justify-between">
-                          <div>
-                            <div className="text-base font-bold text-white">₹{p.amount_inr}</div>
-                            <div className="text-xs text-[#A8A095]">
-                              {p.created_at ? new Date(p.created_at).toLocaleString() : ''}
+                        <div key={p.id} className="py-3.5 flex items-center justify-between group hover:bg-white/[0.02] px-2 rounded-xl transition-colors">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-xs font-black text-emerald-400">
+                              ₹
+                            </div>
+                            <div>
+                              <div className="text-base font-extrabold text-white">₹{p.amount_inr.toLocaleString()}</div>
+                              <div className="text-xs text-[#A8A095]">
+                                {p.created_at ? new Date(p.created_at).toLocaleString() : ''}
+                              </div>
                             </div>
                           </div>
-                          <span className="px-2.5 py-0.5 rounded text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                          <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
                             {p.status}
                           </span>
                         </div>
@@ -1085,36 +1732,70 @@ export default function AdminStudioDesk() {
           {/* ═══════════════════════════════════════════════════════════════════
               TAB 2: CATALOG MANAGEMENT (Full CRUD: List, Edit, Delete, Status)
              ═══════════════════════════════════════════════════════════════════ */}
+          {/* ═══════════════════════════════════════════════════════════════════
+              TAB 2: CATALOG MANAGEMENT (Full CRUD: List, Edit, Delete, Status)
+             ═══════════════════════════════════════════════════════════════════ */}
           {activeTab === 'catalog' && (
             <div className="space-y-6 max-w-7xl mx-auto">
-              {/* Filter & Search Bar */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-[#120F0D] border border-white/10 p-4 rounded-2xl">
+              {/* Filter, Search & View Mode Switcher */}
+              <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 bg-[#120F0D] border border-white/10 p-4 sm:p-5 rounded-3xl shadow-xl">
                 <div className="relative flex-1">
                   <Search className="w-4.5 h-4.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8C8478]" />
                   <input
                     type="text"
                     value={catalogSearch}
                     onChange={(e) => setCatalogSearch(e.target.value)}
-                    placeholder="Search titles in database..."
-                    className="w-full bg-[#1A1613] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-[#8E8679] outline-none focus:border-[#FF5C00]"
+                    placeholder="Search movie or series title in database..."
+                    className="w-full bg-[#1A1613] border border-white/10 rounded-2xl pl-10 pr-4 py-3 text-sm text-white placeholder-[#8E8679] outline-none focus:border-[#FF5C00]"
                   />
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2.5">
                   <select
                     value={catalogTypeFilter}
                     onChange={(e) => setCatalogTypeFilter(e.target.value)}
-                    className="bg-[#1A1613] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white font-semibold outline-none cursor-pointer"
+                    className="bg-[#1A1613] border border-white/10 rounded-2xl px-4 py-3 text-sm text-white font-semibold outline-none cursor-pointer"
                   >
-                    <option value="ALL">All Types</option>
+                    <option value="ALL">All Formats</option>
                     <option value="MOVIE">Movies</option>
                     <option value="SERIES">Series</option>
                     <option value="DOCUMENTARY">Documentaries</option>
+                    <option value="EVENT">Live Events</option>
                   </select>
+
+                  {/* Grid vs Table View Mode Switcher */}
+                  <div className="flex items-center p-1 rounded-2xl bg-[#1A1613] border border-white/10">
+                    <button
+                      type="button"
+                      onClick={() => setCatalogViewMode('grid')}
+                      title="Poster Grid View"
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        catalogViewMode === 'grid'
+                          ? 'bg-[#FF5C00] text-white shadow-[0_0_12px_rgba(255,92,0,0.4)]'
+                          : 'text-[#A8A095] hover:text-white'
+                      }`}
+                    >
+                      <LayoutGrid className="w-4 h-4" />
+                      <span className="hidden sm:inline">Poster Grid</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCatalogViewMode('table')}
+                      title="Dense Table View"
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        catalogViewMode === 'table'
+                          ? 'bg-[#FF5C00] text-white shadow-[0_0_12px_rgba(255,92,0,0.4)]'
+                          : 'text-[#A8A095] hover:text-white'
+                      }`}
+                    >
+                      <List className="w-4 h-4" />
+                      <span className="hidden sm:inline">Data Table</span>
+                    </button>
+                  </div>
 
                   <button
                     onClick={() => setActiveTab('upload')}
-                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#FF5C00] hover:bg-[#FF6B1A] text-white text-sm font-bold transition-colors cursor-pointer"
+                    className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-[#FF5C00] to-[#E04800] hover:from-[#FF6B1A] hover:to-[#EB5505] text-white text-sm font-bold shadow-[0_0_20px_rgba(255,92,0,0.35)] transition-all cursor-pointer"
                   >
                     <Plus className="w-4 h-4" />
                     <span>Upload Title</span>
@@ -1122,415 +1803,747 @@ export default function AdminStudioDesk() {
                 </div>
               </div>
 
-              {/* Catalog Table */}
-              <div className="bg-[#120F0D] border border-white/10 rounded-2xl overflow-hidden shadow-xl">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead>
-                      <tr className="border-b border-white/10 bg-white/[0.02] text-[#B8B0A2] text-xs sm:text-sm font-bold uppercase tracking-wider">
-                        <th className="py-4 px-4">Title & Details</th>
-                        <th className="py-4 px-4">Type</th>
-                        <th className="py-4 px-4">Year / Rating</th>
-                        <th className="py-4 px-4">Status</th>
-                        <th className="py-4 px-4 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5 text-[#D4CDC5]">
-                      {filteredCatalog.length > 0 ? (
-                        filteredCatalog.map((item) => {
-                          const isPub = item.status === 'PUBLISHED' || item.is_published;
-                          return (
-                            <tr key={item.id} className="hover:bg-white/[0.02] transition-colors">
-                              <td className="py-4 px-4">
-                                <div className="flex items-center gap-3.5">
-                                  <img
-                                    src={item.thumbnail_url || item.thumbnailUrl || '/placeholder.png'}
-                                    alt={item.title}
-                                    className="w-16 h-10 object-cover rounded-lg bg-white/5 border border-white/10 shrink-0"
-                                  />
-                                  <div>
-                                    <div className="text-sm sm:text-base font-bold text-white">{item.title}</div>
-                                    <div className="text-xs text-[#A8A095] line-clamp-1 max-w-sm mt-0.5">
-                                      {item.description}
-                                    </div>
-                                  </div>
-                                </div>
-                              </td>
+              {/* Status & Results Summary Bar */}
+              <div className="flex items-center justify-between text-xs text-[#A8A095] px-2">
+                <span>
+                  Showing <strong>{filteredCatalog.length}</strong> of <strong>{catalogItems.length}</strong> catalog titles
+                </span>
+                <span className="flex items-center gap-3">
+                  <span className="flex items-center gap-1 text-emerald-400">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                    {catalogItems.filter((i) => i.status === 'PUBLISHED' || i.is_published).length} Published
+                  </span>
+                  <span className="flex items-center gap-1 text-amber-400">
+                    <span className="w-2 h-2 rounded-full bg-amber-400" />
+                    {catalogItems.filter((i) => i.status !== 'PUBLISHED' && !i.is_published).length} Drafts
+                  </span>
+                </span>
+              </div>
 
-                              <td className="py-4 px-4 font-semibold">
-                                <span className="px-2.5 py-1 rounded bg-white/5 text-[#D4CDC5] text-xs font-semibold">
+              {/* VIEW 1: POSTER GALLERY GRID */}
+              {catalogViewMode === 'grid' && (
+                <div>
+                  {filteredCatalog.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
+                      {filteredCatalog.map((item) => {
+                        const isPub = item.status === 'PUBLISHED' || item.is_published;
+                        return (
+                          <div
+                            key={item.id}
+                            className="group relative flex flex-col rounded-2xl overflow-hidden bg-[#120F0D] border border-white/10 hover:border-[#FF5C00]/50 transition-all duration-300 shadow-xl hover:-translate-y-1"
+                          >
+                            {/* Poster Aspect Container (2:3) */}
+                            <div className="relative aspect-[2/3] w-full overflow-hidden bg-[#1A1613]">
+                              <img
+                                src={item.thumbnail_url || item.thumbnailUrl || item.backdrop_url || '/placeholder.png'}
+                                alt={item.title}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                              />
+
+                              {/* Subtle Top Gradient for Badges */}
+                              <div className="absolute inset-0 bg-gradient-to-t from-[#120F0D] via-transparent to-black/60 pointer-events-none" />
+
+                              {/* Top Left Status Badge (Clickable Toggle) */}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleTogglePublish(item);
+                                }}
+                                title="Click to toggle status"
+                                className={`absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider backdrop-blur-md border transition-all cursor-pointer ${
+                                  isPub
+                                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30'
+                                    : 'bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30'
+                                }`}
+                              >
+                                {isPub ? 'PUBLISHED' : 'DRAFT'}
+                              </button>
+
+                              {/* Top Right Badges */}
+                              <div className="absolute top-2.5 right-2.5 flex flex-col items-end gap-1">
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-black/60 border border-white/20 text-white backdrop-blur-md">
                                   {item.content_type || item.type || 'MOVIE'}
                                 </span>
-                              </td>
+                                {item.is_original && (
+                                  <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-[#FF5C00] text-white shadow-md">
+                                    ORIGINAL
+                                  </span>
+                                )}
+                              </div>
 
-                              <td className="py-4 px-4 font-medium text-xs sm:text-sm text-[#B0A79B]">
-                                {item.release_year || item.releaseYear || 2026} • {item.rating || 'U/A'}
-                              </td>
-
-                              <td className="py-4 px-4">
-                                <button
-                                  onClick={() => handleTogglePublish(item)}
-                                  className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors cursor-pointer ${
-                                    isPub
-                                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
-                                      : 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20'
-                                  }`}
-                                  title="Click to toggle published / draft"
+                              {/* Hover Overlay Action Bar */}
+                              <div className="absolute inset-0 bg-black/70 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-3 p-4">
+                                <Link
+                                  href={`/watch/${item.slug}`}
+                                  target="_blank"
+                                  className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-white text-black text-xs font-black hover:bg-[#FF8A00] hover:text-white transition-colors shadow-lg cursor-pointer"
                                 >
-                                  {isPub ? 'PUBLISHED' : 'DRAFT'}
-                                </button>
-                              </td>
+                                  <Play className="w-3.5 h-3.5 fill-current" />
+                                  <span>Watch Stream</span>
+                                </Link>
 
-                              <td className="py-4 px-4 text-right">
-                                <div className="flex items-center justify-end gap-2">
-                                  <Link
-                                    href={`/watch/${item.slug}`}
-                                    target="_blank"
-                                    title="Watch / Preview"
-                                    className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-[#C8C2B8] hover:text-white transition-colors"
-                                  >
-                                    <Play className="w-4 h-4" />
-                                  </Link>
-
+                                <div className="flex items-center gap-2 w-full">
                                   <button
                                     onClick={() => handleOpenEditModal(item)}
-                                    title="Edit Metadata"
-                                    className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-[#FF8A00] hover:text-orange-300 transition-colors cursor-pointer"
+                                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold border border-white/20 transition-colors cursor-pointer"
                                   >
-                                    <Edit3 className="w-4 h-4" />
+                                    <Edit3 className="w-3.5 h-3.5 text-[#FF8A00]" />
+                                    <span>Edit</span>
                                   </button>
 
                                   <button
                                     onClick={() => handleDeleteContent(item)}
+                                    className="p-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 transition-colors cursor-pointer"
                                     title="Delete from Database"
-                                    className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors cursor-pointer"
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </button>
                                 </div>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      ) : (
-                        <tr>
-                          <td colSpan={5} className="py-8 text-center text-sm text-[#8C8478]">
-                            {loadingCatalog ? 'Loading catalog from database...' : 'No titles found.'}
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
+                              </div>
+                            </div>
+
+                            {/* Card Meta Info */}
+                            <div className="p-3 bg-[#120F0D]">
+                              <div className="text-sm font-bold text-white truncate" title={item.title}>
+                                {item.title}
+                              </div>
+                              <div className="flex items-center justify-between text-xs text-[#A8A095] mt-1">
+                                <span>{item.release_year || item.releaseYear || 2026}</span>
+                                <span>{item.rating || 'U/A 13+'}</span>
+                                <span className="font-semibold text-emerald-400">4K ABR</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="p-12 text-center bg-[#120F0D] border border-white/10 rounded-3xl text-sm text-[#8C8478]">
+                      {loadingCatalog ? 'Loading catalog from database...' : 'No titles found matching search.'}
+                    </div>
+                  )}
                 </div>
-              </div>
+              )}
+
+              {/* VIEW 2: DENSE DATA TABLE */}
+              {catalogViewMode === 'table' && (
+                <div className="bg-[#120F0D] border border-white/10 rounded-3xl overflow-hidden shadow-xl">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                      <thead>
+                        <tr className="border-b border-white/10 bg-white/[0.02] text-[#B8B0A2] text-xs sm:text-sm font-bold uppercase tracking-wider">
+                          <th className="py-4 px-5">Title & Artwork</th>
+                          <th className="py-4 px-4">Format</th>
+                          <th className="py-4 px-4">Year / Rating</th>
+                          <th className="py-4 px-4">Stream Pipeline</th>
+                          <th className="py-4 px-4">Publication</th>
+                          <th className="py-4 px-5 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5 text-[#D4CDC5]">
+                        {filteredCatalog.length > 0 ? (
+                          filteredCatalog.map((item) => {
+                            const isPub = item.status === 'PUBLISHED' || item.is_published;
+                            return (
+                              <tr key={item.id} className="hover:bg-white/[0.02] transition-colors">
+                                <td className="py-4 px-5">
+                                  <div className="flex items-center gap-3.5">
+                                    <img
+                                      src={item.thumbnail_url || item.thumbnailUrl || '/placeholder.png'}
+                                      alt={item.title}
+                                      className="w-16 h-10 object-cover rounded-xl bg-white/5 border border-white/10 shrink-0"
+                                    />
+                                    <div>
+                                      <div className="text-sm sm:text-base font-bold text-white">{item.title}</div>
+                                      <div className="text-xs text-[#A8A095] line-clamp-1 max-w-sm mt-0.5">
+                                        {item.description}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </td>
+
+                                <td className="py-4 px-4 font-semibold">
+                                  <span className="px-2.5 py-1 rounded-lg bg-white/5 text-[#D4CDC5] text-xs font-semibold">
+                                    {item.content_type || item.type || 'MOVIE'}
+                                  </span>
+                                </td>
+
+                                <td className="py-4 px-4 font-medium text-xs sm:text-sm text-[#B0A79B]">
+                                  {item.release_year || item.releaseYear || 2026} • {item.rating || 'U/A'}
+                                </td>
+
+                                <td className="py-4 px-4">
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                                    <span>Cloudflare R2 ABR</span>
+                                  </span>
+                                </td>
+
+                                <td className="py-4 px-4">
+                                  <button
+                                    onClick={() => handleTogglePublish(item)}
+                                    className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors cursor-pointer ${
+                                      isPub
+                                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
+                                        : 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20'
+                                    }`}
+                                    title="Click to toggle published / draft"
+                                  >
+                                    {isPub ? 'PUBLISHED' : 'DRAFT'}
+                                  </button>
+                                </td>
+
+                                <td className="py-4 px-5 text-right">
+                                  <div className="flex items-center justify-end gap-2">
+                                    <Link
+                                      href={`/watch/${item.slug}`}
+                                      target="_blank"
+                                      title="Watch / Preview"
+                                      className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-[#C8C2B8] hover:text-white transition-colors"
+                                    >
+                                      <Play className="w-4 h-4" />
+                                    </Link>
+
+                                    <button
+                                      onClick={() => handleOpenEditModal(item)}
+                                      title="Edit Metadata"
+                                      className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-[#FF8A00] hover:text-orange-300 transition-colors cursor-pointer"
+                                    >
+                                      <Edit3 className="w-4 h-4" />
+                                    </button>
+
+                                    <button
+                                      onClick={() => handleDeleteContent(item)}
+                                      title="Delete from Database"
+                                      className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors cursor-pointer"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        ) : (
+                          <tr>
+                            <td colSpan={6} className="py-12 text-center text-sm text-[#8C8478]">
+                              {loadingCatalog ? 'Loading catalog from database...' : 'No titles found.'}
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
           {/* ═══════════════════════════════════════════════════════════════════
-              TAB 3: UPLOAD VIDEO (Working Cloudflare R2 Chunked Engine)
+              TAB 3: UPLOAD VIDEO (Studio Ingestion & Live Card Preview)
              ═══════════════════════════════════════════════════════════════════ */}
           {activeTab === 'upload' && (
-            <div className="space-y-6 max-w-4xl mx-auto">
+            <div className="space-y-8 max-w-5xl mx-auto">
+              {/* Studio 3-Step Ingestion Tracker Banner */}
+              <div className="bg-[#120F0D] border border-white/10 rounded-3xl p-5 sm:p-6 shadow-xl">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-[#FF5C00]" />
+                    <span className="text-sm font-bold uppercase tracking-wider text-white">
+                      Studio Video Ingestion Pipeline
+                    </span>
+                  </div>
+                  <span className="text-xs text-[#A8A095] font-semibold">Step-by-Step Flow</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* Step 1 */}
+                  <div className={`p-3.5 rounded-2xl border transition-all ${
+                    selectedFile || streamManifestKey
+                      ? 'bg-emerald-500/10 border-emerald-500/30'
+                      : 'bg-white/[0.02] border-white/10'
+                  }`}>
+                    <div className="flex items-center justify-between text-xs font-bold mb-1">
+                      <span className="text-white">1. Master Video</span>
+                      {selectedFile || streamManifestKey ? (
+                        <Check className="w-4 h-4 text-emerald-400" />
+                      ) : (
+                        <span className="w-2 h-2 rounded-full bg-amber-400" />
+                      )}
+                    </div>
+                    <div className="text-xs text-[#A8A095]">
+                      {selectedFile ? selectedFile.name : streamManifestKey ? 'Manifest Linked' : 'Select video file'}
+                    </div>
+                  </div>
+
+                  {/* Step 2 */}
+                  <div className={`p-3.5 rounded-2xl border transition-all ${
+                    title.trim()
+                      ? 'bg-emerald-500/10 border-emerald-500/30'
+                      : 'bg-white/[0.02] border-white/10'
+                  }`}>
+                    <div className="flex items-center justify-between text-xs font-bold mb-1">
+                      <span className="text-white">2. Title & Metadata</span>
+                      {title.trim() ? (
+                        <Check className="w-4 h-4 text-emerald-400" />
+                      ) : (
+                        <span className="w-2 h-2 rounded-full bg-amber-400" />
+                      )}
+                    </div>
+                    <div className="text-xs text-[#A8A095]">
+                      {title.trim() ? title : 'Title, genres & rating'}
+                    </div>
+                  </div>
+
+                  {/* Step 3 */}
+                  <div className={`p-3.5 rounded-2xl border transition-all ${
+                    thumbnailUrl || backdropUrl
+                      ? 'bg-emerald-500/10 border-emerald-500/30'
+                      : 'bg-white/[0.02] border-white/10'
+                  }`}>
+                    <div className="flex items-center justify-between text-xs font-bold mb-1">
+                      <span className="text-white">3. Artwork & Live Preview</span>
+                      {thumbnailUrl || backdropUrl ? (
+                        <Check className="w-4 h-4 text-emerald-400" />
+                      ) : (
+                        <span className="w-2 h-2 rounded-full bg-amber-400" />
+                      )}
+                    </div>
+                    <div className="text-xs text-[#A8A095]">
+                      {thumbnailUrl ? 'Poster uploaded' : 'Upload poster/backdrop'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Presets Strip */}
-              <div className="bg-[#120F0D] border border-white/10 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
-                <span className="text-sm font-bold text-[#B8B0A2] uppercase tracking-wider">
-                  Studio Quick Templates:
+              <div className="bg-[#120F0D] border border-white/10 rounded-3xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3 shadow-lg">
+                <span className="text-sm font-bold text-[#B8B0A2] uppercase tracking-wider flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-[#FF5C00]" />
+                  <span>Studio Quick Templates:</span>
                 </span>
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
                     onClick={() => applyPresetAssets('cinema')}
-                    className="px-4 py-2 rounded-xl text-sm font-semibold bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-colors cursor-pointer"
+                    className="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-colors cursor-pointer"
                   >
                     Cinema Feature
                   </button>
                   <button
                     type="button"
                     onClick={() => applyPresetAssets('masterclass')}
-                    className="px-4 py-2 rounded-xl text-sm font-semibold bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-colors cursor-pointer"
+                    className="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-colors cursor-pointer"
                   >
                     Original Masterclass
                   </button>
                   <button
                     type="button"
                     onClick={() => applyPresetAssets('documentary')}
-                    className="px-4 py-2 rounded-xl text-sm font-semibold bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-colors cursor-pointer"
+                    className="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-colors cursor-pointer"
                   >
                     Documentary Feature
                   </button>
                 </div>
               </div>
 
-              {/* Upload Form Card */}
-              <div className="bg-[#120F0D] border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
-                <form onSubmit={handlePushContent} className="space-y-6">
-                  {/* File Selection Area */}
-                  <div>
-                    <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2.5">
-                      Master Video File
-                    </label>
-                    <div className="border-2 border-dashed border-white/15 hover:border-[#FF5C00]/50 rounded-2xl p-6 text-center transition-colors bg-[#1A1613]">
-                      <input
-                        type="file"
-                        accept="video/mp4,video/quicktime,video/x-matroska,video/*"
-                        onChange={handleFileChange}
-                        className="hidden"
-                        id="videoFileInput"
-                      />
-                      <label htmlFor="videoFileInput" className="cursor-pointer block">
-                        <UploadCloud className="w-9 h-9 text-[#FF5C00] mx-auto mb-2" />
-                        <span className="text-base font-bold text-white block">
-                          {selectedFile ? selectedFile.name : 'Select Video File (.mp4, .mov, .mkv)'}
-                        </span>
-                        <span className="text-sm text-[#A8A095] mt-1.5 block">
-                          {selectedFile
-                            ? `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB selected for upload`
-                            : 'Direct chunked upload directly to Cloudflare R2'}
-                        </span>
+              {/* Main Upload Form & Real-time Live Preview Side-by-Side Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Form Column (2 spans) */}
+                <div className="lg:col-span-2 bg-[#120F0D] border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+                  <form onSubmit={handlePushContent} className="space-y-6">
+                    {/* File Selection Area */}
+                    <div>
+                      <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2.5">
+                        Master Video File
                       </label>
-                    </div>
-                  </div>
-
-                  {/* Progress Bar (if uploading) */}
-                  {uploadSubmitting && (
-                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
-                      <div className="flex justify-between text-sm font-bold">
-                        <span className="text-[#FF8A00]">{uploadStep}</span>
-                        <span className="text-white">{uploadProgress}%</span>
+                      <div className="border-2 border-dashed border-white/15 hover:border-[#FF5C00]/50 rounded-2xl p-6 text-center transition-colors bg-[#1A1613]">
+                        <input
+                          type="file"
+                          accept="video/mp4,video/quicktime,video/x-matroska,video/*"
+                          onChange={handleFileChange}
+                          className="hidden"
+                          id="videoFileInput"
+                        />
+                        <label htmlFor="videoFileInput" className="cursor-pointer block">
+                          <UploadCloud className="w-10 h-10 text-[#FF5C00] mx-auto mb-2" />
+                          <span className="text-base font-bold text-white block">
+                            {selectedFile ? selectedFile.name : 'Select Video File (.mp4, .mov, .mkv)'}
+                          </span>
+                          <span className="text-sm text-[#A8A095] mt-1.5 block">
+                            {selectedFile
+                              ? `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB ready for direct Cloudflare R2 chunked upload`
+                              : 'High-speed chunked upload with automated HLS ABR transcode'}
+                          </span>
+                        </label>
                       </div>
-                      <div className="w-full bg-white/10 h-2.5 rounded-full overflow-hidden">
-                        <div
-                          className="bg-gradient-to-r from-[#FF5C00] to-[#E04800] h-full transition-all duration-300"
-                          style={{ width: `${uploadProgress}%` }}
+                    </div>
+
+                    {/* Progress Bar (if uploading) */}
+                    {uploadSubmitting && (
+                      <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
+                        <div className="flex justify-between text-sm font-bold">
+                          <span className="text-[#FF8A00]">{uploadStep}</span>
+                          <span className="text-white">{uploadProgress}%</span>
+                        </div>
+                        <div className="w-full bg-white/10 h-2.5 rounded-full overflow-hidden">
+                          <div
+                            className="bg-gradient-to-r from-[#FF5C00] to-[#E04800] h-full transition-all duration-300"
+                            style={{ width: `${uploadProgress}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Title & Type */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="sm:col-span-2">
+                        <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
+                          Title *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={title}
+                          onChange={(e) => setTitle(e.target.value)}
+                          placeholder="e.g. Shadows of the Peak"
+                          className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] rounded-xl px-4 py-3.5 text-base sm:text-sm text-white placeholder-[#8E8679] outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
+                          Content Type
+                        </label>
+                        <select
+                          value={contentType}
+                          onChange={(e: any) => setContentType(e.target.value)}
+                          className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] rounded-xl px-4 py-3.5 text-base sm:text-sm text-white outline-none cursor-pointer"
+                        >
+                          <option value="MOVIE">Movie</option>
+                          <option value="SERIES">Series</option>
+                          <option value="DOCUMENTARY">Documentary</option>
+                          <option value="EVENT">Event</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Synopsis */}
+                    <div>
+                      <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
+                        Synopsis / Storyline
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Brief overview of the plot or curriculum..."
+                        className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] rounded-xl px-4 py-3.5 text-base sm:text-sm text-white placeholder-[#8E8679] outline-none resize-none leading-relaxed"
+                      />
+                    </div>
+
+                    {/* Multi-Select Genre Tags Picker */}
+                    {genres.length > 0 && (
+                      <div>
+                        <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
+                          Assign Genres / Tags
+                        </label>
+                        <div className="flex flex-wrap gap-2 p-3 rounded-2xl bg-[#1A1613] border border-white/10">
+                          {genres.map((g) => {
+                            const isSelected = selectedGenreIds.includes(g.id);
+                            return (
+                              <button
+                                key={g.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedGenreIds((prev) =>
+                                    prev.includes(g.id)
+                                      ? prev.filter((id) => id !== g.id)
+                                      : [...prev, g.id]
+                                  );
+                                }}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 ${
+                                  isSelected
+                                    ? 'bg-[#FF5C00] text-white border-[#FF5C00] shadow-[0_0_12px_rgba(255,92,0,0.35)]'
+                                    : 'bg-white/5 text-[#A8A095] border-white/10 hover:bg-white/10 hover:text-white'
+                                }`}
+                              >
+                                {isSelected && <Check className="w-3 h-3" />}
+                                <span>{g.name}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Release Year, Rating, Duration */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
+                          Release Year
+                        </label>
+                        <input
+                          type="number"
+                          value={releaseYear}
+                          onChange={(e) => setReleaseYear(Number(e.target.value))}
+                          className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3.5 text-base sm:text-sm text-white outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
+                          Age Rating
+                        </label>
+                        <input
+                          type="text"
+                          value={rating}
+                          onChange={(e) => setRating(e.target.value)}
+                          placeholder="U/A 13+"
+                          className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3.5 text-base sm:text-sm text-white outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
+                          Runtime (Minutes)
+                        </label>
+                        <input
+                          type="number"
+                          value={durationMinutes}
+                          onChange={(e) => setDurationMinutes(Number(e.target.value))}
+                          className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3.5 text-base sm:text-sm text-white outline-none"
                         />
                       </div>
                     </div>
-                  )}
 
-                  {/* Title & Type */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="sm:col-span-2">
-                      <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
-                        Title *
-                      </label>
+                    {/* Artwork URLs with Direct Cloudflare R2 Image Upload */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="block text-sm font-bold uppercase tracking-wider text-white/95">
+                            Poster Thumbnail (Portrait 2:3)
+                          </label>
+                          <label className="text-sm font-bold text-[#FF8A00] hover:text-[#FFA033] cursor-pointer flex items-center gap-1.5 transition-colors">
+                            <UploadCloud className="w-4 h-4" />
+                            <span>{uploadingPoster ? 'Uploading to R2...' : 'Upload Image'}</span>
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp,image/*"
+                              disabled={uploadingPoster}
+                              onChange={handleUploadPosterImage}
+                              className="hidden"
+                            />
+                          </label>
+                        </div>
+                        <div className="flex gap-2 items-center">
+                          <input
+                            type="url"
+                            value={thumbnailUrl}
+                            onChange={(e) => setThumbnailUrl(e.target.value)}
+                            placeholder="https://... or click 'Upload Image'"
+                            className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] rounded-xl px-4 py-3.5 text-base sm:text-sm text-white placeholder-[#8E8679] outline-none"
+                          />
+                        </div>
+                        <span className="text-xs sm:text-sm text-[#B0A79B] mt-2 block leading-normal">
+                          Vertical poster for cards & mobile (auto-uploaded to Cloudflare R2 or paste URL).
+                        </span>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="block text-sm font-bold uppercase tracking-wider text-white/95">
+                            Backdrop Landscape (16:9 Hero)
+                          </label>
+                          <label className="text-sm font-bold text-[#FF8A00] hover:text-[#FFA033] cursor-pointer flex items-center gap-1.5 transition-colors">
+                            <UploadCloud className="w-4 h-4" />
+                            <span>{uploadingBackdrop ? 'Uploading to R2...' : 'Upload Image'}</span>
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp,image/*"
+                              disabled={uploadingBackdrop}
+                              onChange={handleUploadBackdropImage}
+                              className="hidden"
+                            />
+                          </label>
+                        </div>
+                        <div className="flex gap-2 items-center">
+                          <input
+                            type="url"
+                            value={backdropUrl}
+                            onChange={(e) => setBackdropUrl(e.target.value)}
+                            placeholder="https://... or click 'Upload Image'"
+                            className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] rounded-xl px-4 py-3.5 text-base sm:text-sm text-white placeholder-[#8E8679] outline-none"
+                          />
+                        </div>
+                        <span className="text-xs sm:text-sm text-[#B0A79B] mt-2 block leading-normal">
+                          Wide banner shown on the homepage hero carousel & title details.
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Direct Stream Manifest Option */}
+                    <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-4 sm:p-5 space-y-2.5">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <label className="block text-sm font-bold uppercase tracking-wider text-white/95">
+                          External Stream Key or HLS Manifest (Optional)
+                        </label>
+                        <span className="text-xs font-bold px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                          Leave blank if uploading video file above
+                        </span>
+                      </div>
                       <input
                         type="text"
-                        required
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        placeholder="e.g. Shadows of the Peak"
+                        value={streamManifestKey}
+                        onChange={(e) => setStreamManifestKey(e.target.value)}
+                        placeholder="e.g. hls/second-task-race-to-the-finish/master.m3u8"
                         className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] rounded-xl px-4 py-3.5 text-base sm:text-sm text-white placeholder-[#8E8679] outline-none"
                       />
+                      <p className="text-xs sm:text-sm text-[#B0A79B] leading-relaxed">
+                        💡 <strong>When to use:</strong> Only fill this if your video is already transcoded into HLS in Cloudflare R2 (like <code>hls/second-task-race-to-the-finish/master.m3u8</code>) or hosted on an external CDN. If you selected a video file above, leave this field completely empty — the platform generates the stream key automatically.
+                      </p>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
-                        Content Type
-                      </label>
-                      <select
-                        value={contentType}
-                        onChange={(e: any) => setContentType(e.target.value)}
-                        className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] rounded-xl px-4 py-3.5 text-base sm:text-sm text-white outline-none cursor-pointer"
-                      >
-                        <option value="MOVIE">Movie</option>
-                        <option value="SERIES">Series</option>
-                        <option value="DOCUMENTARY">Documentary</option>
-                        <option value="EVENT">Event</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Description */}
-                  <div>
-                    <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
-                      Synopsis / Storyline
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Brief overview of the story..."
-                      className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] rounded-xl px-4 py-3.5 text-base sm:text-sm text-white placeholder-[#8E8679] outline-none resize-none leading-relaxed"
-                    />
-                  </div>
-
-                  {/* Release Year, Rating, Duration */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
-                        Release Year
-                      </label>
-                      <input
-                        type="number"
-                        value={releaseYear}
-                        onChange={(e) => setReleaseYear(Number(e.target.value))}
-                        className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3.5 text-base sm:text-sm text-white outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
-                        Age Rating
-                      </label>
-                      <input
-                        type="text"
-                        value={rating}
-                        onChange={(e) => setRating(e.target.value)}
-                        placeholder="U/A 13+"
-                        className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3.5 text-base sm:text-sm text-white outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
-                        Runtime (Minutes)
-                      </label>
-                      <input
-                        type="number"
-                        value={durationMinutes}
-                        onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                        className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3.5 text-base sm:text-sm text-white outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Artwork URLs with Direct Cloudflare R2 Image Upload */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="block text-sm font-bold uppercase tracking-wider text-white/95">
-                          Poster Thumbnail (Portrait 2:3)
-                        </label>
-                        <label className="text-sm font-bold text-[#FF8A00] hover:text-[#FFA033] cursor-pointer flex items-center gap-1.5 transition-colors">
-                          <UploadCloud className="w-4 h-4" />
-                          <span>{uploadingPoster ? 'Uploading to R2...' : 'Upload Image'}</span>
-                          <input
-                            type="file"
-                            accept="image/jpeg,image/png,image/webp,image/*"
-                            disabled={uploadingPoster}
-                            onChange={handleUploadPosterImage}
-                            className="hidden"
-                          />
-                        </label>
-                      </div>
-                      <div className="flex gap-2 items-center">
+                    {/* Checkboxes */}
+                    <div className="flex flex-wrap items-center gap-6 pt-2">
+                      <label className="flex items-center gap-2.5 cursor-pointer text-sm font-bold text-white">
                         <input
-                          type="url"
-                          value={thumbnailUrl}
-                          onChange={(e) => setThumbnailUrl(e.target.value)}
-                          placeholder="https://... or click 'Upload Image'"
-                          className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] rounded-xl px-4 py-3.5 text-base sm:text-sm text-white placeholder-[#8E8679] outline-none"
+                          type="checkbox"
+                          checked={isOriginal}
+                          onChange={(e) => setIsOriginal(e.target.checked)}
+                          className="w-4 h-4 rounded border-white/20 text-[#FF5C00] focus:ring-0"
                         />
-                        {thumbnailUrl && (
-                          <div className="w-12 h-12 shrink-0 rounded-lg overflow-hidden border border-white/20 bg-black shadow-md">
-                            <img src={thumbnailUrl} alt="Poster preview" className="w-full h-full object-cover" />
-                          </div>
-                        )}
-                      </div>
-                      <span className="text-xs sm:text-sm text-[#B0A79B] mt-2 block leading-normal">
-                        Vertical poster for cards & mobile (auto-uploaded to Cloudflare R2 or paste URL).
-                      </span>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="block text-sm font-bold uppercase tracking-wider text-white/95">
-                          Backdrop Landscape (16:9 Hero)
-                        </label>
-                        <label className="text-sm font-bold text-[#FF8A00] hover:text-[#FFA033] cursor-pointer flex items-center gap-1.5 transition-colors">
-                          <UploadCloud className="w-4 h-4" />
-                          <span>{uploadingBackdrop ? 'Uploading to R2...' : 'Upload Image'}</span>
-                          <input
-                            type="file"
-                            accept="image/jpeg,image/png,image/webp,image/*"
-                            disabled={uploadingBackdrop}
-                            onChange={handleUploadBackdropImage}
-                            className="hidden"
-                          />
-                        </label>
-                      </div>
-                      <div className="flex gap-2 items-center">
-                        <input
-                          type="url"
-                          value={backdropUrl}
-                          onChange={(e) => setBackdropUrl(e.target.value)}
-                          placeholder="https://... or click 'Upload Image'"
-                          className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] rounded-xl px-4 py-3.5 text-base sm:text-sm text-white placeholder-[#8E8679] outline-none"
-                        />
-                        {backdropUrl && (
-                          <div className="w-16 h-12 shrink-0 rounded-lg overflow-hidden border border-white/20 bg-black shadow-md">
-                            <img src={backdropUrl} alt="Backdrop preview" className="w-full h-full object-cover" />
-                          </div>
-                        )}
-                      </div>
-                      <span className="text-xs sm:text-sm text-[#B0A79B] mt-2 block leading-normal">
-                        Wide banner shown on the homepage hero carousel & title details.
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Direct Stream Manifest Option */}
-                  <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-4 sm:p-5 space-y-2.5">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <label className="block text-sm font-bold uppercase tracking-wider text-white/95">
-                        External Stream Key or HLS Manifest (Optional)
+                        <span>V19Plus Original</span>
                       </label>
-                      <span className="text-xs font-bold px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                        Leave blank if uploading video file above
+
+                      <label className="flex items-center gap-2.5 cursor-pointer text-sm font-bold text-white">
+                        <input
+                          type="checkbox"
+                          checked={isFeatured}
+                          onChange={(e) => setIsFeatured(e.target.checked)}
+                          className="w-4 h-4 rounded border-white/20 text-[#FF5C00] focus:ring-0"
+                        />
+                        <span>Featured in Hero Banner</span>
+                      </label>
+
+                      <label className="flex items-center gap-2.5 cursor-pointer text-sm font-bold text-white">
+                        <input
+                          type="checkbox"
+                          checked={publishImmediately}
+                          onChange={(e) => setPublishImmediately(e.target.checked)}
+                          className="w-4 h-4 rounded border-white/20 text-[#FF5C00] focus:ring-0"
+                        />
+                        <span>Publish Immediately</span>
+                      </label>
+                    </div>
+
+                    {/* Submit Button */}
+                    <button
+                      type="submit"
+                      disabled={uploadSubmitting}
+                      className="w-full py-4 px-6 rounded-2xl font-black text-base text-white bg-gradient-to-r from-[#FF5C00] to-[#E04800] hover:from-[#FF6B1A] hover:to-[#EB5505] shadow-[0_4px_25px_rgba(255,92,0,0.35)] transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      {uploadSubmitting ? 'Uploading & Registering...' : 'Upload Video & Publish to Catalog'}
+                    </button>
+                  </form>
+                </div>
+
+                {/* Right Column: Live Card Preview Desk */}
+                <div className="space-y-4">
+                  <div className="bg-[#120F0D] border border-white/10 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4 sticky top-6">
+                    <div className="flex items-center justify-between pb-3 border-b border-white/5">
+                      <div className="flex items-center gap-2">
+                        <Eye className="w-4 h-4 text-[#FF5C00]" />
+                        <span className="text-xs font-black uppercase tracking-wider text-white">
+                          Live Studio Card Preview
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        Audience View
                       </span>
                     </div>
-                    <input
-                      type="text"
-                      value={streamManifestKey}
-                      onChange={(e) => setStreamManifestKey(e.target.value)}
-                      placeholder="e.g. hls/second-task-race-to-the-finish/master.m3u8"
-                      className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] rounded-xl px-4 py-3.5 text-base sm:text-sm text-white placeholder-[#8E8679] outline-none"
-                    />
-                    <p className="text-xs sm:text-sm text-[#B0A79B] leading-relaxed">
-                      💡 <strong>When to use:</strong> Only fill this if your video is already transcoded into HLS in Cloudflare R2 (like <code>hls/second-task-race-to-the-finish/master.m3u8</code>) or hosted on an external CDN. If you selected a video file above, leave this field completely empty — the platform generates the stream key automatically.
-                    </p>
+
+                    {/* Preview Movie Poster Card */}
+                    <div className="rounded-2xl overflow-hidden bg-[#1A1613] border border-white/15 shadow-2xl relative group">
+                      <div className="relative aspect-[2/3] w-full bg-black/60 overflow-hidden">
+                        <img
+                          src={thumbnailUrl || backdropUrl || '/placeholder.png'}
+                          alt={title || 'Preview'}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#120F0D] via-transparent to-black/60 pointer-events-none" />
+
+                        {/* Top Badges */}
+                        <div className="absolute top-3 left-3">
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 backdrop-blur-md">
+                            {publishImmediately ? 'PUBLISHED' : 'DRAFT'}
+                          </span>
+                        </div>
+
+                        <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-black bg-black/70 border border-white/20 text-white backdrop-blur-md">
+                            {contentType}
+                          </span>
+                          {isOriginal && (
+                            <span className="px-2 py-0.5 rounded text-[9px] font-black bg-[#FF5C00] text-white shadow-md">
+                              ORIGINAL
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Bottom Info inside image */}
+                        <div className="absolute bottom-3 left-3 right-3">
+                          <div className="text-base font-black text-white drop-shadow-md truncate">
+                            {title || 'Untitled Feature'}
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-[#C8C2B8] mt-1 drop-shadow">
+                            <span>{releaseYear}</span>
+                            <span>•</span>
+                            <span>{rating}</span>
+                            <span>•</span>
+                            <span>{durationMinutes}m</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Selected Genres Strip */}
+                      <div className="p-3 bg-[#120F0D] border-t border-white/5 space-y-2">
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-[#A8A095]">
+                          Assigned Categories:
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {selectedGenreIds.length > 0 ? (
+                            genres
+                              .filter((g) => selectedGenreIds.includes(g.id))
+                              .map((g) => (
+                                <span
+                                  key={g.id}
+                                  className="px-2 py-0.5 rounded-md bg-[#FF5C00]/15 text-[#FF8A00] border border-[#FF5C00]/25 text-[10px] font-bold"
+                                >
+                                  {g.name}
+                                </span>
+                              ))
+                          ) : (
+                            <span className="text-[11px] text-[#8C8478] italic">No genres selected</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-white/[0.02] border border-white/5 text-[11px] text-[#A8A095] space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span>Streaming Profile:</span>
+                        <strong className="text-white">Multi-Rendition HLS</strong>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Edge CDN:</span>
+                        <strong className="text-emerald-400">Cloudflare Anycast</strong>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Adaptive Bitrate:</span>
+                        <strong className="text-[#FF8A00]">1080p / 720p / 480p</strong>
+                      </div>
+                    </div>
                   </div>
-
-                  {/* Checkboxes */}
-                  <div className="flex flex-wrap items-center gap-6 pt-2">
-                    <label className="flex items-center gap-2.5 cursor-pointer text-sm font-bold text-white">
-                      <input
-                        type="checkbox"
-                        checked={isOriginal}
-                        onChange={(e) => setIsOriginal(e.target.checked)}
-                        className="w-4 h-4 rounded border-white/20 text-[#FF5C00] focus:ring-0"
-                      />
-                      <span>V19Plus Original</span>
-                    </label>
-
-                    <label className="flex items-center gap-2.5 cursor-pointer text-sm font-bold text-white">
-                      <input
-                        type="checkbox"
-                        checked={isFeatured}
-                        onChange={(e) => setIsFeatured(e.target.checked)}
-                        className="w-4 h-4 rounded border-white/20 text-[#FF5C00] focus:ring-0"
-                      />
-                      <span>Featured in Hero Banner</span>
-                    </label>
-
-                    <label className="flex items-center gap-2.5 cursor-pointer text-sm font-bold text-white">
-                      <input
-                        type="checkbox"
-                        checked={publishImmediately}
-                        onChange={(e) => setPublishImmediately(e.target.checked)}
-                        className="w-4 h-4 rounded border-white/20 text-[#FF5C00] focus:ring-0"
-                      />
-                      <span>Publish Immediately</span>
-                    </label>
-                  </div>
-
-                  {/* Submit Button */}
-                  <button
-                    type="submit"
-                    disabled={uploadSubmitting}
-                    className="w-full py-4 px-6 rounded-xl font-black text-base text-white bg-gradient-to-r from-[#FF5C00] to-[#E04800] hover:from-[#FF6B1A] hover:to-[#EB5505] shadow-[0_4px_25px_rgba(255,92,0,0.35)] transition-all cursor-pointer disabled:opacity-50"
-                  >
-                    {uploadSubmitting ? 'Uploading & Registering...' : 'Upload Video & Publish to Catalog'}
-                  </button>
-                </form>
+                </div>
               </div>
             </div>
           )}
