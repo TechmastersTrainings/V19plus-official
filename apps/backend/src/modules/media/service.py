@@ -1,9 +1,12 @@
+import logging
 import math
 from typing import Any, Dict, List, Optional
 import boto3
 from botocore.config import Config
 from src.config import settings
 from src.core.exceptions import V19plusException
+
+logger = logging.getLogger("v19plus.media.storage")
 
 
 class MediaStorageService:
@@ -115,11 +118,37 @@ class MediaStorageService:
 
     def abort_multipart_upload(self, bucket: str, key: str, upload_id: str) -> None:
         """Abort an in-progress multipart upload to prevent orphan chunk storage charges"""
+        if self.is_mock_mode():
+            logger.info(f"[MOCK] Aborted multipart upload '{upload_id}' for key '{key}'")
+            return
+
         try:
             self.s3_client.abort_multipart_upload(
                 Bucket=bucket,
                 Key=key,
                 UploadId=upload_id,
             )
-        except Exception:
-            pass
+            logger.warning(
+                f"[R2 CLEANUP] Successfully aborted incomplete multipart upload. Bucket: '{bucket}', Key: '{key}', UploadId: '{upload_id}'"
+            )
+        except Exception as e:
+            # Handle idempotency: if the upload is already aborted or expired, do not error
+            error_code = getattr(e, "response", {}).get("Error", {}).get("Code", "")
+            if error_code in ("NoSuchUpload", "NotFound", "404"):
+                logger.info(f"[R2 CLEANUP] Multipart upload '{upload_id}' was already aborted or completed.")
+                return
+            logger.error(f"[R2 CLEANUP] Error while aborting multipart upload '{upload_id}' on key '{key}': {e}")
+            raise V19plusException(f"Failed to abort multipart upload in R2: {str(e)}", status_code=500)
+
+    def safe_abort_multipart_upload(self, bucket: str, key: str, upload_id: str) -> bool:
+        """
+        Safely abort an in-progress multipart upload without raising exceptions.
+        Ensures emergency cleanup never masks or suppresses the original error that triggered the failure.
+        Returns True if successfully aborted or already aborted, False otherwise.
+        """
+        try:
+            self.abort_multipart_upload(bucket, key, upload_id)
+            return True
+        except Exception as e:
+            logger.error(f"[R2 CLEANUP] safe_abort_multipart_upload failed gracefully: {e}")
+            return False

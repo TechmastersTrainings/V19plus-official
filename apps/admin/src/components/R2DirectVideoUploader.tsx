@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import api from '../api/axios';
+import { adminApi } from '../api/admin';
 import {
   UploadCloud,
   FileVideo,
@@ -45,6 +46,34 @@ export function R2DirectVideoUploader({
   const isPausedRef = useRef<boolean>(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const activeSessionRef = useRef<{ upload_id: string; key: string } | null>(null);
+  const isCompletedRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (!isCompletedRef.current && activeSessionRef.current) {
+        const { upload_id, key } = activeSessionRef.current;
+        try {
+          const payload = JSON.stringify({ upload_id, key, reason: 'Admin closed browser tab' });
+          if (navigator.sendBeacon) {
+            const blob = new Blob([payload], { type: 'application/json' });
+            navigator.sendBeacon('/api/media/upload/abort', blob);
+          } else {
+            fetch('/api/media/upload/abort', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: payload,
+              keepalive: true,
+            });
+          }
+        } catch {
+          // ignore
+        }
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
 
   const formatSize = (bytes: number) => {
     if (bytes === 0) return '0 B';
@@ -131,6 +160,13 @@ export function R2DirectVideoUploader({
     isPausedRef.current = false;
     abortControllerRef.current = new AbortController();
 
+    // Clean up any abandoned session before initiating a new one
+    if (activeSessionRef.current && !isCompletedRef.current) {
+      const oldSession = activeSessionRef.current;
+      adminApi.abortR2Upload({ upload_id: oldSession.upload_id, key: oldSession.key, reason: 'Superseded by new upload session' }).catch(() => {});
+      activeSessionRef.current = null;
+    }
+
     try {
       // 1. Initiate Multipart Session with FastAPI
       const initRes = await api.post('/media/upload/initiate', {
@@ -142,6 +178,8 @@ export function R2DirectVideoUploader({
       });
 
       const { upload_id, key, total_parts, initial_parts } = initRes.data;
+      activeSessionRef.current = { upload_id, key };
+      isCompletedRef.current = false;
 
       setUploadState('uploading');
       toast.success(`Multipart session established (${total_parts} chunks of 64MB)`);
@@ -216,6 +254,10 @@ export function R2DirectVideoUploader({
         file_size_bytes: selectedFile.size,
       });
 
+      // Mark completed permanently so cleanup never touches completed video
+      isCompletedRef.current = true;
+      activeSessionRef.current = null;
+
       setUploadState('success');
       setProgress(100);
       toast.success('Upload complete! Video processing enqueued on Render Worker.');
@@ -225,6 +267,16 @@ export function R2DirectVideoUploader({
       }
     } catch (err: any) {
       if (!isPausedRef.current) {
+        // Abort incomplete multipart upload in R2 on failure
+        if (!isCompletedRef.current && activeSessionRef.current) {
+          const session = activeSessionRef.current;
+          adminApi.abortR2Upload({
+            upload_id: session.upload_id,
+            key: session.key,
+            reason: err.message || 'Upload error encountered',
+          }).catch(() => {});
+          activeSessionRef.current = null;
+        }
         setUploadState('error');
         setErrorMessage(err.message || 'An unexpected error occurred during upload.');
         toast.error(`Upload error: ${err.message}`);
@@ -246,6 +298,15 @@ export function R2DirectVideoUploader({
 
   const resetUpload = () => {
     isPausedRef.current = true;
+    if (!isCompletedRef.current && activeSessionRef.current) {
+      const session = activeSessionRef.current;
+      adminApi.abortR2Upload({
+        upload_id: session.upload_id,
+        key: session.key,
+        reason: 'User cancelled/reset upload',
+      }).catch(() => {});
+      activeSessionRef.current = null;
+    }
     setSelectedFile(null);
     setProgress(0);
     setBytesTransferred(0);

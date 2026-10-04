@@ -134,6 +134,8 @@ export const adminApi = {
     episode_id?: string;
     file_size_bytes: number;
   }) => api.post('/media/upload/complete', data),
+  abortR2Upload: (data: { upload_id: string; key: string; reason?: string }) =>
+    api.post('/media/upload/abort', data),
   listVideoJobs: () => api.get('/jobs'),
   getVideoJob: (id: string) => api.get(`/jobs/${id}`),
   retryVideoJob: (id: string) => api.post(`/jobs/${id}/retry`),

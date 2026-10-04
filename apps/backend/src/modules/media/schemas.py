@@ -44,3 +44,16 @@ class CompleteMultipartUploadResponse(BaseModel):
     key: str
     job_id: uuid.UUID
     status: str
+
+
+class AbortMultipartUploadRequest(BaseModel):
+    upload_id: str
+    key: str
+    reason: Optional[str] = None
+
+
+class AbortMultipartUploadResponse(BaseModel):
+    status: str
+    upload_id: str
+    key: str
+    message: str

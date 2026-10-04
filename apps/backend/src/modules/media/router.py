@@ -17,6 +17,8 @@ from src.dependencies import TokenUser, require_admin
 from src.redis import get_redis_client
 from src.core.exceptions import V19plusException
 from src.modules.media.schemas import (
+    AbortMultipartUploadRequest,
+    AbortMultipartUploadResponse,
     CompleteMultipartUploadRequest,
     CompleteMultipartUploadResponse,
     InitiateMultipartUploadRequest,
@@ -184,13 +186,28 @@ async def complete_chunked_upload(
     bucket = settings.R2_STREAMING_BUCKET or settings.R2_MASTERS_BUCKET
     parts_payload = [{"PartNumber": p.part_number, "ETag": p.etag} for p in req.parts]
 
-    await run_in_threadpool(
-        storage.complete_multipart_upload,
-        bucket,
-        req.key,
-        req.upload_id,
-        parts_payload,
-    )
+    is_completed = False
+    try:
+        await run_in_threadpool(
+            storage.complete_multipart_upload,
+            bucket,
+            req.key,
+            req.upload_id,
+            parts_payload,
+        )
+        is_completed = True
+    except Exception as e:
+        logger.error(
+            f"[R2 CLEANUP] complete_chunked_upload failed assembling R2 parts for key '{req.key}', upload_id '{req.upload_id}': {e}"
+        )
+        # Abort the multipart upload to prevent orphan chunk storage charges
+        await run_in_threadpool(
+            storage.safe_abort_multipart_upload,
+            bucket,
+            req.key,
+            req.upload_id,
+        )
+        raise V19plusException(f"Failed to assemble chunked video in Cloudflare R2: {str(e)}", status_code=500)
 
     clean_key_name = re.sub(r"[^\w\.-]", "_", req.key).replace(".mp4", "").replace(".mov", "")
     target_id = req.content_id or req.episode_id or clean_key_name
@@ -204,6 +221,7 @@ async def complete_chunked_upload(
     hls_manifest_url = f"{cdn_base}/{hls_prefix}/master.m3u8" if cdn_base else stream_url
 
     # Automatically queue VideoJob for transcoding master into adaptive HLS
+    # NOTE: Since R2 assembly succeeded, we never abort the completed video object even if downstream job registration logs an issue
     job_id = None
     try:
         content_uuid = uuid.UUID(req.content_id) if req.content_id else None
@@ -244,6 +262,34 @@ async def complete_chunked_upload(
         "job_id": job_id,
         "file_size_bytes": req.file_size_bytes,
     }
+
+
+@router.post("/upload/chunked/abort", response_model=AbortMultipartUploadResponse)
+async def abort_chunked_upload(
+    req: AbortMultipartUploadRequest,
+):
+    """
+    Explicitly abort an in-progress chunked multipart upload in Cloudflare R2.
+    Frees all stored part chunks immediately to prevent orphan storage charges.
+    Safe and idempotent.
+    """
+    storage = MediaStorageService()
+    bucket = settings.R2_STREAMING_BUCKET or settings.R2_MASTERS_BUCKET
+    logger.warning(
+        f"[R2 CLEANUP] Explicit chunked abort requested. Key: '{req.key}', UploadId: '{req.upload_id}', Reason: '{req.reason}'"
+    )
+    await run_in_threadpool(
+        storage.safe_abort_multipart_upload,
+        bucket,
+        req.key,
+        req.upload_id,
+    )
+    return AbortMultipartUploadResponse(
+        status="aborted",
+        upload_id=req.upload_id,
+        key=req.key,
+        message="In-progress chunked multipart upload aborted and orphan chunks purged from R2.",
+    )
 
 
 @router.api_route("/stream/{filename}", methods=["GET", "HEAD"])
@@ -366,15 +412,26 @@ async def complete_upload(
     parts_payload = [{"PartNumber": p.part_number, "ETag": p.etag} for p in req.parts]
 
     # 1. Finalize multipart assembly in Cloudflare R2
-    storage.complete_multipart_upload(
-        settings.R2_MASTERS_BUCKET, req.key, req.upload_id, parts_payload
-    )
+    is_completed = False
+    try:
+        storage.complete_multipart_upload(
+            settings.R2_MASTERS_BUCKET, req.key, req.upload_id, parts_payload
+        )
+        is_completed = True
+    except Exception as e:
+        logger.error(
+            f"[R2 CLEANUP] complete_upload failed assembling R2 parts for key '{req.key}', upload_id '{req.upload_id}': {e}"
+        )
+        # Abort the multipart upload to prevent orphan chunk storage charges
+        storage.safe_abort_multipart_upload(settings.R2_MASTERS_BUCKET, req.key, req.upload_id)
+        raise V19plusException(f"Failed to assemble master video in R2: {str(e)}", status_code=500)
 
     # 2. Derive target streaming HLS prefix
     target_id = str(req.content_id or req.episode_id or uuid.uuid4())
     hls_prefix = f"hls/{target_id}"
 
     # 3. Create VideoJob in PostgreSQL
+    # NOTE: Since R2 assembly succeeded, we never abort the completed video object even if downstream DB/Redis operations encounter an error
     job = VideoJob(
         content_id=req.content_id,
         episode_id=req.episode_id,
@@ -419,4 +476,30 @@ async def complete_upload(
         key=req.key,
         job_id=job.id,
         status=job.status.value,
+    )
+
+
+@router.post(
+    "/upload/abort",
+    response_model=AbortMultipartUploadResponse,
+    dependencies=[Depends(require_admin)],
+)
+async def abort_upload(
+    req: AbortMultipartUploadRequest,
+):
+    """
+    Explicitly abort an in-progress multipart master upload in Cloudflare R2.
+    Frees all stored part chunks immediately to prevent orphan storage charges.
+    Safe and idempotent.
+    """
+    storage = MediaStorageService()
+    logger.warning(
+        f"[R2 CLEANUP] Admin explicit abort requested for master upload. Key: '{req.key}', UploadId: '{req.upload_id}', Reason: '{req.reason}'"
+    )
+    storage.safe_abort_multipart_upload(settings.R2_MASTERS_BUCKET, req.key, req.upload_id)
+    return AbortMultipartUploadResponse(
+        status="aborted",
+        upload_id=req.upload_id,
+        key=req.key,
+        message="In-progress multipart master upload aborted and orphan chunks purged from R2.",
     )

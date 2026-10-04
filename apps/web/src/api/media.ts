@@ -21,6 +21,13 @@ export interface CompleteUploadResponse {
   status: string;
 }
 
+export interface AbortUploadResponse {
+  status: string;
+  upload_id: string;
+  key: string;
+  message: string;
+}
+
 export const mediaApi = {
   initiateUpload: (data: {
     filename: string;
@@ -39,6 +46,19 @@ export const mediaApi = {
     file_size_bytes: number;
     content_id?: string;
   }) => api.post<CompleteUploadResponse>('/media/upload/complete', data),
+
+  abortUpload: (data: { upload_id: string; key: string; reason?: string }) =>
+    api.post<AbortUploadResponse>('/media/upload/abort', data),
+
+  abortChunkedUpload: (data: { upload_id: string; key: string; reason?: string }) => {
+    const uploadUrl =
+      typeof window !== 'undefined' &&
+      !window.location.hostname.includes('localhost') &&
+      !window.location.hostname.includes('127.0.0.1')
+        ? 'https://v19plus-official.onrender.com/api/media/upload/chunked/abort'
+        : '/media/upload/chunked/abort';
+    return api.post<AbortUploadResponse>(uploadUrl, data);
+  },
 
   uploadDirectFile: (file: File, onProgress?: (pct: number) => void) => {
     const formData = new FormData();
@@ -77,7 +97,8 @@ export const mediaApi = {
     onProgress?: (
       pct: number,
       details?: { currentPart: number; totalParts: number; uploadedBytes: number; totalBytes: number }
-    ) => void
+    ) => void,
+    options?: { signal?: AbortSignal }
   ) => {
     const getChunkEndpoint = (endpoint: string) => {
       // In production, upload directly to Render backend to bypass serverless 4.5MB limits
@@ -103,113 +124,179 @@ export const mediaApi = {
         file_size_bytes: file.size,
         content_type: file.type || 'video/mp4',
       },
-      { timeout: 30000 }
+      { timeout: 30000, signal: options?.signal }
     );
 
     const { upload_id, key } = initRes.data;
-    const parts: { part_number: number; etag: string }[] = [];
+    let isCompleted = false;
 
-    // 2. Upload each chunk with retry logic
-    let uploadedBytes = 0;
-
-    for (let partNumber = 1; partNumber <= totalParts; partNumber++) {
-      const start = (partNumber - 1) * CHUNK_SIZE;
-      const end = Math.min(start + CHUNK_SIZE, file.size);
-      const chunkBlob = file.slice(start, end);
-
-      let attempts = 0;
-      let partEtag = '';
-
-      while (attempts < 3) {
+    // Helper: Register beacon or keepalive abort request on browser window close
+    const emergencyAbortUrl = getChunkEndpoint('abort');
+    const handleBeforeUnload = () => {
+      if (!isCompleted && upload_id && key) {
         try {
-          const chunkForm = new FormData();
-          chunkForm.append('upload_id', upload_id);
-          chunkForm.append('key', key);
-          chunkForm.append('part_number', String(partNumber));
-          chunkForm.append('chunk', chunkBlob, file.name);
-
-          const partRes = await api.post<{ part_number: number; etag: string }>(
-            getChunkEndpoint('part'),
-            chunkForm,
-            {
-              timeout: 0,
-              onUploadProgress: (pEvent) => {
-                if (pEvent.total && onProgress) {
-                  const currentChunkLoaded = pEvent.loaded;
-                  const totalLoadedSoFar = start + currentChunkLoaded;
-                  const pct = Math.min(99, Math.round((totalLoadedSoFar * 100) / file.size));
-                  onProgress(pct, {
-                    currentPart: partNumber,
-                    totalParts,
-                    uploadedBytes: totalLoadedSoFar,
-                    totalBytes: file.size,
-                  });
-                }
-              },
-            }
-          );
-
-          partEtag = partRes.data.etag;
-          break;
-        } catch (chunkErr) {
-          attempts++;
-          if (attempts >= 3) {
-            throw new Error(
-              `Failed to upload chunk ${partNumber} of ${totalParts} after 3 attempts: ${
-                chunkErr instanceof Error ? chunkErr.message : 'Network error'
-              }`
-            );
+          const payload = JSON.stringify({ upload_id, key, reason: 'Browser window closed mid-upload' });
+          if (navigator.sendBeacon) {
+            const blob = new Blob([payload], { type: 'application/json' });
+            navigator.sendBeacon(emergencyAbortUrl, blob);
+          } else {
+            fetch(emergencyAbortUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: payload,
+              keepalive: true,
+            });
           }
-          await new Promise((r) => setTimeout(r, 1500 * attempts));
+        } catch {
+          // ignore
+        }
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('beforeunload', handleBeforeUnload);
+    }
+
+    try {
+      const parts: { part_number: number; etag: string }[] = [];
+      let uploadedBytes = 0;
+
+      if (options?.signal?.aborted) {
+        throw new Error('Upload cancelled before starting chunk transfers.');
+      }
+
+      // 2. Upload each chunk with retry logic
+      for (let partNumber = 1; partNumber <= totalParts; partNumber++) {
+        if (options?.signal?.aborted) {
+          throw new Error('Upload cancelled by user.');
+        }
+
+        const start = (partNumber - 1) * CHUNK_SIZE;
+        const end = Math.min(start + CHUNK_SIZE, file.size);
+        const chunkBlob = file.slice(start, end);
+
+        let attempts = 0;
+        let partEtag = '';
+
+        while (attempts < 3) {
+          if (options?.signal?.aborted) {
+            throw new Error('Upload cancelled by user.');
+          }
+
+          try {
+            const chunkForm = new FormData();
+            chunkForm.append('upload_id', upload_id);
+            chunkForm.append('key', key);
+            chunkForm.append('part_number', String(partNumber));
+            chunkForm.append('chunk', chunkBlob, file.name);
+
+            const partRes = await api.post<{ part_number: number; etag: string }>(
+              getChunkEndpoint('part'),
+              chunkForm,
+              {
+                timeout: 0,
+                signal: options?.signal,
+                onUploadProgress: (pEvent) => {
+                  if (pEvent.total && onProgress) {
+                    const currentChunkLoaded = pEvent.loaded;
+                    const totalLoadedSoFar = start + currentChunkLoaded;
+                    const pct = Math.min(99, Math.round((totalLoadedSoFar * 100) / file.size));
+                    onProgress(pct, {
+                      currentPart: partNumber,
+                      totalParts,
+                      uploadedBytes: totalLoadedSoFar,
+                      totalBytes: file.size,
+                    });
+                  }
+                },
+              }
+            );
+
+            partEtag = partRes.data.etag;
+            break;
+          } catch (chunkErr) {
+            attempts++;
+            if (options?.signal?.aborted || attempts >= 3) {
+              throw new Error(
+                `Failed to upload chunk ${partNumber} of ${totalParts} after ${attempts} attempts: ${
+                  chunkErr instanceof Error ? chunkErr.message : 'Network error'
+                }`
+              );
+            }
+            await new Promise((r) => setTimeout(r, 1500 * attempts));
+          }
+        }
+
+        parts.push({ part_number: partNumber, etag: partEtag });
+        uploadedBytes += end - start;
+        if (onProgress) {
+          const pct = Math.min(99, Math.round((uploadedBytes * 100) / file.size));
+          onProgress(pct, {
+            currentPart: partNumber,
+            totalParts,
+            uploadedBytes,
+            totalBytes: file.size,
+          });
         }
       }
 
-      parts.push({ part_number: partNumber, etag: partEtag });
-      uploadedBytes += end - start;
+      // 3. Complete chunked upload
+      const completeRes = await api.post<{
+        storage_key: string;
+        stream_url: string;
+        file_size_bytes: number;
+      }>(
+        getChunkEndpoint('complete'),
+        {
+          upload_id,
+          key,
+          parts,
+          file_size_bytes: file.size,
+        },
+        { timeout: 60000, signal: options?.signal }
+      );
+
+      // Permanently mark as completed so cleanup never touches completed video
+      isCompleted = true;
+
       if (onProgress) {
-        const pct = Math.min(99, Math.round((uploadedBytes * 100) / file.size));
-        onProgress(pct, {
-          currentPart: partNumber,
+        onProgress(100, {
+          currentPart: totalParts,
           totalParts,
-          uploadedBytes,
+          uploadedBytes: file.size,
           totalBytes: file.size,
         });
       }
+
+      return {
+        data: {
+          storage_key: completeRes.data.storage_key,
+          filename: file.name,
+          file_size_bytes: file.size,
+          stream_url: completeRes.data.stream_url,
+          content_type: file.type || 'video/mp4',
+        },
+      };
+    } catch (uploadErr) {
+      // If upload failed before completion, abort the multipart upload in R2 immediately
+      if (!isCompleted && upload_id && key) {
+        try {
+          console.warn(`[R2 CLEANUP] Aborting incomplete multipart upload '${upload_id}' on error:`, uploadErr);
+          await mediaApi.abortChunkedUpload({
+            upload_id,
+            key,
+            reason: uploadErr instanceof Error ? uploadErr.message : 'Upload failed',
+          });
+        } catch (abortErr) {
+          console.error('[R2 CLEANUP] Failed to send abort request to backend:', abortErr);
+        }
+      }
+      // Re-throw original error so it's not swallowed
+      throw uploadErr;
+    } finally {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('beforeunload', handleBeforeUnload);
+      }
     }
-
-    // 3. Complete chunked upload
-    const completeRes = await api.post<{
-      storage_key: string;
-      stream_url: string;
-      file_size_bytes: number;
-    }>(
-      getChunkEndpoint('complete'),
-      {
-        upload_id,
-        key,
-        parts,
-        file_size_bytes: file.size,
-      },
-      { timeout: 60000 }
-    );
-
-    if (onProgress) {
-      onProgress(100, {
-        currentPart: totalParts,
-        totalParts,
-        uploadedBytes: file.size,
-        totalBytes: file.size,
-      });
-    }
-
-    return {
-      data: {
-        storage_key: completeRes.data.storage_key,
-        filename: file.name,
-        file_size_bytes: file.size,
-        stream_url: completeRes.data.stream_url,
-        content_type: file.type || 'video/mp4',
-      },
-    };
   },
 };
