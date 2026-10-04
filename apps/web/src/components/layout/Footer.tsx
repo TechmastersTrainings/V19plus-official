@@ -16,17 +16,17 @@ export function Footer() {
   }
 
   return (
-    <footer className="mt-12 border-t border-white/5 bg-[#070605] text-[#A49C90] pt-10 pb-14 px-4 sm:px-6 lg:px-8">
+    <footer className="mt-12 border-t border-white/10 bg-[#121212] text-[#A49C90] pt-10 pb-14 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Top: Brand & Platform Mission */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 pb-12 border-b border-white/5">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 pb-12 border-b border-white/10">
           <div className="lg:col-span-5 space-y-4">
             <Link href="/" className="inline-flex items-center gap-3 group">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF5C00] to-[#E04800] shadow-[0_0_20px_rgba(255,92,0,0.4)] flex items-center justify-center group-hover:scale-105 transition-transform">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#E50914] to-[#B30710] shadow-[0_0_20px_rgba(229,9,20,0.4)] flex items-center justify-center group-hover:scale-105 transition-transform">
                 <Play className="w-5 h-5 fill-white text-white ml-0.5" />
               </div>
               <span className="font-black text-2xl tracking-tight text-white">
-                V19<span className="text-[#FF5C00]">Plus</span>
+                V19<span className="text-[#3EFFC0]">Plus</span>
               </span>
             </Link>
             <p className="text-xs sm:text-sm text-gray-400 leading-relaxed max-w-md">
@@ -35,14 +35,14 @@ export function Footer() {
             </p>
             {/* Entertainment badges */}
             <div className="flex flex-wrap gap-2 pt-2">
-              <span className="px-2.5 py-1 rounded-md bg-[#14100D] border border-white/10 text-[11px] font-semibold text-gray-300 flex items-center gap-1.5">
-                <Sparkles className="w-3 h-3 text-[#FF5C00]" /> Curated Stories
+              <span className="px-2.5 py-1 rounded-md bg-[#181818] border border-white/10 text-[11px] font-semibold text-gray-300 flex items-center gap-1.5">
+                <Sparkles className="w-3 h-3 text-[#3EFFC0]" /> Curated Stories
               </span>
-              <span className="px-2.5 py-1 rounded-md bg-[#14100D] border border-white/10 text-[11px] font-semibold text-gray-300 flex items-center gap-1.5">
-                <Film className="w-3 h-3 text-[#FF8A00]" /> V19Plus Originals
+              <span className="px-2.5 py-1 rounded-md bg-[#181818] border border-white/10 text-[11px] font-semibold text-gray-300 flex items-center gap-1.5">
+                <Film className="w-3 h-3 text-[#E50914]" /> V19Plus Originals
               </span>
-              <span className="px-2.5 py-1 rounded-md bg-[#14100D] border border-white/10 text-[11px] font-semibold text-gray-300 flex items-center gap-1.5">
-                <ShieldCheck className="w-3 h-3 text-emerald-400" /> Ad-Free Streaming
+              <span className="px-2.5 py-1 rounded-md bg-[#181818] border border-white/10 text-[11px] font-semibold text-gray-300 flex items-center gap-1.5">
+                <ShieldCheck className="w-3 h-3 text-[#00E5FF]" /> Ad-Free Direct Edge
               </span>
             </div>
           </div>

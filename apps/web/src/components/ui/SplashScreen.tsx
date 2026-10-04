@@ -118,7 +118,7 @@ export function SplashScreen() {
           <div
             className="w-[500px] h-[500px] rounded-full"
             style={{
-              background: 'radial-gradient(circle, rgba(229,9,20,0.15) 0%, rgba(229,9,20,0.05) 40%, transparent 70%)',
+              background: 'radial-gradient(circle, rgba(62,255,192,0.15) 0%, rgba(229,9,20,0.08) 40%, transparent 70%)',
               filter: 'blur(60px)',
               willChange: 'transform',
             }}
@@ -129,7 +129,7 @@ export function SplashScreen() {
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
           {/* Logo Badge */}
           <motion.div
-            className="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-gradient-to-br from-[#FF8A00] to-[#D44900] p-0.5 shadow-[0_0_35px_rgba(255,92,0,0.55)] mb-4 overflow-hidden"
+            className="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-gradient-to-br from-[#E50914] via-[#00E5FF] to-[#3EFFC0] p-0.5 shadow-[0_0_35px_rgba(62,255,192,0.45)] mb-4 overflow-hidden"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={opening ? { opacity: 0, scale: 1.1 } : { opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
@@ -158,10 +158,10 @@ export function SplashScreen() {
             }
           >
             <span className="text-white">V19</span>
-            <span className="text-[#FF5C00] relative">
+            <span className="text-[#3EFFC0] relative">
               Plus
               <motion.span
-                className="absolute inset-0 text-[#FF5C00] blur-[10px] pointer-events-none"
+                className="absolute inset-0 text-[#3EFFC0] blur-[10px] pointer-events-none"
                 animate={{ opacity: [0.35, 0.9, 0.35] }}
                 transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
                 aria-hidden
@@ -186,7 +186,7 @@ export function SplashScreen() {
           <motion.div
             className="absolute left-0 right-0 top-1/2 h-px pointer-events-none"
             style={{
-              background: 'linear-gradient(90deg, transparent, rgba(255,92,0,0.3), transparent)',
+              background: 'linear-gradient(90deg, transparent, rgba(62,255,192,0.4), transparent)',
               willChange: 'transform, opacity',
             }}
             initial={{ scaleX: 0, opacity: 0 }}
@@ -200,7 +200,7 @@ export function SplashScreen() {
           <motion.div
             className="h-full rounded-full"
             style={{
-              background: 'linear-gradient(90deg, #FF5C00, #FF8A00)',
+              background: 'linear-gradient(90deg, #E50914, #00E5FF, #3EFFC0)',
               willChange: 'transform',
             }}
             initial={{ scaleX: 0, transformOrigin: 'left' }}

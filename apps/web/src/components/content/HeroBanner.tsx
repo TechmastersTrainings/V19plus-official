@@ -118,7 +118,7 @@ export function HeroBanner({ content, contents, isLoading, hideContent = false }
     'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=1920&q=80';
 
   return (
-    <section className="relative w-full h-[520px] sm:h-[600px] md:h-[660px] lg:h-[700px] overflow-hidden bg-[#070605]">
+    <section className="relative w-full h-[520px] sm:h-[600px] md:h-[660px] lg:h-[700px] overflow-hidden bg-[#121212]">
       {/* Background Poster / Trailer Video with Balanced Cinematic Framing */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         <AnimatePresence mode="wait">
@@ -152,12 +152,13 @@ export function HeroBanner({ content, contents, isLoading, hideContent = false }
               />
             )}
 
-            {/* Studio Multi-Layered Vignettes - Balanced so the video is clearly visible and centered */}
-            <div className="hidden md:block absolute inset-0 bg-gradient-to-r from-[#070605] via-[#070605]/55 to-transparent z-10 w-[52%] lg:w-[46%] pointer-events-none" />
-            <div className="md:hidden absolute inset-0 bg-gradient-to-t from-[#070605] via-[#070605]/65 to-transparent z-10 pointer-events-none" />
-            <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#070605] to-transparent z-10 pointer-events-none" />
-            <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-[#070605]/75 via-[#070605]/20 to-transparent z-10 pointer-events-none" />
-            <div className="absolute top-1/4 left-8 w-[280px] h-[280px] rounded-full bg-[#FF5C00]/10 blur-[100px] pointer-events-none z-10" />
+            {/* Studio Multi-Layered Vignettes into Deep Charcoal #121212 */}
+            <div className="hidden md:block absolute inset-0 bg-gradient-to-r from-[#121212] via-[#121212]/60 to-transparent z-10 w-[55%] lg:w-[48%] pointer-events-none" />
+            <div className="md:hidden absolute inset-0 bg-gradient-to-t from-[#121212] via-[#121212]/70 to-transparent z-10 pointer-events-none" />
+            <div className="absolute bottom-0 left-0 right-0 h-44 bg-gradient-to-t from-[#121212] via-[#121212]/80 to-transparent z-10 pointer-events-none" />
+            <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-[#121212]/80 via-[#121212]/20 to-transparent z-10 pointer-events-none" />
+            {/* Ambient Multi-Hue Glow */}
+            <div className="absolute top-1/4 left-8 w-[320px] h-[320px] rounded-full bg-gradient-to-br from-[#3EFFC0]/15 via-[#00E5FF]/10 to-[#E50914]/15 blur-[110px] pointer-events-none z-10" />
           </motion.div>
         </AnimatePresence>
       </div>
@@ -175,44 +176,47 @@ export function HeroBanner({ content, contents, isLoading, hideContent = false }
                 transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                 className="max-w-2xl"
               >
-                {/* Brand Tag / Kicker */}
+                {/* Brand Tag / Kicker with Turquoise #3EFFC0 */}
                 <div className="inline-flex items-center gap-2 mb-2 sm:mb-2.5">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[#FF8A00] text-[11px] font-medium tracking-wide">
-                    <Sparkles className="w-3 h-3 text-[#FF5C00]" />
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#181818]/90 backdrop-blur-md border border-[#3EFFC0]/35 text-[#3EFFC0] text-[11px] font-bold tracking-wide shadow-[0_0_15px_rgba(62,255,192,0.2)]">
+                    <Sparkles className="w-3 h-3 text-[#3EFFC0]" />
                     {isOriginal ? 'V19Plus Original' : 'Featured Presentation'}
                   </span>
                 </div>
 
-                {/* Main Hero Title - Refined, cinematic, not oversized or overly bold */}
-                <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-[3.25rem] font-bold font-display tracking-tight text-white mb-3 leading-[1.12] drop-shadow-lg">
+                {/* Main Hero Title - Pure White #FFFFFF */}
+                <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-[3.25rem] font-black font-display tracking-tight text-white mb-3 leading-[1.12] drop-shadow-2xl">
                   {current.title}
                 </h1>
 
                 {/* Metadata Row */}
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm mb-3.5 text-[#B8B0A2] font-medium">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm mb-3.5 text-[#C0C0C0] font-medium">
                   {current.imdbScore && (
-                    <span className="flex items-center gap-1 text-[#FFB800] font-semibold bg-[#FFB800]/10 border border-[#FFB800]/25 px-2 py-0.5 rounded text-xs">
+                    <span className="flex items-center gap-1 text-[#3EFFC0] font-bold bg-[#3EFFC0]/15 border border-[#3EFFC0]/30 px-2 py-0.5 rounded text-xs">
                       ★ {current.imdbScore} IMDb
                     </span>
                   )}
-                  <span className="text-white/90">{releaseYear}</span>
-                  <span className="border border-white/20 px-1.5 py-0.5 text-[10px] rounded bg-white/10 text-white font-medium">
+                  <span className="text-white font-bold">{releaseYear}</span>
+                  <span className="border border-white/20 px-1.5 py-0.5 text-[10px] rounded bg-white/10 text-white font-bold">
                     {rating}
                   </span>
                   {durationMins > 0 && (
-                    <span className="text-[#9A9284]">
+                    <span className="text-[#A0A0A0]">
                       {Math.floor(durationMins / 60)}h {durationMins % 60}m
                     </span>
                   )}
                   {genreList.length > 0 && (
-                    <span className="text-[#FF8A00]/90">
+                    <span className="text-[#00E5FF] font-semibold">
                       • {genreList.slice(0, 2).join(' • ')}
                     </span>
                   )}
+                  <span className="text-[#3EFFC0] font-bold text-[10px] border border-[#3EFFC0]/30 bg-[#3EFFC0]/10 px-1.5 py-0.5 rounded">
+                    4K UHD
+                  </span>
                 </div>
 
                 {/* Description Synopsis */}
-                <p className="text-xs sm:text-sm md:text-base text-[#D4CDC3]/90 font-normal mb-6 line-clamp-3 max-w-xl leading-relaxed drop-shadow-md">
+                <p className="text-xs sm:text-sm md:text-base text-[#D0D0D0] font-normal mb-6 line-clamp-3 max-w-xl leading-relaxed drop-shadow-md">
                   {current.description}
                 </p>
 
@@ -221,29 +225,29 @@ export function HeroBanner({ content, contents, isLoading, hideContent = false }
                   {/* Primary Netflix-Style Play Button */}
                   <Link
                     href={`/watch/${current.slug}`}
-                    className="flex items-center justify-center gap-2.5 px-6 sm:px-7 py-2.5 sm:py-3 bg-white hover:bg-neutral-200 active:scale-95 text-black font-semibold rounded-xl text-sm sm:text-base transition-all duration-200 shadow-[0_4px_20px_rgba(255,255,255,0.2)]"
+                    className="flex items-center justify-center gap-2.5 px-6 sm:px-7 py-2.5 sm:py-3 bg-white hover:bg-[#3EFFC0] active:scale-95 text-[#121212] font-black rounded-xl text-sm sm:text-base transition-all duration-200 shadow-[0_4px_20px_rgba(255,255,255,0.25)] hover:shadow-[0_0_25px_rgba(62,255,192,0.5)] cursor-pointer"
                   >
-                    <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-black text-black" />
+                    <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-[#121212] text-[#121212]" />
                     <span>Play</span>
                   </Link>
 
                   {/* Details / Specs Button */}
                   <button
                     onClick={handleMoreInfo}
-                    className="flex items-center justify-center gap-2.5 px-5 sm:px-6 py-2.5 sm:py-3 bg-[#181411]/90 hover:bg-[#26201B] active:scale-95 text-white font-medium rounded-xl text-sm sm:text-base border border-white/20 transition-all backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.6)]"
+                    className="flex items-center justify-center gap-2.5 px-5 sm:px-6 py-2.5 sm:py-3 bg-[#181818]/90 hover:bg-[#242424] active:scale-95 text-white font-bold rounded-xl text-sm sm:text-base border border-white/20 hover:border-[#00E5FF]/50 transition-all backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.7)] cursor-pointer"
                   >
-                    <Info className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                    <Info className="w-4 h-4 sm:w-5 sm:h-5 text-[#00E5FF]" />
                     <span>More Info</span>
                   </button>
 
                   {/* Add to Watchlist Button */}
                   <button
                     onClick={handleWatchlist}
-                    className="p-2.5 sm:p-3 rounded-xl bg-[#181411]/90 hover:bg-[#26201B] border border-white/20 text-white transition-all active:scale-95 backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.6)]"
+                    className="p-2.5 sm:p-3 rounded-xl bg-[#181818]/90 hover:bg-[#242424] border border-white/20 text-white transition-all active:scale-95 backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.7)] cursor-pointer"
                     title={inList ? 'Remove from My List' : 'Add to My List'}
                     aria-label="Add to My List"
                   >
-                    {inList ? <Check className="w-4 h-4 sm:w-5 sm:h-5 text-[#FF8A00]" /> : <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-white" />}
+                    {inList ? <Check className="w-4 h-4 sm:w-5 sm:h-5 text-[#3EFFC0] stroke-[3]" /> : <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-white" />}
                   </button>
                 </div>
               </motion.div>
@@ -255,14 +259,14 @@ export function HeroBanner({ content, contents, isLoading, hideContent = false }
       {/* Bottom Right Rating & Audio Control */}
       <div className="absolute bottom-6 sm:bottom-12 right-4 sm:right-8 md:right-12 z-30 flex items-center gap-2 sm:gap-3">
         {items.length > 1 && (
-          <div className="flex items-center gap-1.5 bg-[#181411]/90 backdrop-blur-xl px-2.5 sm:px-3 py-1.5 rounded-full border border-white/15 shadow-xl">
+          <div className="flex items-center gap-1.5 bg-[#181818]/90 backdrop-blur-xl px-2.5 sm:px-3 py-1.5 rounded-full border border-white/15 shadow-xl">
             {items.map((it, i) => (
               <button
                 key={it.id || i}
                 onClick={() => setActiveIndex(i)}
                 className={`h-1.5 rounded-full transition-all duration-300 ${
                   i === activeIndex
-                    ? 'w-5 sm:w-6 bg-[#FF5C00]'
+                    ? 'w-5 sm:w-6 bg-[#3EFFC0] shadow-[0_0_10px_#3EFFC0]'
                     : 'w-1.5 sm:w-2 bg-white/30 hover:bg-white/60'
                 }`}
                 aria-label={`Slide ${i + 1}: ${it.title}`}
@@ -274,15 +278,15 @@ export function HeroBanner({ content, contents, isLoading, hideContent = false }
         {videoSrc && (
           <button
             onClick={() => setIsMuted(!isMuted)}
-            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-white/20 bg-[#181411]/90 hover:bg-[#26201B] text-white flex items-center justify-center backdrop-blur-xl transition-all active:scale-95 shadow-xl"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-white/20 bg-[#181818]/90 hover:bg-[#242424] text-white flex items-center justify-center backdrop-blur-xl transition-all active:scale-95 shadow-xl"
             aria-label="Toggle Sound"
           >
-            {isMuted ? <VolumeX className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+            {isMuted ? <VolumeX className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#3EFFC0]" />}
           </button>
         )}
 
-        {/* Rating Badge (displayed on sm+ screens; on mobile it is in the metadata row) */}
-        <div className="hidden sm:block px-3.5 py-1.5 rounded-lg bg-[#181411]/90 border border-white/20 border-l-4 border-l-[#FF5C00] text-xs font-semibold text-white backdrop-blur-xl shadow-xl">
+        {/* Rating Badge */}
+        <div className="hidden sm:block px-3.5 py-1.5 rounded-lg bg-[#181818]/90 border border-white/20 border-l-4 border-l-[#E50914] text-xs font-bold text-white backdrop-blur-xl shadow-xl">
           {rating}
         </div>
       </div>

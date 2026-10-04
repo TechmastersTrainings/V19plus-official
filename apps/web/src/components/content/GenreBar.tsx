@@ -44,13 +44,13 @@ export function GenreBar() {
             <button
               key={pill}
               onClick={() => handleSelect(pill)}
-              className={`flex-shrink-0 px-3.5 py-1.5 rounded-lg text-xs font-medium tracking-wide transition-all duration-200 flex items-center gap-1.5 ${
+              className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold tracking-wide transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
                 isActive
-                  ? 'bg-[#FF5C00] text-white shadow-[0_0_12px_rgba(255,92,0,0.35)] border border-[#FF5C00]'
-                  : 'bg-[#121110] text-[#B0A89C] hover:text-white border border-white/5 hover:border-white/15 hover:bg-[#1A1816]'
+                  ? 'bg-[#3EFFC0] text-[#121212] shadow-[0_0_16px_rgba(62,255,192,0.45)] border border-[#3EFFC0]'
+                  : 'bg-[#181818] text-[#D0D0D0] hover:text-white border border-white/10 hover:border-[#00E5FF]/40 hover:bg-[#222222]'
               }`}
             >
-              {pill.includes('Masterclass') && <Sparkles className="w-3 h-3 text-amber-300" />}
+              {pill.includes('Masterclass') && <Sparkles className={`w-3 h-3 ${isActive ? 'text-[#121212]' : 'text-[#3EFFC0]'}`} />}
               <span>{pill}</span>
             </button>
           );

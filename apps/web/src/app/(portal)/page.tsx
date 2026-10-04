@@ -14,28 +14,17 @@ import {
   useContinueWatching,
   useBrowse,
 } from '../../hooks/useContent';
-import { useWatchlist, useAddToWatchlist, useRemoveFromWatchlist } from '../../hooks/useWatchlist';
+import { useWatchlist } from '../../hooks/useWatchlist';
 import { useAuthStore } from '../../store/authStore';
 import { useUiStore } from '../../store/uiStore';
 import type { Content } from '../../api/content';
 import {
   UploadCloud,
   Film,
-  Sparkles,
-  Play,
-  Tv,
   Compass,
-  ArrowRight,
   X,
-  Zap,
   ShieldCheck,
-  Check,
-  Bookmark,
-  Info,
-  Clock,
-  Layers,
 } from 'lucide-react';
-import toast from 'react-hot-toast';
 
 export default function HomePage() {
   const { data: featuredData, isLoading: featuredLoading } = useFeatured();
@@ -43,13 +32,10 @@ export default function HomePage() {
   const { data: originalsData, isLoading: originalsLoading } = useOriginals();
   const { data: continueWatchingData, isLoading: continueLoading } = useContinueWatching();
   const { data: watchlistData } = useWatchlist();
-  const addToWatchlist = useAddToWatchlist();
-  const removeFromWatchlist = useRemoveFromWatchlist();
 
   const { user, isAuthenticated } = useAuthStore();
   const activeGenre = useUiStore((s) => s.activeGenre);
   const setActiveGenre = useUiStore((s) => s.setActiveGenre);
-  const openDetail = useUiStore((s) => s.openDetail);
 
   const { data: genreContent, isLoading: genreLoading } = useBrowse(
     undefined,
@@ -115,17 +101,6 @@ export default function HomePage() {
     [allPool]
   );
 
-  // Feature Movies (excluding Masterclasses to prevent duplication)
-  const featureMovies = useMemo(
-    () =>
-      allPool.filter((c: any) => {
-        const typeMatch = c.content_type === 'MOVIE' || c.type === 'MOVIE';
-        const isNotMasterclass = !(c.title || '').toLowerCase().includes('masterclass');
-        return typeMatch && isNotMasterclass;
-      }),
-    [allPool]
-  );
-
   // Recorded Events
   const events = useMemo(
     () =>
@@ -181,37 +156,6 @@ export default function HomePage() {
     });
   }, [activeGenre, genreContent, allPool]);
 
-  // Spotlight title for the editorial cinema showcase
-  const spotlightItem: Content | null = useMemo(() => {
-    if (allPool.length === 0) return null;
-    return allPool[1] || allPool[0];
-  }, [allPool]);
-
-  // In-list check for the spotlight item
-  const isSpotlightInList = useMemo(() => {
-    if (!spotlightItem) return false;
-    return watchlistItems.some((w) => w.id === spotlightItem.id);
-  }, [spotlightItem, watchlistItems]);
-
-  const handleToggleSpotlightWatchlist = async () => {
-    if (!spotlightItem) return;
-    if (!isAuthenticated) {
-      toast.error('Sign in to add to your list');
-      return;
-    }
-    try {
-      if (isSpotlightInList) {
-        await removeFromWatchlist.mutateAsync(spotlightItem.id);
-        toast.success('Removed from My List');
-      } else {
-        await addToWatchlist.mutateAsync(spotlightItem.id);
-        toast.success('Added to My List');
-      }
-    } catch {
-      toast.error('Could not update list');
-    }
-  };
-
   // Smart OTT Showcase Shelves (Netflix / Prime Video Style)
   const dynamicSections = useMemo(() => {
     const sections: {
@@ -248,19 +192,7 @@ export default function HomePage() {
       });
     }
 
-    // 3. Feature Cinema & Premieres
-    const primaryMovies = featureMovies.length > 0 ? featureMovies : allPool.filter((c) => c.content_type === 'MOVIE');
-    if (primaryMovies.length > 0) {
-      sections.push({
-        id: 'feature-movies',
-        title: 'Feature Cinema',
-        subtitle: 'Original premiere cinema and feature productions',
-        items: primaryMovies,
-        seeAllHref: '/movies',
-      });
-    }
-
-    // 4. Series & Episodic Stories
+    // 3. Series & Episodic Stories
     const primarySeries = allPool.filter((c) => c.content_type === 'SERIES' || (c as any).type === 'SERIES');
     if (primarySeries.length > 0) {
       sections.push({
@@ -272,7 +204,7 @@ export default function HomePage() {
       });
     }
 
-    // 5. Complete Vault Catalog
+    // 4. Complete Vault Catalog
     if (allPool.length > 0) {
       sections.push({
         id: 'all-vault',
@@ -284,7 +216,7 @@ export default function HomePage() {
     }
 
     return sections;
-  }, [trending, allPool, originals, featureMovies]);
+  }, [trending, allPool, originals]);
 
   const isLoading = (featuredLoading || trendingLoading) && allPool.length === 0;
 
@@ -294,19 +226,19 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#070605] text-white pb-24 animate-fade-in overflow-x-hidden">
+    <div className="min-h-screen bg-[#121212] text-white selection:bg-[#3EFFC0]/30 selection:text-[#3EFFC0] pb-24 animate-fade-in overflow-x-hidden font-sans">
       {/* Admin Studio Quick Desk Bar (Visible strictly to authenticated admins) */}
       {isAdmin && (
-        <div className="relative z-30 bg-gradient-to-r from-[#FF5C00]/15 via-[#1A1410] to-[#070605] border-b border-white/10 px-4 sm:px-6 py-2.5 flex items-center justify-between text-xs">
+        <div className="relative z-30 bg-gradient-to-r from-[#E50914]/20 via-[#181818] to-[#121212] border-b border-white/10 px-4 sm:px-6 py-2.5 flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#FF5C00] animate-pulse" />
-            <span className="font-semibold text-[#E5E0D8]">
+            <span className="w-2 h-2 rounded-full bg-[#3EFFC0] shadow-[0_0_8px_#3EFFC0] animate-pulse" />
+            <span className="font-semibold text-white">
               V19Plus Studio Partner Portal • Catalog & Media Management
             </span>
           </div>
           <Link
             href="/admin"
-            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#FF5C00] hover:bg-[#E04800] text-white font-bold tracking-wide transition-all shadow-[0_0_12px_rgba(255,92,0,0.3)]"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-gradient-to-r from-[#E50914] to-[#B80710] hover:from-[#FF1E27] hover:to-[#E50914] text-white font-bold tracking-wide transition-all shadow-[0_0_12px_rgba(229,9,20,0.4)]"
           >
             <UploadCloud className="w-3.5 h-3.5" />
             <span>Studio Portal</span>
@@ -333,15 +265,15 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/10">
               <div className="flex items-center gap-3">
-                <span className="w-1.5 h-6 rounded-full bg-[#FF5C00] shadow-[0_0_12px_#FF5C00]" />
+                <span className="w-1.5 h-6 rounded-full bg-[#3EFFC0] shadow-[0_0_12px_#3EFFC0]" />
                 <div>
                   <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
                     <span>{activeGenre}</span>
-                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-white/10 text-[#FF8A00] border border-white/15">
+                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#3EFFC0]/15 text-[#3EFFC0] border border-[#3EFFC0]/30">
                       {filteredGenreItems.length} {filteredGenreItems.length === 1 ? 'Title' : 'Titles'}
                     </span>
                   </h2>
-                  <p className="text-xs text-[#8C8478] mt-0.5">
+                  <p className="text-xs text-[#A0A0A0] mt-0.5">
                     Curated selection in {activeGenre}
                   </p>
                 </div>
@@ -349,7 +281,7 @@ export default function HomePage() {
 
               <button
                 onClick={() => setActiveGenre(null)}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-[#A49C90] hover:text-white border border-white/10 transition-colors"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-[#A0A0A0] hover:text-white border border-white/10 transition-colors cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />
                 <span>Reset Filter</span>
@@ -380,17 +312,17 @@ export default function HomePage() {
                 )}
               </div>
             ) : (
-              <div className="py-14 px-4 text-center rounded-2xl bg-[#120F0C] border border-white/5 space-y-3">
-                <div className="w-12 h-12 rounded-xl bg-[#FF5C00]/15 flex items-center justify-center text-[#FF5C00] mx-auto shadow-[0_0_15px_rgba(255,92,0,0.2)]">
+              <div className="py-14 px-4 text-center rounded-2xl bg-[#181818] border border-white/10 space-y-3">
+                <div className="w-12 h-12 rounded-xl bg-[#3EFFC0]/15 flex items-center justify-center text-[#3EFFC0] mx-auto shadow-[0_0_15px_rgba(62,255,192,0.25)]">
                   <Film className="w-6 h-6" />
                 </div>
                 <h3 className="text-base font-bold text-white">No titles in {activeGenre} yet</h3>
-                <p className="text-xs text-[#8C8478] max-w-sm mx-auto">
+                <p className="text-xs text-[#A0A0A0] max-w-sm mx-auto">
                   New original titles are regularly being published. Explore our complete streaming library or select another category.
                 </p>
                 <button
                   onClick={() => setActiveGenre(null)}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#FF5C00] hover:bg-[#E04800] text-white font-bold text-xs shadow-md transition-all active:scale-95"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#3EFFC0] hover:bg-[#32e0a7] text-[#121212] font-black text-xs shadow-md transition-all active:scale-95 cursor-pointer"
                 >
                   View All Titles
                 </button>
@@ -403,7 +335,7 @@ export default function HomePage() {
       {/* Normal Curated Home Experience (Shown when not filtering by a single genre) */}
       {!activeGenre && (
         <>
-          {/* 4. Continue Watching (When Authenticated User Has In-Progress History) */}
+          {/* Continue Watching (When Authenticated User Has In-Progress History) */}
           {continueItems.length > 0 && (
             <ContentRow
               title="Continue Watching"
@@ -414,7 +346,7 @@ export default function HomePage() {
             />
           )}
 
-          {/* 5. Smart Dynamic Sections (Strictly Non-Duplicating) */}
+          {/* Smart Dynamic Sections (Strictly Non-Duplicating) */}
           {dynamicSections.map((sec) => (
             <ContentRow
               key={sec.id}
@@ -427,122 +359,7 @@ export default function HomePage() {
             />
           ))}
 
-          {/* 6. Cinematic Editorial Spotlight Feature Card */}
-          {spotlightItem && (
-            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 my-10 sm:my-14">
-              <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#1A1410] via-[#120E0B] to-[#080605] border border-white/10 p-6 sm:p-10 shadow-2xl">
-                {/* Ambient Warm Backlight */}
-                <div className="absolute -top-20 -right-20 w-96 h-96 bg-[#FF5C00]/15 blur-[120px] rounded-full pointer-events-none" />
-
-                <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-                  {/* Left Column: Editorial Info */}
-                  <div className="lg:col-span-7 space-y-4">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[#FFA84A] text-xs font-bold tracking-widest uppercase">
-                      <Sparkles className="w-3.5 h-3.5 text-[#FF5C00]" />
-                      <span>Featured Premiere Spotlight</span>
-                    </div>
-
-                    <h3 className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight leading-tight">
-                      {spotlightItem.title}
-                    </h3>
-
-                    {/* Metadata Strip */}
-                    <div className="flex flex-wrap items-center gap-3 text-xs font-semibold text-[#B8B0A2]">
-                      <span className="px-2 py-0.5 rounded bg-[#FF5C00]/15 border border-[#FF5C00]/30 text-[#FF8A00]">
-                        4K UHD Direct Stream
-                      </span>
-                      <span>{spotlightItem.release_year ?? 2026}</span>
-                      <span>•</span>
-                      <span>{spotlightItem.rating || 'U/A 13+'}</span>
-                      {spotlightItem.duration ? (
-                        <>
-                          <span>•</span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3 h-3 text-[#FF8A00]" />
-                            {spotlightItem.duration}m
-                          </span>
-                        </>
-                      ) : null}
-                      <span>•</span>
-                      <span className="text-white/70">Dolby 5.1 Surround</span>
-                    </div>
-
-                    <p className="text-sm sm:text-base text-[#D4CDC3]/90 leading-relaxed max-w-xl">
-                      {spotlightItem.description ||
-                        'Experience this master release in ultra-high bitrate streaming directly from global edge storage with lossless audio.'}
-                    </p>
-
-                    {/* CTA Actions */}
-                    <div className="flex flex-wrap items-center gap-3 pt-2">
-                      <Link
-                        href={`/watch/${spotlightItem.slug}`}
-                        className="inline-flex items-center gap-2.5 px-6 py-3 rounded-xl bg-white hover:bg-neutral-200 text-black font-bold text-sm shadow-[0_4px_20px_rgba(255,255,255,0.2)] transition-all active:scale-95"
-                      >
-                        <Play className="w-4 h-4 fill-black text-black" />
-                        <span>Watch Now</span>
-                      </Link>
-
-                      <button
-                        onClick={() => openDetail(spotlightItem.slug)}
-                        className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#1A1512] hover:bg-[#251E1A] text-white font-medium text-sm border border-white/15 transition-all shadow-md active:scale-95"
-                      >
-                        <Info className="w-4 h-4 text-[#FF8A00]" />
-                        <span>More Info</span>
-                      </button>
-
-                      <button
-                        onClick={handleToggleSpotlightWatchlist}
-                        className={`p-3 rounded-xl border transition-all active:scale-95 ${
-                          isSpotlightInList
-                            ? 'bg-[#FF5C00]/20 border-[#FF5C00] text-[#FF8A00]'
-                            : 'bg-[#1A1512] hover:bg-[#251E1A] border-white/15 text-white/80 hover:text-white'
-                        }`}
-                        title={isSpotlightInList ? 'In My List' : 'Add to My List'}
-                        aria-label="Toggle Watchlist"
-                      >
-                        {isSpotlightInList ? (
-                          <Check className="w-4 h-4 text-[#FFA040]" />
-                        ) : (
-                          <Bookmark className="w-4 h-4" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Right Column: Wide Cinematic Artwork Preview */}
-                  <div className="lg:col-span-5">
-                    <Link
-                      href={`/watch/${spotlightItem.slug}`}
-                      className="group relative block aspect-video rounded-2xl overflow-hidden border border-white/15 shadow-2xl bg-black"
-                    >
-                      <img
-                        src={
-                          spotlightItem.backdrop_url ||
-                          spotlightItem.backdropUrl ||
-                          spotlightItem.thumbnail_url ||
-                          spotlightItem.thumbnailUrl ||
-                          'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=1200&q=80'
-                        }
-                        alt={spotlightItem.title}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30 backdrop-blur-[2px]">
-                        <div className="w-14 h-14 rounded-full bg-white text-black flex items-center justify-center shadow-2xl transform scale-90 group-hover:scale-100 transition-transform">
-                          <Play className="w-6 h-6 fill-black ml-1" />
-                        </div>
-                      </div>
-                      <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-lg bg-black/75 backdrop-blur-md border border-white/15 text-xs font-bold text-white">
-                        Direct Edge Streaming
-                      </div>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </section>
-          )}
-
-          {/* 7. Personalized Watchlist Section (When User Has Saved Titles) */}
+          {/* Personalized Watchlist Section (When User Has Saved Titles) */}
           {watchlistItems.length > 0 && (
             <ContentRow
               title="My Watchlist"
@@ -553,35 +370,36 @@ export default function HomePage() {
             />
           )}
 
-          {/* 8. Modern High-Fidelity Studio Experience Strip */}
+          {/* Modern Direct Edge Experience Strip */}
           <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 sm:mt-16">
-            <div className="rounded-2xl bg-[#120F0C] border border-white/10 p-6 sm:p-8">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-[#FF8A00] text-xs font-bold uppercase tracking-wider">
-                    <ShieldCheck className="w-4 h-4 text-[#FF5C00]" />
+            <div className="rounded-2xl bg-[#181818] border border-white/10 p-6 sm:p-8 relative overflow-hidden shadow-2xl">
+              <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-[#3EFFC0]/10 via-[#00E5FF]/10 to-transparent blur-[80px] pointer-events-none" />
+              <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2 text-[#3EFFC0] text-xs font-bold uppercase tracking-wider">
+                    <ShieldCheck className="w-4 h-4 text-[#3EFFC0]" />
                     <span>V19Plus Direct-to-Edge Architecture</span>
                   </div>
-                  <h4 className="text-lg sm:text-xl font-bold text-white tracking-tight">
+                  <h4 className="text-lg sm:text-xl font-black text-white tracking-tight">
                     Pure Cinema Fidelity. Zero Intermediate Server Latency.
                   </h4>
-                  <p className="text-xs sm:text-sm text-[#8C8478] max-w-2xl leading-relaxed">
-                    Stream your favorite masterclasses and feature films delivered directly from Cloudflare global edge storage with multi-bitrate adaptive HLS streaming.
+                  <p className="text-xs sm:text-sm text-[#A0A0A0] max-w-2xl leading-relaxed">
+                    Stream your favorite masterclasses and feature films delivered directly from Cloudflare global edge storage with multi-bitrate adaptive 4K HLS streaming.
                   </p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">
                   <Link
                     href="/browse"
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs border border-white/15 transition-all"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-[#3EFFC0] hover:text-[#121212] text-white font-bold text-xs border border-white/15 transition-all shadow-sm"
                   >
-                    <Compass className="w-3.5 h-3.5 text-[#FF8A00]" />
+                    <Compass className="w-3.5 h-3.5" />
                     <span>Explore Library</span>
                   </Link>
                   {isAdmin && (
                     <Link
                       href="/admin"
-                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#FF5C00] hover:bg-[#E04800] text-white font-bold text-xs shadow-md transition-all active:scale-95"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#E50914] to-[#B80710] hover:from-[#FF1E27] hover:to-[#E50914] text-white font-bold text-xs shadow-md transition-all active:scale-95"
                     >
                       <UploadCloud className="w-3.5 h-3.5" />
                       <span>Studio Dashboard</span>
@@ -594,30 +412,30 @@ export default function HomePage() {
         </>
       )}
 
-      {/* 9. Empty Catalog State (Only if 0 titles exist across the entire platform) */}
+      {/* Empty Catalog State */}
       {!isLoading && allPool.length === 0 && (
-        <div className="max-w-xl mx-auto my-16 p-8 rounded-3xl bg-[#120F0C] border border-white/10 text-center space-y-4 shadow-2xl">
-          <div className="w-16 h-16 rounded-2xl bg-[#FF5C00]/15 flex items-center justify-center text-[#FF5C00] mx-auto shadow-[0_0_20px_rgba(255,92,0,0.3)]">
+        <div className="max-w-xl mx-auto my-16 p-8 rounded-3xl bg-[#181818] border border-white/10 text-center space-y-4 shadow-2xl">
+          <div className="w-16 h-16 rounded-2xl bg-[#3EFFC0]/15 flex items-center justify-center text-[#3EFFC0] mx-auto shadow-[0_0_20px_rgba(62,255,192,0.25)]">
             <Film className="w-8 h-8" />
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-white">
             Premieres Coming Soon
           </h2>
-          <p className="text-sm text-[#A49C90] leading-relaxed">
+          <p className="text-sm text-[#A0A0A0] leading-relaxed">
             Our cinema catalog is being updated with new original masterclasses and feature films. Check back regularly or explore the library.
           </p>
           <div className="pt-2 flex items-center justify-center gap-3">
             <Link
               href="/browse"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm border border-white/10 transition-all"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/10 hover:bg-[#3EFFC0] hover:text-[#121212] text-white font-bold text-sm border border-white/10 transition-all"
             >
-              <Compass className="w-4 h-4 text-[#FF8A00]" />
+              <Compass className="w-4 h-4" />
               <span>Browse Catalog</span>
             </Link>
             {isAdmin && (
               <Link
                 href="/admin"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#FF5C00] hover:bg-[#E04800] text-white font-bold text-sm shadow-[0_0_20px_rgba(255,92,0,0.4)] transition-all active:scale-95"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#E50914] to-[#B80710] hover:from-[#FF1E27] hover:to-[#E50914] text-white font-bold text-sm shadow-[0_0_20px_rgba(229,9,20,0.4)] transition-all active:scale-95"
               >
                 <UploadCloud className="w-4 h-4" />
                 <span>Upload to Catalog</span>

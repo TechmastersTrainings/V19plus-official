@@ -38,10 +38,10 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
   // While restoring session or waiting for router redirection, show sleek loading indicator
   if (loading || !authorized) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center space-y-4">
+      <div className="min-h-screen bg-[#121212] flex flex-col items-center justify-center space-y-4">
         <div className="relative w-12 h-12">
           <div className="absolute inset-0 rounded-full border-2 border-white/5" />
-          <div className="absolute inset-0 rounded-full border-2 border-[#FF5C00] border-t-transparent animate-spin" />
+          <div className="absolute inset-0 rounded-full border-2 border-[#3EFFC0] border-t-transparent animate-spin" />
         </div>
         <span className="text-[#8C8478] text-[11px] font-bold tracking-widest uppercase">Loading…</span>
       </div>

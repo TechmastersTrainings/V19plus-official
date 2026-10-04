@@ -61,7 +61,7 @@ export function BottomNav() {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 select-none pb-[env(safe-area-inset-bottom)] bg-[#0e0c0a]/95 backdrop-blur-2xl border-t border-white/10 shadow-[0_-8px_30px_rgba(0,0,0,0.8)]">
+    <div className="fixed bottom-0 left-0 right-0 z-50 select-none pb-[env(safe-area-inset-bottom)] bg-[#121212]/95 backdrop-blur-2xl border-t border-white/10 shadow-[0_-8px_30px_rgba(0,0,0,0.8)]">
       <div className="flex justify-between items-center py-2 px-2 max-w-lg mx-auto">
         {navItems.map((item) => {
           const active = isActive(item.to);
@@ -76,7 +76,7 @@ export function BottomNav() {
               <div
                 className={`p-1 rounded-xl transition-all duration-200 ${
                   active
-                    ? 'text-[#FF5C00] scale-110'
+                    ? 'text-[#3EFFC0] scale-110'
                     : 'text-[#9A9286]'
                 }`}
               >
@@ -92,7 +92,7 @@ export function BottomNav() {
               {active && (
                 <motion.div
                   layoutId="activeAppBottomNavDot"
-                  className="w-1 h-1 rounded-full bg-[#FF5C00] shadow-[0_0_6px_#FF5C00] mt-0.5"
+                  className="w-1 h-1 rounded-full bg-[#3EFFC0] shadow-[0_0_6px_#3EFFC0] mt-0.5"
                 />
               )}
             </Link>

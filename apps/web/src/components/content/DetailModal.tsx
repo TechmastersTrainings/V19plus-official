@@ -77,12 +77,12 @@ export function DetailModal() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92, y: 25 }}
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            className="relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl bg-[#100C09]/95 border border-white/10 shadow-[0_25px_70px_rgba(0,0,0,0.95),0_0_35px_rgba(255,92,0,0.2)] backdrop-blur-2xl"
+            className="relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl bg-[#181818]/98 border border-white/10 shadow-[0_25px_70px_rgba(0,0,0,0.95),0_0_35px_rgba(62,255,192,0.15)] backdrop-blur-2xl"
           >
             {/* Close Button */}
             <button
               onClick={closeDetail}
-              className="absolute top-4 right-4 z-30 w-10 h-10 rounded-full bg-black/70 hover:bg-[#FF5C00] text-white flex items-center justify-center border border-white/15 hover:border-[#FF5C00] transition-all backdrop-blur-md active:scale-95 shadow-lg"
+              className="absolute top-4 right-4 z-30 w-10 h-10 rounded-full bg-black/70 hover:bg-[#E50914] text-white flex items-center justify-center border border-white/15 hover:border-[#E50914] transition-all backdrop-blur-md active:scale-95 shadow-lg"
               aria-label="Close"
             >
               <X className="w-5 h-5" />
@@ -98,7 +98,7 @@ export function DetailModal() {
             ) : content ? (
               <>
                 {/* Backdrop Hero Header */}
-                <div className="relative aspect-video overflow-hidden rounded-t-3xl bg-[#181410]">
+                <div className="relative aspect-video overflow-hidden rounded-t-3xl bg-[#121212]">
                   {backdropSrc ? (
                     <img
                       src={backdropSrc}
@@ -106,11 +106,11 @@ export function DetailModal() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-[#1C140C] via-[#100C08] to-[#070605] flex items-center justify-center">
-                      <span className="text-6xl font-black text-[#FF5C00]/20">V19+</span>
+                    <div className="w-full h-full bg-gradient-to-br from-[#181818] via-[#121212] to-black flex items-center justify-center">
+                      <span className="text-6xl font-black text-[#3EFFC0]/20">V19+</span>
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#100C09] via-[#100C09]/40 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#181818] via-[#181818]/40 to-transparent" />
 
                   {/* Play Button Overlay */}
                   <div className="absolute bottom-6 left-6 right-6 flex items-center gap-3">
@@ -119,7 +119,7 @@ export function DetailModal() {
                         closeDetail();
                         router.push(`/watch/${content.slug}`);
                       }}
-                      className="flex items-center gap-2.5 px-6 py-3 bg-gradient-to-r from-[#FF5C00] via-[#FF7A00] to-[#FFA726] hover:from-[#FF7A00] hover:to-[#FFB74D] text-white font-semibold rounded-xl text-sm transition-all shadow-[0_0_24px_rgba(255,92,0,0.5)] active:scale-95"
+                      className="flex items-center gap-2.5 px-6 py-3 bg-gradient-to-r from-[#E50914] via-[#FF2236] to-[#E50914] hover:from-[#FF2236] hover:to-[#E50914] text-white font-semibold rounded-xl text-sm transition-all shadow-[0_0_24px_rgba(229,9,20,0.5)] active:scale-95"
                     >
                       <Play className="w-4 h-4 fill-white text-white" />
                       <span>Play Now</span>
@@ -131,7 +131,7 @@ export function DetailModal() {
                       title={inList ? 'Remove from My List' : 'Add to My List'}
                     >
                       {inList ? (
-                        <Check className="w-5 h-5 text-[#FF8A00]" />
+                        <Check className="w-5 h-5 text-[#3EFFC0]" />
                       ) : (
                         <Plus className="w-5 h-5" />
                       )}
@@ -150,7 +150,7 @@ export function DetailModal() {
                   {/* Metadata Row */}
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs sm:text-sm text-[#C8C2B8] font-medium mb-4">
                     {content.imdbScore && (
-                      <span className="text-[#FFB800] font-semibold bg-[#FFB800]/10 border border-[#FFB800]/30 px-2 py-0.5 rounded shadow-sm">
+                      <span className="text-[#3EFFC0] font-semibold bg-[#3EFFC0]/10 border border-[#3EFFC0]/30 px-2 py-0.5 rounded shadow-sm">
                         ★ {content.imdbScore} IMDb
                       </span>
                     )}
@@ -191,7 +191,7 @@ export function DetailModal() {
                         closeDetail();
                         router.push(`/watch/${content.slug}`);
                       }}
-                      className="flex-1 py-3 bg-gradient-to-r from-[#FF5C00] to-[#FF8A00] hover:from-[#FF7A00] hover:to-[#FFA726] text-white font-bold rounded-xl text-sm transition-all shadow-[0_0_20px_rgba(255,92,0,0.4)] flex items-center justify-center gap-2"
+                      className="flex-1 py-3 bg-gradient-to-r from-[#E50914] to-[#FF2236] hover:from-[#FF2236] hover:to-[#E50914] text-white font-bold rounded-xl text-sm transition-all shadow-[0_0_20px_rgba(229,9,20,0.4)] flex items-center justify-center gap-2"
                     >
                       <Play className="w-4 h-4 fill-white text-white" />
                       <span>Watch Movie</span>

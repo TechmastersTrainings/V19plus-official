@@ -57,14 +57,20 @@ export function ContentRow({
     <section className="mb-8 sm:mb-10 group/row relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="flex items-end justify-between mb-3">
+        <div className="flex items-end justify-between mb-3.5">
           <div>
-            <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2 tracking-tight group-hover/row:text-[#FF8A00] transition-colors">
-              <span className="w-1 h-4 rounded-full bg-[#FF5C00] shadow-[0_0_8px_#FF5C00]" />
+            <h2 className="text-lg sm:text-xl font-extrabold text-white flex items-center gap-2.5 tracking-tight group-hover/row:text-[#3EFFC0] transition-colors">
+              <span
+                className={`w-1.5 h-5 rounded-full ${
+                  title.toLowerCase().includes('trending')
+                    ? 'bg-[#E50914] shadow-[0_0_12px_#E50914]'
+                    : 'bg-[#3EFFC0] shadow-[0_0_12px_#3EFFC0]'
+                }`}
+              />
               {title}
             </h2>
             {subtitle && (
-              <p className="text-xs text-[#8C8478] font-normal ml-3 mt-0.5">
+              <p className="text-xs text-[#A0A0A0] font-normal ml-4 mt-0.5">
                 {subtitle}
               </p>
             )}
@@ -73,15 +79,15 @@ export function ContentRow({
           {seeAllHref ? (
             <Link
               href={seeAllHref}
-              className="flex items-center gap-1 text-xs font-semibold text-[#A49C90] hover:text-[#FF5C00] transition-all group/link"
+              className="flex items-center gap-1.5 text-xs font-bold text-[#A0A0A0] hover:text-[#3EFFC0] transition-all group/link"
             >
               <span>Explore All</span>
-              <ArrowRight className="w-3.5 h-3.5 transform group-hover/link:translate-x-0.5 transition-transform" />
+              <ArrowRight className="w-3.5 h-3.5 transform group-hover/link:translate-x-1 text-[#3EFFC0] transition-transform" />
             </Link>
           ) : (
             <button
               onClick={() => scroll('right')}
-              className="hidden sm:flex items-center gap-1 text-xs font-semibold text-[#A49C90] hover:text-[#FF5C00] transition-colors"
+              className="hidden sm:flex items-center gap-1 text-xs font-bold text-[#A0A0A0] hover:text-[#3EFFC0] transition-colors"
             >
               <span>Scroll</span>
               <ChevronRight className="w-3.5 h-3.5" />
@@ -95,7 +101,7 @@ export function ContentRow({
           {canScrollLeft && (
             <button
               onClick={() => scroll('left')}
-              className="hidden sm:flex absolute left-0 sm:-left-3 top-1/2 -translate-y-1/2 z-30 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#090807]/90 hover:bg-[#FF5C00] text-white items-center justify-center border border-white/15 hover:border-[#FF5C00] shadow-[0_4px_20px_rgba(0,0,0,0.8)] backdrop-blur-xl opacity-0 group-hover/row:opacity-100 transition-all duration-200 active:scale-95"
+              className="hidden sm:flex absolute left-0 sm:-left-3 top-1/2 -translate-y-1/2 z-30 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#181818]/95 hover:bg-[#3EFFC0] text-white hover:text-[#121212] items-center justify-center border border-white/20 hover:border-[#3EFFC0] shadow-[0_4px_25px_rgba(0,0,0,0.9)] backdrop-blur-xl opacity-0 group-hover/row:opacity-100 transition-all duration-200 active:scale-95"
               aria-label="Scroll left"
             >
               <ChevronLeft className="w-5 h-5" />
@@ -131,7 +137,7 @@ export function ContentRow({
           {canScrollRight && (
             <button
               onClick={() => scroll('right')}
-              className="hidden sm:flex absolute right-0 sm:-right-3 top-1/2 -translate-y-1/2 z-30 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#090807]/90 hover:bg-[#FF5C00] text-white items-center justify-center border border-white/15 hover:border-[#FF5C00] shadow-[0_4px_20px_rgba(0,0,0,0.8)] backdrop-blur-xl opacity-0 group-hover/row:opacity-100 transition-all duration-200 active:scale-95"
+              className="hidden sm:flex absolute right-0 sm:-right-3 top-1/2 -translate-y-1/2 z-30 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#181818]/95 hover:bg-[#3EFFC0] text-white hover:text-[#121212] items-center justify-center border border-white/20 hover:border-[#3EFFC0] shadow-[0_4px_25px_rgba(0,0,0,0.9)] backdrop-blur-xl opacity-0 group-hover/row:opacity-100 transition-all duration-200 active:scale-95"
               aria-label="Scroll right"
             >
               <ChevronRight className="w-5 h-5" />

@@ -135,15 +135,15 @@ export function PlayerControls({
           onMouseLeave={() => setHoverTime(null)}
           onClick={handleProgressClick}
         >
-          {/* Filled with brand orange */}
+          {/* Filled with brand gradient */}
           <div
-            className="absolute left-0 top-0 h-full bg-gradient-to-r from-[#FF5C00] via-[#FF7A00] to-[#FFA84A] rounded-full shadow-[0_0_12px_#FF5C00]"
+            className="absolute left-0 top-0 h-full bg-gradient-to-r from-[#E50914] via-[#00E5FF] to-[#3EFFC0] rounded-full shadow-[0_0_12px_#3EFFC0]"
             style={{ width: `${pct}%` }}
           />
 
           {/* Scrubber Knob */}
           <div
-            className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full -translate-x-1/2 opacity-0 group-hover/progress:opacity-100 transition-opacity shadow-[0_0_10px_rgba(0,0,0,0.9)] border-2 border-[#FF5C00]"
+            className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full -translate-x-1/2 opacity-0 group-hover/progress:opacity-100 transition-opacity shadow-[0_0_10px_rgba(0,0,0,0.9)] border-2 border-[#3EFFC0]"
             style={{ left: `${pct}%` }}
           />
 
@@ -184,7 +184,7 @@ export function PlayerControls({
             {/* Play / Pause Toggle */}
             <button
               onClick={handleTogglePlay}
-              className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-[#FF5C00] to-[#E04800] hover:from-[#FF7A00] hover:to-[#FF5C00] text-white flex items-center justify-center transition-all shadow-[0_0_20px_rgba(255,92,0,0.5)] border border-white/30 active:scale-95 flex-shrink-0"
+              className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-[#E50914] to-[#B30710] hover:from-[#FF2236] hover:to-[#E50914] text-white flex items-center justify-center transition-all shadow-[0_0_20px_rgba(229,9,20,0.5)] border border-white/30 active:scale-95 flex-shrink-0"
               aria-label={isPlaying ? 'Pause' : 'Play'}
             >
               {isPlaying ? (
@@ -234,7 +234,7 @@ export function PlayerControls({
                   value={isMuted ? 0 : volume}
                   onChange={(e) => handleSetVolume(Number(e.target.value))}
                   className="w-full h-1 bg-white/25 rounded-full appearance-none cursor-pointer"
-                  style={{ accentColor: '#FF5C00' }}
+                  style={{ accentColor: '#3EFFC0' }}
                 />
               </div>
             </div>
@@ -251,9 +251,9 @@ export function PlayerControls({
           {progress > 10 && progress < 85 && duration > 150 && (
             <button
               onClick={() => onSeek(85)}
-              className="absolute right-8 sm:right-14 -top-14 z-30 px-5 py-2.5 bg-black/90 border border-white/20 hover:border-[#FF5C00] text-white text-xs sm:text-sm font-black rounded-xl backdrop-blur-xl transition-all active:scale-95 shadow-2xl flex items-center gap-2 hover:text-[#FF5C00]"
+              className="absolute right-8 sm:right-14 -top-14 z-30 px-5 py-2.5 bg-black/90 border border-white/20 hover:border-[#3EFFC0] text-white text-xs sm:text-sm font-black rounded-xl backdrop-blur-xl transition-all active:scale-95 shadow-2xl flex items-center gap-2 hover:text-[#3EFFC0]"
             >
-              <FastForward className="w-4 h-4 text-[#FF5C00]" />
+              <FastForward className="w-4 h-4 text-[#3EFFC0]" />
               <span>Skip Intro</span>
             </button>
           )}
@@ -264,7 +264,7 @@ export function PlayerControls({
             {showNext && onNextEpisode && (
               <button
                 onClick={onNextEpisode}
-                className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 bg-black/60 hover:bg-[#FF5C00] text-white rounded-xl transition-colors border border-white/20 shadow-xl backdrop-blur-xl"
+                className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 bg-black/60 hover:bg-[#E50914] text-white rounded-xl transition-colors border border-white/20 shadow-xl backdrop-blur-xl"
               >
                 <span>Next Ep</span>
                 <FastForward className="w-3.5 h-3.5" />
@@ -275,7 +275,7 @@ export function PlayerControls({
             <button
               onClick={handleToggleSubtitles}
               className={`text-xs font-black px-3 py-2 rounded-xl border transition-all shadow-xl backdrop-blur-xl ${subtitles
-                  ? 'bg-[#FF5C00] text-white border-[#FF5C00] shadow-[0_0_10px_rgba(255,92,0,0.5)]'
+                  ? 'bg-[#3EFFC0] text-[#121212] border-[#3EFFC0] shadow-[0_0_10px_rgba(62,255,192,0.5)]'
                   : 'text-white border-white/20 hover:border-white/40 bg-black/60 hover:bg-black/90'
                 }`}
               aria-label="Toggle Subtitles"
@@ -288,7 +288,7 @@ export function PlayerControls({
               <button
                 onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); }}
                 className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center border shadow-xl backdrop-blur-xl transition active:scale-95 ${showSettings
-                    ? 'text-white bg-[#FF5C00] border-[#FF5C00]'
+                    ? 'text-[#121212] bg-[#3EFFC0] border-[#3EFFC0]'
                     : 'text-white bg-black/60 hover:bg-black/90 border-white/20 hover:border-white/40'
                   }`}
                 aria-label="Player Settings"
@@ -298,7 +298,7 @@ export function PlayerControls({
 
               {showSettings && (
                 <div
-                  className="absolute bottom-full right-0 mb-3 bg-[#14110E] border border-white/20 rounded-2xl overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.95)] backdrop-blur-2xl min-w-[240px] flex flex-col p-3.5 gap-3 text-white z-50"
+                  className="absolute bottom-full right-0 mb-3 bg-[#181818] border border-white/20 rounded-2xl overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.95)] backdrop-blur-2xl min-w-[240px] flex flex-col p-3.5 gap-3 text-white z-50"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {/* Speed Selector */}
@@ -312,7 +312,7 @@ export function PlayerControls({
                           key={s}
                           onClick={() => { handleSetSpeed(s); setShowSettings(false); }}
                           className={`py-1.5 text-xs font-bold rounded-lg transition-colors ${playbackSpeed === s
-                              ? 'bg-[#FF5C00] text-white'
+                              ? 'bg-[#3EFFC0] text-[#121212]'
                               : 'bg-white/5 text-[#C8C2B8] hover:bg-white/10 hover:text-white'
                             }`}
                         >
@@ -326,20 +326,20 @@ export function PlayerControls({
                   <div className="border-t border-white/10 pt-2.5">
                     <p className="text-[10px] font-black text-[#8C8478] uppercase tracking-wider px-2 mb-1.5 flex items-center justify-between">
                       <span>Stream Quality</span>
-                      <span className="text-[9px] text-[#FF5C00] font-semibold">
+                      <span className="text-[9px] text-[#3EFFC0] font-semibold">
                         {currentQuality === -1 ? 'Auto' : 'Selected'}
                       </span>
                     </p>
                     <button
                       onClick={() => { handleSetQuality(-1); setShowSettings(false); }}
-                      className={`w-full text-left px-3 py-2 text-xs rounded-xl flex items-center justify-between transition-colors ${currentQuality === -1 ? 'text-[#FF5C00] font-bold bg-[#FF5C00]/10' : 'text-[#C8C2B8] hover:bg-white/5 hover:text-white'
+                      className={`w-full text-left px-3 py-2 text-xs rounded-xl flex items-center justify-between transition-colors ${currentQuality === -1 ? 'text-[#3EFFC0] font-bold bg-[#3EFFC0]/10' : 'text-[#C8C2B8] hover:bg-white/5 hover:text-white'
                         }`}
                     >
                       <div>
                         <div className="font-bold">Auto (Recommended)</div>
                         <div className="text-[10px] text-white/50">Auto quality • Best for your network</div>
                       </div>
-                      {currentQuality === -1 && <Check className="w-4 h-4 text-[#FF5C00] shrink-0" />}
+                      {currentQuality === -1 && <Check className="w-4 h-4 text-[#3EFFC0] shrink-0" />}
                     </button>
                     {(qualities.length > 0
                       ? qualities
@@ -355,7 +355,7 @@ export function PlayerControls({
                       <button
                         key={q.index}
                         onClick={() => { handleSetQuality(q.index); setShowSettings(false); }}
-                        className={`w-full text-left px-3 py-2 text-xs rounded-xl flex items-center justify-between transition-colors ${currentQuality === q.index ? 'text-[#FF5C00] font-bold bg-[#FF5C00]/10' : 'text-[#C8C2B8] hover:bg-white/5 hover:text-white'
+                        className={`w-full text-left px-3 py-2 text-xs rounded-xl flex items-center justify-between transition-colors ${currentQuality === q.index ? 'text-[#3EFFC0] font-bold bg-[#3EFFC0]/10' : 'text-[#C8C2B8] hover:bg-white/5 hover:text-white'
                           }`}
                       >
                         <div>
@@ -364,7 +364,7 @@ export function PlayerControls({
                             {q.height >= 1080 ? 'Full HD' : q.height >= 720 ? 'High Definition' : 'Standard Definition'}
                           </div>
                         </div>
-                        {currentQuality === q.index && <Check className="w-4 h-4 text-[#FF5C00] shrink-0" />}
+                        {currentQuality === q.index && <Check className="w-4 h-4 text-[#3EFFC0] shrink-0" />}
                       </button>
                     ))}
                   </div>
