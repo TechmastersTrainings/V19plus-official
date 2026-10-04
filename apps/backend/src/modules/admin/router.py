@@ -238,7 +238,7 @@ async def get_dashboard_stats(db: AsyncSession = Depends(get_db_session)):
 
     # 8. Real Content Breakdown by Type & Status
     res_breakdown = await db.execute(
-        select(Content.type, Content.status, func.count(Content.id)).group_by(Content.type, Content.status)
+        select(Content.content_type, Content.status, func.count(Content.id)).group_by(Content.content_type, Content.status)
     )
     movies_count = 0
     series_count = 0
@@ -246,8 +246,8 @@ async def get_dashboard_stats(db: AsyncSession = Depends(get_db_session)):
     published_count = 0
     draft_count = 0
     for r in res_breakdown.all():
-        ctype = str(r[0] or "").upper()
-        cstatus = str(r[1] or "").upper()
+        ctype = (r[0].value if hasattr(r[0], "value") else str(r[0] or "")).upper()
+        cstatus = (r[1].value if hasattr(r[1], "value") else str(r[1] or "")).upper()
         cnt = r[2] or 0
         if "MOVIE" in ctype:
             movies_count += cnt

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Content } from '../../api/content';
 import { useAuthStore } from '../../store/authStore';
 import { useWatchlist, useAddToWatchlist, useRemoveFromWatchlist } from '../../hooks/useWatchlist';
-import { Film, Bookmark, Check } from 'lucide-react';
+import { Film, Bookmark, Check, Play, Sparkles, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export interface ContentCardProps {
@@ -45,6 +45,7 @@ export function ContentCard({
     '';
 
   const releaseYear = content.release_year ?? content.releaseYear ?? 2026;
+  const rating = content.rating || 'U/A 13+';
   const durationMins = content.duration
     ? content.duration
     : content.duration_seconds
@@ -57,6 +58,7 @@ export function ContentCard({
       : content.genre || [];
 
   const primaryGenre = genres[0] || 'V19+ Original';
+  const isOriginal = content.is_original ?? content.isOriginal ?? true;
 
   const handlePlay = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -84,20 +86,12 @@ export function ContentCard({
     }
   };
 
-  // User-centric informative details matching the card list
-  const cardListItems = [
-    durationMins > 0 ? `${Math.floor(durationMins / 60)}h ${durationMins % 60}m Runtime` : 'Full Feature',
-    primaryGenre ? `${primaryGenre}` : 'Curated Cinema',
-    releaseYear ? `Released in ${releaseYear}` : 'Original Production',
-    'Ad-Free Viewing',
-  ];
-
   const effectivePoster =
     posterSrc ||
     'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=600&q=80';
 
   return (
-    <div className="flex-shrink-0 my-1 w-full min-w-0">
+    <div className="flex-shrink-0 my-1 w-full min-w-0 group/card">
       <div className={`card ${theme === 'cyan' ? 'theme-cyan' : ''} w-full`}>
         <div className="card__border" />
 
@@ -110,7 +104,7 @@ export function ContentCard({
             <img
               src={effectivePoster}
               alt={content.title}
-              className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+              className="w-full h-full object-cover transition-transform duration-500 group-hover/media:scale-105"
               loading="lazy"
               onError={() => setImgError(true)}
             />
@@ -125,18 +119,46 @@ export function ContentCard({
             </div>
           )}
 
-          {/* Watchlist toggle icon */}
-          <button
-            onClick={handleWatchlist}
-            className="absolute top-2 left-2 z-10 w-7 h-7 rounded-md bg-black/60 hover:bg-black/90 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white border border-white/10 transition-colors"
-            title={inList ? 'In My List' : 'Add to My List'}
-          >
-            {inList ? <Check className="w-3.5 h-3.5 text-[#FFA040]" /> : <Bookmark className="w-3.5 h-3.5" />}
-          </button>
+          {/* Rank Badge or Original Tag in Top-Left */}
+          {rank !== undefined ? (
+            <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-md bg-gradient-to-r from-[#FF5C00] to-[#FF8A00] text-white font-black text-xs shadow-lg border border-white/20">
+              #{rank}
+            </div>
+          ) : isOriginal ? (
+            <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-md text-[#FFA040] font-bold text-[10px] tracking-wide border border-[#FFA040]/30 flex items-center gap-1">
+              <Sparkles className="w-2.5 h-2.5" />
+              <span>Original</span>
+            </div>
+          ) : null}
+
+          {/* 4K UHD Badge Top-Right */}
+          <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 rounded bg-black/70 backdrop-blur-md text-[10px] font-bold text-amber-300 border border-amber-300/30">
+            4K UHD
+          </div>
+
+          {/* Hover Play Glow Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-0 group-hover/media:opacity-100 transition-opacity duration-300 flex items-center justify-center z-10">
+            <div className="w-11 h-11 rounded-full bg-white text-black flex items-center justify-center shadow-2xl transform scale-90 group-hover/media:scale-100 transition-transform duration-200">
+              <Play className="w-5 h-5 fill-black ml-0.5" />
+            </div>
+          </div>
+
+          {/* Duration Badge Bottom-Left */}
+          {durationMins > 0 && (
+            <div className="absolute bottom-2 left-2 z-10 px-1.5 py-0.5 rounded bg-black/75 backdrop-blur-md text-[10px] font-medium text-white/90 border border-white/10 flex items-center gap-1">
+              <Clock className="w-2.5 h-2.5 text-[#FF8A00]" />
+              <span>{Math.floor(durationMins / 60) > 0 ? `${Math.floor(durationMins / 60)}h ` : ''}{durationMins % 60}m</span>
+            </div>
+          )}
+
+          {/* Age Rating Badge Bottom-Right */}
+          <div className="absolute bottom-2 right-2 z-10 px-1.5 py-0.5 rounded bg-black/75 backdrop-blur-md text-[10px] font-semibold text-white/80 border border-white/10">
+            {rating}
+          </div>
 
           {/* Continue Watching Progress Bar */}
           {progress !== undefined && progress > 0 && (
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/80 overflow-hidden z-10">
+            <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-black/80 overflow-hidden z-20">
               <div
                 className="h-full bg-gradient-to-r from-[#FF8A00] via-[#FFA040] to-[#FFE0B2] shadow-[0_0_8px_rgba(255,160,64,0.8)]"
                 style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
@@ -145,48 +167,57 @@ export function ContentCard({
           )}
         </div>
 
-        {/* Title & Description Container */}
-        <div className="card_title__container">
-          <span className="card_title truncate block" title={content.title}>
-            {content.title}
-          </span>
-          <p className="card_paragraph line-clamp-2">
-            {content.description || `${releaseYear} • ${durationMins ? `${Math.floor(durationMins / 60)}h ${durationMins % 60}m` : 'Feature'} • ${primaryGenre}`}
+        {/* Title & Metadata Container */}
+        <div className="card_title__container space-y-1">
+          <div className="flex items-center justify-between gap-2">
+            <span className="card_title truncate block font-bold text-white text-sm sm:text-base group-hover/card:text-[#FF8A00] transition-colors" title={content.title}>
+              {content.title}
+            </span>
+          </div>
+
+          {/* Subtle Tagline / Metadata */}
+          <div className="flex items-center gap-2 text-[11px] text-[#A49C90] font-medium">
+            <span className="text-[#FF8A00] font-semibold">{primaryGenre}</span>
+            <span>•</span>
+            <span>{releaseYear}</span>
+            <span>•</span>
+            <span className="text-white/60">Stereo 5.1</span>
+          </div>
+
+          <p className="card_paragraph line-clamp-2 text-xs text-[#9A9284] leading-relaxed pt-0.5">
+            {content.description || `${primaryGenre} premiere production streaming in high-bitrate edge delivery.`}
           </p>
         </div>
 
-        <hr className="line" />
+        <hr className="line my-1" />
 
-        {/* Feature Check List */}
-        <ul className="card__list">
-          {cardListItems.map((text, idx) => (
-            <li key={idx} className="card__list_item">
-              <span className="check">
-                <svg
-                  className="check_svg"
-                  fill="currentColor"
-                  viewBox="0 0 16 16"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    clipRule="evenodd"
-                    d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </span>
-              <span className="list_text">{text}</span>
-            </li>
-          ))}
-        </ul>
+        {/* Action Controls */}
+        <div className="flex items-center gap-2 pt-1 z-10 relative">
+          <button
+            className="button flex-1 flex items-center justify-center gap-2"
+            onClick={handlePlay}
+          >
+            <Play className="w-3.5 h-3.5 fill-white text-white" />
+            <span>{progress !== undefined && progress > 0 ? 'Resume' : 'Watch Now'}</span>
+          </button>
 
-        {/* Action Button */}
-        <button className="button" onClick={handlePlay}>
-          {progress !== undefined && progress > 0 ? 'Resume Playing' : 'Watch Now'}
-        </button>
+          <button
+            onClick={handleWatchlist}
+            className={`p-2 rounded-full border transition-all active:scale-95 ${
+              inList
+                ? 'bg-[#FF5C00]/20 border-[#FF5C00] text-[#FF8A00] shadow-[0_0_10px_rgba(255,92,0,0.3)]'
+                : 'bg-white/5 border-white/10 text-white/70 hover:text-white hover:bg-white/10 hover:border-white/20'
+            }`}
+            title={inList ? 'In My List' : 'Add to My List'}
+            aria-label="Toggle Watchlist"
+          >
+            {inList ? <Check className="w-4 h-4 text-[#FFA040]" /> : <Bookmark className="w-4 h-4" />}
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
 export default ContentCard;
+
