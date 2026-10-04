@@ -90,12 +90,12 @@ export function ContentRow({
         </div>
 
         {/* Row with Scroll Container & Gradient Action Arrows */}
-        <div className="relative">
+        <div className="relative group/carousel">
           {/* Left Arrow Button */}
           {canScrollLeft && (
             <button
               onClick={() => scroll('left')}
-              className="hidden md:flex absolute -left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-xl bg-[#090807]/90 hover:bg-[#FF5C00] text-white items-center justify-center border border-white/10 hover:border-[#FF5C00] shadow-lg backdrop-blur-xl opacity-0 group-hover/row:opacity-100 transition-all duration-200 active:scale-95"
+              className="hidden sm:flex absolute left-0 sm:-left-3 top-1/2 -translate-y-1/2 z-30 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#090807]/90 hover:bg-[#FF5C00] text-white items-center justify-center border border-white/15 hover:border-[#FF5C00] shadow-[0_4px_20px_rgba(0,0,0,0.8)] backdrop-blur-xl opacity-0 group-hover/row:opacity-100 transition-all duration-200 active:scale-95"
               aria-label="Scroll left"
             >
               <ChevronLeft className="w-5 h-5" />
@@ -106,7 +106,7 @@ export function ContentRow({
           <div
             ref={scrollRef}
             onScroll={updateScrollState}
-            className="flex gap-4 sm:gap-5 overflow-x-auto pb-4 pt-3 px-1 scrollbar-hide scroll-smooth"
+            className="flex gap-3.5 sm:gap-4 overflow-x-auto pb-3 pt-1 px-1 scrollbar-hide scroll-smooth"
             style={{ scrollbarWidth: 'none' }}
           >
             {validHistoryItems.map((item) => (
@@ -131,7 +131,7 @@ export function ContentRow({
           {canScrollRight && (
             <button
               onClick={() => scroll('right')}
-              className="hidden md:flex absolute -right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-xl bg-[#090807]/90 hover:bg-[#FF5C00] text-white items-center justify-center border border-white/10 hover:border-[#FF5C00] shadow-lg backdrop-blur-xl opacity-0 group-hover/row:opacity-100 transition-all duration-200 active:scale-95"
+              className="hidden sm:flex absolute right-0 sm:-right-3 top-1/2 -translate-y-1/2 z-30 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#090807]/90 hover:bg-[#FF5C00] text-white items-center justify-center border border-white/15 hover:border-[#FF5C00] shadow-[0_4px_20px_rgba(0,0,0,0.8)] backdrop-blur-xl opacity-0 group-hover/row:opacity-100 transition-all duration-200 active:scale-95"
               aria-label="Scroll right"
             >
               <ChevronRight className="w-5 h-5" />

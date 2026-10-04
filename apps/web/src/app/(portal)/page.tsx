@@ -212,9 +212,7 @@ export default function HomePage() {
     }
   };
 
-  // Smart Section Deduplication Architecture
-  // Ensures that identical lists of items are never repeated in consecutive rows.
-  // When the library grows with distinct items, the respective category rows automatically activate.
+  // Smart OTT Showcase Shelves (Netflix / Prime Video Style)
   const dynamicSections = useMemo(() => {
     const sections: {
       id: string;
@@ -225,17 +223,7 @@ export default function HomePage() {
       showRank?: boolean;
     }[] = [];
 
-    // Helper: checks if candidate items are identical to an already rendered section
-    const isDuplicateOfExisting = (candidateItems: Content[]) => {
-      if (candidateItems.length === 0) return true;
-      const candidateIds = new Set(candidateItems.map((i) => i.id));
-      return sections.some((sec) => {
-        if (sec.items.length !== candidateItems.length) return false;
-        return sec.items.every((i) => candidateIds.has(i.id));
-      });
-    };
-
-    // 1. Primary Showcase: Trending Now (Top popular titles)
+    // 1. Trending Now (Ranked #1, #2...)
     const primaryTrending = trending.length > 0 ? trending : allPool;
     if (primaryTrending.length > 0) {
       sections.push({
@@ -248,70 +236,47 @@ export default function HomePage() {
       });
     }
 
-    // 2. V19Plus Originals (Only if distinct from Trending)
-    if (originals.length > 0 && !isDuplicateOfExisting(originals)) {
+    // 2. V19Plus Originals
+    const primaryOriginals = originals.length > 0 ? originals : allPool.filter((c) => c.is_original ?? true);
+    if (primaryOriginals.length > 0) {
       sections.push({
         id: 'originals',
         title: 'V19Plus Originals',
         subtitle: 'Exclusive productions crafted by premier storytellers',
-        items: originals,
+        items: primaryOriginals,
         seeAllHref: '/browse?type=ORIGINAL',
       });
     }
 
-    // 3. Feature Cinema (Only if distinct from previous sections)
-    if (featureMovies.length > 0 && !isDuplicateOfExisting(featureMovies)) {
+    // 3. Feature Cinema & Premieres
+    const primaryMovies = featureMovies.length > 0 ? featureMovies : allPool.filter((c) => c.content_type === 'MOVIE');
+    if (primaryMovies.length > 0) {
       sections.push({
         id: 'feature-movies',
-        title: 'Feature Films',
+        title: 'Feature Cinema',
         subtitle: 'Original premiere cinema and feature productions',
-        items: featureMovies,
+        items: primaryMovies,
         seeAllHref: '/movies',
       });
     }
 
-    // 4. Masterclasses & Knowledge (Only if distinct)
-    if (masterclasses.length > 0 && !isDuplicateOfExisting(masterclasses)) {
+    // 4. Series & Episodic Stories
+    const primarySeries = allPool.filter((c) => c.content_type === 'SERIES' || (c as any).type === 'SERIES');
+    if (primarySeries.length > 0) {
       sections.push({
-        id: 'masterclasses',
-        title: 'Masterclasses & Knowledge',
-        subtitle: 'Instructional master sessions led by industry pioneers',
-        items: masterclasses,
-        seeAllHref: '/browse?genre=knowledge',
+        id: 'series',
+        title: 'Series & Episodic Stories',
+        subtitle: 'Binge-worthy drama and multi-part journeys',
+        items: primarySeries,
+        seeAllHref: '/series',
       });
     }
 
-    // 5. Documentaries & Real Stories (Only if distinct)
-    if (documentaries.length > 0 && !isDuplicateOfExisting(documentaries)) {
-      sections.push({
-        id: 'documentaries',
-        title: 'Documentaries & Real Stories',
-        subtitle: 'Investigative features, real-world journeys, and true accounts',
-        items: documentaries,
-        seeAllHref: '/browse?type=DOCUMENTARY',
-      });
-    }
-
-    // 6. Premieres & Special Broadcasts (Only if distinct)
-    if (events.length > 0 && !isDuplicateOfExisting(events)) {
-      sections.push({
-        id: 'premieres',
-        title: 'Premieres & Broadcasts',
-        subtitle: 'Full-length master recordings and exclusive special events',
-        items: events,
-        seeAllHref: '/browse?genre=events',
-      });
-    }
-
-    // 7. Complete Vault Catalog (Only if total items exceed the primary trending row)
-    if (
-      allPool.length > 0 &&
-      !isDuplicateOfExisting(allPool) &&
-      allPool.length > (primaryTrending.length || 0)
-    ) {
+    // 5. Complete Vault Catalog
+    if (allPool.length > 0) {
       sections.push({
         id: 'all-vault',
-        title: 'Curated Catalog',
+        title: 'Curated Streaming Vault',
         subtitle: 'Explore the complete streaming library',
         items: allPool,
         seeAllHref: '/browse',
@@ -319,7 +284,7 @@ export default function HomePage() {
     }
 
     return sections;
-  }, [trending, allPool, originals, featureMovies, masterclasses, documentaries, events]);
+  }, [trending, allPool, originals, featureMovies]);
 
   const isLoading = (featuredLoading || trendingLoading) && allPool.length === 0;
 
@@ -398,10 +363,21 @@ export default function HomePage() {
                 ))}
               </div>
             ) : filteredGenreItems.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
-                {filteredGenreItems.map((item) => (
-                  <ContentCard key={item.id} content={item} size="md" />
-                ))}
+              <div className="space-y-8">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+                  {filteredGenreItems.map((item) => (
+                    <ContentCard key={item.id} content={item} size="md" />
+                  ))}
+                </div>
+
+                {filteredGenreItems.length < 4 && (
+                  <ContentRow
+                    title="Trending Across V19Plus"
+                    subtitle="More popular titles streaming this week"
+                    items={trending.length > 0 ? trending : allPool}
+                    size="md"
+                  />
+                )}
               </div>
             ) : (
               <div className="py-14 px-4 text-center rounded-2xl bg-[#120F0C] border border-white/5 space-y-3">
@@ -434,7 +410,7 @@ export default function HomePage() {
               subtitle="Pick up where you left off"
               historyItems={continueItems}
               isLoading={continueLoading}
-              size="wide"
+              size="md"
             />
           )}
 

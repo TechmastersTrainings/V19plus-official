@@ -227,10 +227,11 @@ select {
 
 /* Fluid Adaptation inside Grid Layouts */
 .grid .card,
-.grid .glowing-card {
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
+.grid .glowing-card,
+.grid .v19-card {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
 }
 
 @media (max-width: 640px) {
