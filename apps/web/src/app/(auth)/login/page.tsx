@@ -69,19 +69,19 @@ export default function LoginPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
-        <div className="w-12 h-12 rounded-full border-4 border-white/10 border-t-[#3EFFC0] animate-spin" />
+      <div className="min-h-screen bg-[#080808] flex items-center justify-center">
+        <div className="w-12 h-12 rounded-full border-4 border-white/10 border-t-[#FF5C00] animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen relative flex flex-col justify-between bg-[#121212] text-white selection:bg-[#3EFFC0]/30 selection:text-white">
+    <div className="min-h-screen relative flex flex-col justify-between bg-[#080808] text-white selection:bg-[#FF5C00]/30 selection:text-white">
       {/* Cinematic Ambient Atmosphere Glow */}
       <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[700px] sm:w-[900px] h-[500px] bg-gradient-to-b from-[#3EFFC0]/15 via-[#00E5FF]/10 to-transparent blur-[140px]" />
+        <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[700px] sm:w-[900px] h-[500px] bg-gradient-to-b from-[#FF5C00]/15 via-[#E50914]/10 to-transparent blur-[140px]" />
         <div className="absolute bottom-[-10%] right-[-5%] w-[500px] h-[500px] bg-[#E50914]/15 blur-[150px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(62,255,192,0.04)_0,transparent_70%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,92,0,0.04)_0,transparent_70%)]" />
       </div>
 
       {/* Top Navigation */}
@@ -91,16 +91,16 @@ export default function LoginPage() {
             <Play className="w-5 h-5 fill-white text-white ml-0.5" />
           </div>
           <span className="text-2xl sm:text-3xl font-black tracking-tight text-white drop-shadow-md">
-            V19<span className="text-[#3EFFC0]">Plus</span>
+            V19<span className="text-[#FF5C00]">Plus</span>
           </span>
         </Link>
 
         <Link
           href="/signup"
-          className="px-4 py-2 rounded-xl text-xs font-bold text-gray-300 hover:text-white border border-white/10 hover:border-[#3EFFC0]/40 transition-all backdrop-blur-md bg-white/5 hover:bg-white/10 flex items-center gap-1.5"
+          className="px-4 py-2 rounded-xl text-xs font-bold text-gray-300 hover:text-white border border-white/10 hover:border-[#FF5C00]/40 transition-all backdrop-blur-md bg-white/5 hover:bg-white/10 flex items-center gap-1.5"
         >
           <span>Create Account</span>
-          <ArrowRight className="w-3.5 h-3.5 text-[#3EFFC0]" />
+          <ArrowRight className="w-3.5 h-3.5 text-[#FF5C00]" />
         </Link>
       </header>
 
@@ -108,9 +108,9 @@ export default function LoginPage() {
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-10">
         <div className="w-full max-w-md">
           {/* Card Frame */}
-          <div className="relative rounded-3xl bg-[#181818]/95 border border-white/12 p-7 sm:p-10 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8),0_0_50px_rgba(62,255,192,0.08)] backdrop-blur-2xl transition-all">
+          <div className="relative rounded-3xl bg-[#141414]/95 border border-white/12 p-7 sm:p-10 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8),0_0_50px_rgba(255,92,0,0.06)] backdrop-blur-2xl transition-all">
             {/* Top glowing brand pill */}
-            <div className="w-12 h-1 bg-gradient-to-r from-[#E50914] via-[#00E5FF] to-[#3EFFC0] rounded-full mx-auto mb-6 shadow-[0_0_12px_#3EFFC0]" />
+            <div className="w-12 h-1 bg-gradient-to-r from-[#E50914] via-[#FF5C00] to-[#FF7A00] rounded-full mx-auto mb-6 shadow-[0_0_12px_rgba(255,92,0,0.5)]" />
 
             {/* Header Titles */}
             <div className="text-center mb-8">
@@ -150,7 +150,7 @@ export default function LoginPage() {
                       setError('');
                     }}
                     placeholder="name@example.com"
-                    className="w-full bg-[#121212] border border-white/15 focus:border-[#3EFFC0] focus:ring-2 focus:ring-[#3EFFC0]/25 rounded-xl pl-11 pr-4 py-3.5 text-sm text-white placeholder-[#787065] transition-all outline-none font-medium"
+                    className="w-full bg-[#0C0C0C] border border-white/15 focus:border-[#FF5C00] focus:ring-2 focus:ring-[#FF5C00]/25 rounded-xl pl-11 pr-4 py-3.5 text-sm text-white placeholder-[#888888] transition-all outline-none font-medium"
                   />
                 </div>
               </div>
@@ -167,7 +167,7 @@ export default function LoginPage() {
                       setForgotModalOpen(true);
                       setResetEmail(email);
                     }}
-                    className="text-xs text-[#3EFFC0] hover:text-white font-semibold transition-colors cursor-pointer"
+                    className="text-xs text-[#FF5C00] hover:text-white font-semibold transition-colors cursor-pointer"
                   >
                     Forgot Password?
                   </button>
@@ -185,7 +185,7 @@ export default function LoginPage() {
                       setError('');
                     }}
                     placeholder="Enter your password"
-                    className="w-full bg-[#121212] border border-white/15 focus:border-[#3EFFC0] focus:ring-2 focus:ring-[#3EFFC0]/25 rounded-xl pl-11 pr-11 py-3.5 text-sm text-white placeholder-[#787065] transition-all outline-none font-medium"
+                    className="w-full bg-[#0C0C0C] border border-white/15 focus:border-[#FF5C00] focus:ring-2 focus:ring-[#FF5C00]/25 rounded-xl pl-11 pr-11 py-3.5 text-sm text-white placeholder-[#888888] transition-all outline-none font-medium"
                   />
                   <button
                     type="button"
@@ -202,7 +202,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3.5 px-6 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-[#E50914] to-[#FF2236] hover:from-[#FF2236] hover:to-[#E50914] shadow-[0_4px_25px_rgba(229,9,20,0.4)] hover:shadow-[0_6px_30px_rgba(229,9,20,0.6)] transition-all duration-200 active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+                className="w-full py-3.5 px-6 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-[#E50914] via-[#FF5C00] to-[#E50914] hover:from-[#FF2236] hover:to-[#FF7A00] shadow-[0_4px_25px_rgba(229,9,20,0.4)] hover:shadow-[0_6px_30px_rgba(229,9,20,0.6)] transition-all duration-200 active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mt-2"
               >
                 {isSubmitting ? (
                   <>
@@ -220,7 +220,7 @@ export default function LoginPage() {
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-white/10" />
               </div>
-              <span className="relative bg-[#181818] px-3 text-xs text-[#8C8478] font-semibold uppercase tracking-wider">
+              <span className="relative bg-[#141414] px-3 text-xs text-[#8C8478] font-semibold uppercase tracking-wider">
                 or sign in with
               </span>
             </div>
@@ -270,7 +270,7 @@ export default function LoginPage() {
               Don't have an account?{' '}
               <Link
                 href="/signup"
-                className="text-[#3EFFC0] hover:text-white font-bold underline-offset-4 hover:underline transition-colors"
+                className="text-[#FF5C00] hover:text-white font-bold underline-offset-4 hover:underline transition-colors"
               >
                 Sign up free
               </Link>
@@ -287,7 +287,7 @@ export default function LoginPage() {
       {/* Forgot Password Modal */}
       {forgotModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4 backdrop-blur-md animate-fade-in">
-          <div className="w-full max-w-md bg-[#181818] border border-white/15 rounded-3xl p-7 sm:p-8 space-y-4 shadow-2xl relative">
+          <div className="w-full max-w-md bg-[#141414] border border-white/15 rounded-3xl p-7 sm:p-8 space-y-4 shadow-2xl relative">
             <div className="flex justify-between items-center pb-2">
               <h3 className="text-lg font-bold text-white">Reset Password</h3>
               <button
@@ -304,7 +304,7 @@ export default function LoginPage() {
 
             {resetSubmitted ? (
               <div className="text-center py-6 space-y-3">
-                <div className="w-12 h-12 rounded-full bg-[#3EFFC0]/15 border border-[#3EFFC0]/30 flex items-center justify-center text-[#3EFFC0] mx-auto">
+                <div className="w-12 h-12 rounded-full bg-[#FF5C00]/15 border border-[#FF5C00]/30 flex items-center justify-center text-[#FF5C00] mx-auto">
                   <CheckCircle2 className="w-6 h-6" />
                 </div>
                 <h4 className="text-sm font-bold text-white">Reset Link Sent</h4>
@@ -317,7 +317,7 @@ export default function LoginPage() {
                     setForgotModalOpen(false);
                     setResetSubmitted(false);
                   }}
-                  className="mt-4 px-6 py-2.5 bg-gradient-to-r from-[#E50914] to-[#FF2236] text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-lg shadow-red-500/20"
+                  className="mt-4 px-6 py-2.5 bg-gradient-to-r from-[#E50914] to-[#FF5C00] hover:from-[#FF2236] hover:to-[#FF7A00] text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-lg shadow-orange-500/20"
                 >
                   Return to Sign In
                 </button>
@@ -348,7 +348,7 @@ export default function LoginPage() {
                     value={resetEmail}
                     onChange={(e) => setResetEmail(e.target.value)}
                     placeholder="name@example.com"
-                    className="w-full bg-[#121212] border border-white/15 focus:border-[#3EFFC0] focus:ring-2 focus:ring-[#3EFFC0]/25 rounded-xl px-4 py-3 text-sm text-white placeholder-[#787065] transition-all outline-none"
+                    className="w-full bg-[#0C0C0C] border border-white/15 focus:border-[#FF5C00] focus:ring-2 focus:ring-[#FF5C00]/25 rounded-xl px-4 py-3 text-sm text-white placeholder-[#888888] transition-all outline-none"
                   />
                 </div>
                 <div className="flex items-center gap-3 pt-2">
@@ -361,7 +361,7 @@ export default function LoginPage() {
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 py-3 px-4 rounded-xl text-xs font-bold text-[#121212] bg-[#3EFFC0] hover:bg-[#34e0a7] transition-colors shadow-lg shadow-[#3EFFC0]/20 cursor-pointer"
+                    className="flex-1 py-3 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#E50914] to-[#FF5C00] hover:from-[#FF2236] hover:to-[#FF7A00] transition-colors shadow-lg shadow-orange-500/25 cursor-pointer"
                   >
                     Send Reset Link
                   </button>

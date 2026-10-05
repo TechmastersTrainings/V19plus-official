@@ -70,19 +70,19 @@ export default function SignupPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
-        <div className="w-12 h-12 rounded-full border-4 border-white/10 border-t-[#3EFFC0] animate-spin" />
+      <div className="min-h-screen bg-[#080808] flex items-center justify-center">
+        <div className="w-12 h-12 rounded-full border-4 border-white/10 border-t-[#FF5C00] animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen relative flex flex-col justify-between bg-[#121212] text-white selection:bg-[#3EFFC0]/30 selection:text-white">
+    <div className="min-h-screen relative flex flex-col justify-between bg-[#080808] text-white selection:bg-[#FF5C00]/30 selection:text-white">
       {/* Cinematic Ambient Atmosphere Glow */}
       <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[700px] sm:w-[900px] h-[500px] bg-gradient-to-b from-[#3EFFC0]/15 via-[#00E5FF]/10 to-transparent blur-[140px]" />
+        <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[700px] sm:w-[900px] h-[500px] bg-gradient-to-b from-[#FF5C00]/15 via-[#E50914]/10 to-transparent blur-[140px]" />
         <div className="absolute bottom-[-10%] left-[-5%] w-[500px] h-[500px] bg-[#E50914]/15 blur-[150px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(62,255,192,0.04)_0,transparent_70%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,92,0,0.04)_0,transparent_70%)]" />
       </div>
 
       {/* Top Navigation */}
@@ -92,16 +92,16 @@ export default function SignupPage() {
             <Play className="w-5 h-5 fill-white text-white ml-0.5" />
           </div>
           <span className="text-2xl sm:text-3xl font-black tracking-tight text-white drop-shadow-md">
-            V19<span className="text-[#3EFFC0]">Plus</span>
+            V19<span className="text-[#FF5C00]">Plus</span>
           </span>
         </Link>
 
         <Link
           href="/login"
-          className="px-4 py-2 rounded-xl text-xs font-bold text-gray-300 hover:text-white border border-white/10 hover:border-[#3EFFC0]/40 transition-all backdrop-blur-md bg-white/5 hover:bg-white/10 flex items-center gap-1.5"
+          className="px-4 py-2 rounded-xl text-xs font-bold text-gray-300 hover:text-white border border-white/10 hover:border-[#FF5C00]/40 transition-all backdrop-blur-md bg-white/5 hover:bg-white/10 flex items-center gap-1.5"
         >
           <span>Sign In</span>
-          <ArrowRight className="w-3.5 h-3.5 text-[#3EFFC0]" />
+          <ArrowRight className="w-3.5 h-3.5 text-[#FF5C00]" />
         </Link>
       </header>
 
@@ -109,9 +109,9 @@ export default function SignupPage() {
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-10">
         <div className="w-full max-w-md">
           {/* Card Frame */}
-          <div className="relative rounded-3xl bg-[#181818]/95 border border-white/12 p-7 sm:p-10 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8),0_0_50px_rgba(62,255,192,0.08)] backdrop-blur-2xl transition-all">
+          <div className="relative rounded-3xl bg-[#141414]/95 border border-white/12 p-7 sm:p-10 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8),0_0_50px_rgba(255,92,0,0.06)] backdrop-blur-2xl transition-all">
             {/* Top glowing brand pill */}
-            <div className="w-12 h-1 bg-gradient-to-r from-[#E50914] via-[#00E5FF] to-[#3EFFC0] rounded-full mx-auto mb-6 shadow-[0_0_12px_#3EFFC0]" />
+            <div className="w-12 h-1 bg-gradient-to-r from-[#E50914] via-[#FF5C00] to-[#FF7A00] rounded-full mx-auto mb-6 shadow-[0_0_12px_rgba(255,92,0,0.5)]" />
 
             {/* Header Titles */}
             <div className="text-center mb-8">
@@ -151,7 +151,7 @@ export default function SignupPage() {
                       setError('');
                     }}
                     placeholder="Enter your name"
-                    className="w-full bg-[#121212] border border-white/15 focus:border-[#3EFFC0] focus:ring-2 focus:ring-[#3EFFC0]/25 rounded-xl pl-11 pr-4 py-3.5 text-sm text-white placeholder-[#787065] transition-all outline-none font-medium"
+                    className="w-full bg-[#0C0C0C] border border-white/15 focus:border-[#FF5C00] focus:ring-2 focus:ring-[#FF5C00]/25 rounded-xl pl-11 pr-4 py-3.5 text-sm text-white placeholder-[#888888] transition-all outline-none font-medium"
                   />
                 </div>
               </div>
@@ -174,7 +174,7 @@ export default function SignupPage() {
                       setError('');
                     }}
                     placeholder="name@example.com"
-                    className="w-full bg-[#121212] border border-white/15 focus:border-[#3EFFC0] focus:ring-2 focus:ring-[#3EFFC0]/25 rounded-xl pl-11 pr-4 py-3.5 text-sm text-white placeholder-[#787065] transition-all outline-none font-medium"
+                    className="w-full bg-[#0C0C0C] border border-white/15 focus:border-[#FF5C00] focus:ring-2 focus:ring-[#FF5C00]/25 rounded-xl pl-11 pr-4 py-3.5 text-sm text-white placeholder-[#888888] transition-all outline-none font-medium"
                   />
                 </div>
               </div>
@@ -198,7 +198,7 @@ export default function SignupPage() {
                       setError('');
                     }}
                     placeholder="Create a strong password"
-                    className="w-full bg-[#121212] border border-white/15 focus:border-[#3EFFC0] focus:ring-2 focus:ring-[#3EFFC0]/25 rounded-xl pl-11 pr-11 py-3.5 text-sm text-white placeholder-[#787065] transition-all outline-none font-medium"
+                    className="w-full bg-[#0C0C0C] border border-white/15 focus:border-[#FF5C00] focus:ring-2 focus:ring-[#FF5C00]/25 rounded-xl pl-11 pr-11 py-3.5 text-sm text-white placeholder-[#888888] transition-all outline-none font-medium"
                   />
                   <button
                     type="button"
@@ -214,11 +214,11 @@ export default function SignupPage() {
               {/* Terms agreement note */}
               <p className="text-[11px] text-[#8C8478] leading-relaxed text-center pt-1">
                 By creating an account, you agree to our{' '}
-                <Link href="/legal/terms" className="text-[#3EFFC0] hover:text-white underline underline-offset-2">
+                <Link href="/legal/terms" className="text-[#FF5C00] hover:text-white underline underline-offset-2">
                   Terms of Service
                 </Link>{' '}
                 and{' '}
-                <Link href="/legal/privacy" className="text-[#3EFFC0] hover:text-white underline underline-offset-2">
+                <Link href="/legal/privacy" className="text-[#FF5C00] hover:text-white underline underline-offset-2">
                   Privacy Policy
                 </Link>
                 .
@@ -228,7 +228,7 @@ export default function SignupPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3.5 px-6 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-[#E50914] to-[#FF2236] hover:from-[#FF2236] hover:to-[#E50914] shadow-[0_4px_25px_rgba(229,9,20,0.4)] hover:shadow-[0_6px_30px_rgba(229,9,20,0.6)] transition-all duration-200 active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+                className="w-full py-3.5 px-6 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-[#E50914] via-[#FF5C00] to-[#E50914] hover:from-[#FF2236] hover:to-[#FF7A00] shadow-[0_4px_25px_rgba(229,9,20,0.4)] hover:shadow-[0_6px_30px_rgba(229,9,20,0.6)] transition-all duration-200 active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mt-2"
               >
                 {isSubmitting ? (
                   <>
@@ -246,7 +246,7 @@ export default function SignupPage() {
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-white/10" />
               </div>
-              <span className="relative bg-[#181818] px-3 text-xs text-[#8C8478] font-semibold uppercase tracking-wider">
+              <span className="relative bg-[#141414] px-3 text-xs text-[#8C8478] font-semibold uppercase tracking-wider">
                 or register with
               </span>
             </div>
@@ -296,7 +296,7 @@ export default function SignupPage() {
               Already have an account?{' '}
               <Link
                 href="/login"
-                className="text-[#3EFFC0] hover:text-white font-bold underline-offset-4 hover:underline transition-colors"
+                className="text-[#FF5C00] hover:text-white font-bold underline-offset-4 hover:underline transition-colors"
               >
                 Sign in
               </Link>

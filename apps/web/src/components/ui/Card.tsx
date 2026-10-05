@@ -7,7 +7,7 @@ export interface CardProps {
   paragraph?: string;
   items?: string[];
   buttonText?: string;
-  theme?: 'cyan' | 'orange';
+  theme?: 'red' | 'orange';
   onClick?: () => void;
   className?: string;
 }
@@ -30,7 +30,7 @@ export const Card: React.FC<CardProps> = ({
   className = '',
 }) => {
   return (
-    <div className={`card ${theme === 'cyan' ? 'theme-cyan' : ''} ${className}`}>
+    <div className={`card ${theme === 'red' ? 'theme-red' : ''} ${className}`}>
       <div className="card__border" />
       <div className="card_title__container">
         <span className="card_title">{title}</span>

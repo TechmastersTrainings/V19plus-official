@@ -173,7 +173,7 @@ export default function SupportPage() {
 
             {submitted ? (
               <div className="text-center py-8 space-y-4">
-                <div className="w-12 h-12 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center text-green-500 mx-auto">
+                <div className="w-12 h-12 rounded-full bg-[#FF5C00]/15 border border-[#FF5C00]/30 flex items-center justify-center text-[#FF5C00] mx-auto shadow-[0_0_15px_rgba(255,92,0,0.25)]">
                   <MessageSquare className="w-6 h-6" />
                 </div>
                 <h3 className="text-base font-bold text-white">Ticket Submitted</h3>

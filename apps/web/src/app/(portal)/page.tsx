@@ -226,12 +226,12 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#121212] text-white selection:bg-[#3EFFC0]/30 selection:text-[#3EFFC0] pb-24 animate-fade-in overflow-x-hidden font-sans">
+    <div className="min-h-screen bg-[#080808] text-white selection:bg-[#FF5C00]/30 selection:text-[#FFFFFF] pb-24 animate-fade-in overflow-x-hidden font-sans">
       {/* Admin Studio Quick Desk Bar (Visible strictly to authenticated admins) */}
       {isAdmin && (
-        <div className="relative z-30 bg-gradient-to-r from-[#E50914]/20 via-[#181818] to-[#121212] border-b border-white/10 px-4 sm:px-6 py-2.5 flex items-center justify-between text-xs">
+        <div className="relative z-30 bg-gradient-to-r from-[#E50914]/20 via-[#141414] to-[#080808] border-b border-white/10 px-4 sm:px-6 py-2.5 flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#3EFFC0] shadow-[0_0_8px_#3EFFC0] animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-[#FF5C00] shadow-[0_0_8px_#FF5C00] animate-pulse" />
             <span className="font-semibold text-white">
               V19Plus Studio Partner Portal • Catalog & Media Management
             </span>
@@ -265,11 +265,11 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/10">
               <div className="flex items-center gap-3">
-                <span className="w-1.5 h-6 rounded-full bg-[#3EFFC0] shadow-[0_0_12px_#3EFFC0]" />
+                <span className="w-1.5 h-6 rounded-full bg-gradient-to-b from-[#E50914] to-[#FF5C00] shadow-[0_0_12px_rgba(229,9,20,0.6)]" />
                 <div>
                   <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
                     <span>{activeGenre}</span>
-                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#3EFFC0]/15 text-[#3EFFC0] border border-[#3EFFC0]/30">
+                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#FF5C00]/15 text-[#FF5C00] border border-[#FF5C00]/30">
                       {filteredGenreItems.length} {filteredGenreItems.length === 1 ? 'Title' : 'Titles'}
                     </span>
                   </h2>
@@ -312,8 +312,8 @@ export default function HomePage() {
                 )}
               </div>
             ) : (
-              <div className="py-14 px-4 text-center rounded-2xl bg-[#181818] border border-white/10 space-y-3">
-                <div className="w-12 h-12 rounded-xl bg-[#3EFFC0]/15 flex items-center justify-center text-[#3EFFC0] mx-auto shadow-[0_0_15px_rgba(62,255,192,0.25)]">
+              <div className="py-14 px-4 text-center rounded-2xl bg-[#141414] border border-white/10 space-y-3">
+                <div className="w-12 h-12 rounded-xl bg-[#E50914]/15 flex items-center justify-center text-[#E50914] mx-auto shadow-[0_0_15px_rgba(229,9,20,0.25)]">
                   <Film className="w-6 h-6" />
                 </div>
                 <h3 className="text-base font-bold text-white">No titles in {activeGenre} yet</h3>
@@ -322,7 +322,7 @@ export default function HomePage() {
                 </p>
                 <button
                   onClick={() => setActiveGenre(null)}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#3EFFC0] hover:bg-[#32e0a7] text-[#121212] font-black text-xs shadow-md transition-all active:scale-95 cursor-pointer"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#E50914] to-[#FF5C00] hover:from-[#FF2236] hover:to-[#FF7A00] text-white font-bold text-xs shadow-md transition-all active:scale-95 cursor-pointer"
                 >
                   View All Titles
                 </button>
@@ -372,12 +372,12 @@ export default function HomePage() {
 
           {/* Modern Direct Edge Experience Strip */}
           <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 sm:mt-16">
-            <div className="rounded-2xl bg-[#181818] border border-white/10 p-6 sm:p-8 relative overflow-hidden shadow-2xl">
-              <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-[#3EFFC0]/10 via-[#00E5FF]/10 to-transparent blur-[80px] pointer-events-none" />
+            <div className="rounded-2xl bg-[#141414] border border-white/10 p-6 sm:p-8 relative overflow-hidden shadow-2xl">
+              <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-[#E50914]/15 via-[#FF5C00]/10 to-transparent blur-[80px] pointer-events-none" />
               <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="space-y-1.5">
-                  <div className="flex items-center gap-2 text-[#3EFFC0] text-xs font-bold uppercase tracking-wider">
-                    <ShieldCheck className="w-4 h-4 text-[#3EFFC0]" />
+                  <div className="flex items-center gap-2 text-[#FF5C00] text-xs font-bold uppercase tracking-wider">
+                    <ShieldCheck className="w-4 h-4 text-[#FF5C00]" />
                     <span>V19Plus Direct-to-Edge Architecture</span>
                   </div>
                   <h4 className="text-lg sm:text-xl font-black text-white tracking-tight">
@@ -391,7 +391,7 @@ export default function HomePage() {
                 <div className="flex flex-wrap items-center gap-3">
                   <Link
                     href="/browse"
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-[#3EFFC0] hover:text-[#121212] text-white font-bold text-xs border border-white/15 transition-all shadow-sm"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-[#FF5C00] hover:text-white text-white font-bold text-xs border border-white/15 transition-all shadow-sm"
                   >
                     <Compass className="w-3.5 h-3.5" />
                     <span>Explore Library</span>
@@ -414,8 +414,8 @@ export default function HomePage() {
 
       {/* Empty Catalog State */}
       {!isLoading && allPool.length === 0 && (
-        <div className="max-w-xl mx-auto my-16 p-8 rounded-3xl bg-[#181818] border border-white/10 text-center space-y-4 shadow-2xl">
-          <div className="w-16 h-16 rounded-2xl bg-[#3EFFC0]/15 flex items-center justify-center text-[#3EFFC0] mx-auto shadow-[0_0_20px_rgba(62,255,192,0.25)]">
+        <div className="max-w-xl mx-auto my-16 p-8 rounded-3xl bg-[#141414] border border-white/10 text-center space-y-4 shadow-2xl">
+          <div className="w-16 h-16 rounded-2xl bg-[#FF5C00]/15 flex items-center justify-center text-[#FF5C00] mx-auto shadow-[0_0_20px_rgba(255,92,0,0.25)]">
             <Film className="w-8 h-8" />
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-white">
@@ -427,7 +427,7 @@ export default function HomePage() {
           <div className="pt-2 flex items-center justify-center gap-3">
             <Link
               href="/browse"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/10 hover:bg-[#3EFFC0] hover:text-[#121212] text-white font-bold text-sm border border-white/10 transition-all"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/10 hover:bg-[#FF5C00] hover:text-white text-white font-bold text-sm border border-white/10 transition-all"
             >
               <Compass className="w-4 h-4" />
               <span>Browse Catalog</span>

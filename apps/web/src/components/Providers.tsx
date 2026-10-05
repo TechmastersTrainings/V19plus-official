@@ -32,7 +32,7 @@ function AppErrorBoundary({ children }: { children: React.ReactNode }) {
         <p style={{ fontSize: 14, color: '#888', marginBottom: 24, textAlign: 'center' }}>{errorMessage || 'An error occurred'}</p>
         <button
           onClick={() => { setHasError(false); setErrorMessage(''); window.location.reload(); }}
-          style={{ background: '#3EFFC0', color: '#121212', border: 'none', borderRadius: 8, padding: '10px 24px', fontWeight: 700, cursor: 'pointer' }}
+          style={{ background: 'linear-gradient(to right, #E50914, #FF5C00)', color: '#FFFFFF', border: 'none', borderRadius: 8, padding: '10px 24px', fontWeight: 700, cursor: 'pointer', boxShadow: '0 0 15px rgba(229,9,20,0.4)' }}
         >
           Retry
         </button>

@@ -4,12 +4,12 @@ interface BadgeProps {
 }
 
 const variants = {
-  red:      'bg-n-red text-white',
-  orange:   'bg-n-red text-white',
-  new:      'bg-emerald-600 text-white',
-  top:      'bg-n-red text-white',
-  original: 'bg-n-red text-white',
-  quality:  'bg-black/60 text-white border border-white/20',
+  red:      'bg-[#E50914] text-white',
+  orange:   'bg-[#FF5C00] text-white',
+  new:      'bg-gradient-to-r from-[#FF5C00] to-[#E50914] text-white font-bold',
+  top:      'bg-[#E50914] text-white font-bold',
+  original: 'bg-gradient-to-r from-[#E50914] to-[#FF5C00] text-white font-bold',
+  quality:  'bg-black/70 text-white border border-white/20',
 };
 
 export function Badge({ children, variant = 'red' }: BadgeProps) {

@@ -77,7 +77,7 @@ export function DetailModal() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92, y: 25 }}
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            className="relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl bg-[#181818]/98 border border-white/10 shadow-[0_25px_70px_rgba(0,0,0,0.95),0_0_35px_rgba(62,255,192,0.15)] backdrop-blur-2xl"
+            className="relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl bg-[#141414]/98 border border-white/10 shadow-[0_25px_70px_rgba(0,0,0,0.95),0_0_35px_rgba(255,92,0,0.15)] backdrop-blur-2xl"
           >
             {/* Close Button */}
             <button
@@ -98,7 +98,7 @@ export function DetailModal() {
             ) : content ? (
               <>
                 {/* Backdrop Hero Header */}
-                <div className="relative aspect-video overflow-hidden rounded-t-3xl bg-[#121212]">
+                <div className="relative aspect-video overflow-hidden rounded-t-3xl bg-[#080808]">
                   {backdropSrc ? (
                     <img
                       src={backdropSrc}
@@ -106,11 +106,11 @@ export function DetailModal() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-[#181818] via-[#121212] to-black flex items-center justify-center">
-                      <span className="text-6xl font-black text-[#3EFFC0]/20">V19+</span>
+                    <div className="w-full h-full bg-gradient-to-br from-[#1C1C1C] via-[#141414] to-black flex items-center justify-center">
+                      <span className="text-6xl font-black text-white/15">V19+</span>
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#181818] via-[#181818]/40 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/40 to-transparent" />
 
                   {/* Play Button Overlay */}
                   <div className="absolute bottom-6 left-6 right-6 flex items-center gap-3">
@@ -119,7 +119,7 @@ export function DetailModal() {
                         closeDetail();
                         router.push(`/watch/${content.slug}`);
                       }}
-                      className="flex items-center gap-2.5 px-6 py-3 bg-gradient-to-r from-[#E50914] via-[#FF2236] to-[#E50914] hover:from-[#FF2236] hover:to-[#E50914] text-white font-semibold rounded-xl text-sm transition-all shadow-[0_0_24px_rgba(229,9,20,0.5)] active:scale-95"
+                      className="flex items-center gap-2.5 px-6 py-3 bg-gradient-to-r from-[#E50914] via-[#FF5C00] to-[#E50914] hover:from-[#FF2236] hover:to-[#FF7A00] text-white font-bold rounded-xl text-sm transition-all shadow-[0_0_24px_rgba(229,9,20,0.5)] active:scale-95"
                     >
                       <Play className="w-4 h-4 fill-white text-white" />
                       <span>Play Now</span>
@@ -131,7 +131,7 @@ export function DetailModal() {
                       title={inList ? 'Remove from My List' : 'Add to My List'}
                     >
                       {inList ? (
-                        <Check className="w-5 h-5 text-[#3EFFC0]" />
+                        <Check className="w-5 h-5 text-[#FF5C00]" />
                       ) : (
                         <Plus className="w-5 h-5" />
                       )}
@@ -142,15 +142,15 @@ export function DetailModal() {
                 {/* Content Info Body */}
                 <div className="p-6 sm:p-8">
                   <div className="flex items-start justify-between gap-4 mb-3">
-                    <h2 className="text-2xl sm:text-3xl font-bold font-display text-white leading-tight">
+                    <h2 className="text-2xl sm:text-3xl font-extrabold font-display text-white leading-tight">
                       {content.title}
                     </h2>
                   </div>
 
                   {/* Metadata Row */}
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs sm:text-sm text-[#C8C2B8] font-medium mb-4">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs sm:text-sm text-[#D0D0D0] font-medium mb-4">
                     {content.imdbScore && (
-                      <span className="text-[#3EFFC0] font-semibold bg-[#3EFFC0]/10 border border-[#3EFFC0]/30 px-2 py-0.5 rounded shadow-sm">
+                      <span className="text-[#FF5C00] font-bold bg-[#FF5C00]/10 border border-[#FF5C00]/30 px-2 py-0.5 rounded shadow-sm">
                         ★ {content.imdbScore} IMDb
                       </span>
                     )}

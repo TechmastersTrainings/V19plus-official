@@ -13,7 +13,7 @@ export interface ContentCardProps {
   progress?: number;
   rank?: number;
   size?: 'sm' | 'md' | 'lg' | 'wide';
-  theme?: 'cyan' | 'orange';
+  theme?: 'red' | 'orange';
   className?: string;
 }
 
@@ -104,7 +104,7 @@ export function ContentCard({
       className={`v19-card flex-shrink-0 group/card cursor-pointer select-none transition-all duration-300 hover:-translate-y-1.5 ${widthClasses} ${className}`}
     >
       {/* 16:9 Landscape Thumbnail Container */}
-      <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-[#181818] border border-white/10 group-hover/card:border-[#3EFFC0]/70 group-hover/card:shadow-[0_0_20px_rgba(62,255,192,0.25)] transition-all duration-300 shadow-xl">
+      <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-[#141414] border border-white/10 group-hover/card:border-[#FF5C00]/80 group-hover/card:shadow-[0_0_24px_rgba(255,92,0,0.35)] transition-all duration-300 shadow-xl">
         {!imgError ? (
           <img
             src={effectivePoster}
@@ -114,8 +114,8 @@ export function ContentCard({
             onError={() => setImgError(true)}
           />
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#1E1E1E] to-[#121212] relative">
-            <div className="w-10 h-10 rounded-xl bg-[#3EFFC0]/15 border border-[#3EFFC0]/30 flex items-center justify-center text-[#3EFFC0] shadow-[0_0_15px_rgba(62,255,192,0.25)]">
+          <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#1C1C1C] to-[#080808] relative">
+            <div className="w-10 h-10 rounded-xl bg-[#E50914]/15 border border-[#E50914]/30 flex items-center justify-center text-[#E50914] shadow-[0_0_15px_rgba(229,9,20,0.25)]">
               <Film className="w-5 h-5" />
             </div>
             <span className="text-[11px] font-bold text-white/90 mt-1 line-clamp-1 px-2 text-center">
@@ -126,19 +126,19 @@ export function ContentCard({
 
         {/* Hover Ambient Overlay with Center Play Circle */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-          <div className="w-11 h-11 rounded-full bg-white group-hover/card:bg-[#3EFFC0] text-[#121212] flex items-center justify-center shadow-[0_4px_24px_rgba(0,0,0,0.9)] transform scale-75 group-hover/card:scale-100 transition-all duration-200">
-            <Play className="w-4 h-4 fill-[#121212] text-[#121212] ml-0.5" />
+          <div className="w-11 h-11 rounded-full bg-white group-hover/card:bg-[#E50914] text-white flex items-center justify-center shadow-[0_4px_24px_rgba(0,0,0,0.9)] transform scale-75 group-hover/card:scale-100 transition-all duration-200">
+            <Play className="w-4 h-4 fill-white text-white ml-0.5" />
           </div>
         </div>
 
         {/* Top-Left Badge: Rank or Original Tag */}
         {rank !== undefined ? (
-          <div className="absolute top-2 left-2 z-10 px-2.5 py-0.5 rounded-md bg-gradient-to-r from-[#E50914] to-[#FF2236] text-white font-black text-xs shadow-[0_0_12px_rgba(229,9,20,0.6)] border border-white/20">
+          <div className="absolute top-2 left-2 z-10 px-2.5 py-0.5 rounded-md bg-gradient-to-r from-[#E50914] to-[#FF5C00] text-white font-black text-xs shadow-[0_0_12px_rgba(229,9,20,0.6)] border border-white/20">
             #{rank}
           </div>
         ) : isOriginal ? (
-          <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-md bg-[#121212]/85 backdrop-blur-md text-[#3EFFC0] font-bold text-[10px] tracking-wide border border-[#3EFFC0]/35 flex items-center gap-1 shadow-sm">
-            <Sparkles className="w-2.5 h-2.5 text-[#3EFFC0]" />
+          <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-md bg-[#080808]/85 backdrop-blur-md text-[#FF5C00] font-bold text-[10px] tracking-wide border border-[#FF5C00]/40 flex items-center gap-1 shadow-sm">
+            <Sparkles className="w-2.5 h-2.5 text-[#FF5C00]" />
             <span>Original</span>
           </div>
         ) : null}
@@ -148,13 +148,13 @@ export function ContentCard({
           onClick={handleWatchlist}
           className={`absolute top-2 right-2 z-10 w-7 h-7 rounded-full backdrop-blur-md border flex items-center justify-center transition-all duration-200 shadow-md ${
             inList
-              ? 'bg-[#3EFFC0] border-[#3EFFC0] text-[#121212] shadow-[0_0_10px_rgba(62,255,192,0.5)]'
-              : 'bg-black/60 border-white/20 text-white/80 hover:text-white hover:bg-black/90 hover:border-[#3EFFC0]/60 opacity-0 group-hover/card:opacity-100'
+              ? 'bg-[#E50914] border-[#E50914] text-white shadow-[0_0_10px_rgba(229,9,20,0.6)]'
+              : 'bg-black/60 border-white/20 text-white/80 hover:text-white hover:bg-black/90 hover:border-[#FF5C00]/60 opacity-0 group-hover/card:opacity-100'
           }`}
           title={inList ? 'In My List' : 'Add to My List'}
           aria-label="Toggle Watchlist"
         >
-          {inList ? <Check className="w-3.5 h-3.5 text-[#121212] stroke-[3]" /> : <Bookmark className="w-3.5 h-3.5" />}
+          {inList ? <Check className="w-3.5 h-3.5 text-white stroke-[3]" /> : <Bookmark className="w-3.5 h-3.5" />}
         </button>
 
         {/* Bottom Badges */}
@@ -162,14 +162,14 @@ export function ContentCard({
           {/* Duration Badge */}
           {durationMins > 0 ? (
             <span className="px-1.5 py-0.5 rounded bg-black/80 backdrop-blur-md text-[10px] font-medium text-white/90 border border-white/10 flex items-center gap-1 shadow-sm">
-              <Clock className="w-2.5 h-2.5 text-[#3EFFC0]" />
+              <Clock className="w-2.5 h-2.5 text-[#FF5C00]" />
               <span>{Math.floor(durationMins / 60) > 0 ? `${Math.floor(durationMins / 60)}h ` : ''}{durationMins % 60}m</span>
             </span>
           ) : <span />}
 
           {/* Quality & Rating */}
           <div className="flex items-center gap-1">
-            <span className="px-1.5 py-0.5 rounded bg-[#121212]/90 backdrop-blur-md text-[9px] font-bold text-[#3EFFC0] border border-[#3EFFC0]/40 shadow-sm">
+            <span className="px-1.5 py-0.5 rounded bg-black/90 backdrop-blur-md text-[9px] font-bold text-[#FF5C00] border border-[#FF5C00]/40 shadow-sm">
               4K UHD
             </span>
             <span className="px-1.5 py-0.5 rounded bg-black/80 backdrop-blur-md text-[9px] font-semibold text-white/90 border border-white/10">
@@ -182,7 +182,7 @@ export function ContentCard({
         {progress !== undefined && progress > 0 && (
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/80 z-20 overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-[#E50914] via-[#00E5FF] to-[#3EFFC0] shadow-[0_0_8px_rgba(62,255,192,0.8)]"
+              className="h-full bg-gradient-to-r from-[#FF5C00] to-[#E50914] shadow-[0_0_8px_rgba(255,92,0,0.8)]"
               style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
             />
           </div>
@@ -192,18 +192,18 @@ export function ContentCard({
       {/* Metadata Below Card */}
       <div className="pt-2 px-0.5 space-y-0.5">
         <h3
-          className="font-bold text-white text-xs sm:text-sm tracking-tight truncate group-hover/card:text-[#3EFFC0] transition-colors"
+          className="font-bold text-white text-xs sm:text-sm tracking-tight truncate group-hover/card:text-[#FF5C00] transition-colors"
           title={content.title}
         >
           {content.title}
         </h3>
 
         <div className="flex items-center gap-1.5 text-[11px] text-[#A0A0A0] font-medium">
-          <span className="text-[#3EFFC0] font-semibold">{primaryGenre}</span>
+          <span className="text-[#FF5C00] font-semibold">{primaryGenre}</span>
           <span>•</span>
           <span className="text-white/80">{releaseYear}</span>
           <span>•</span>
-          <span className="text-[#00E5FF]/90">Direct Edge</span>
+          <span className="text-white/60">Direct Edge</span>
         </div>
       </div>
     </div>
