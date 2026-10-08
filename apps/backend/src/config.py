@@ -60,8 +60,8 @@ class Settings(BaseSettings):
         return ""
 
     # Razorpay Payment Gateway
-    RAZORPAY_KEY_ID: str = "rzp_test_TlZexudG496RM2"
-    RAZORPAY_KEY_SECRET: str = "aDxkWf4l23hOqIjAf0ZR6jZH"
+    RAZORPAY_KEY_ID: str = "rzp_live_Tbb4iLspKtfxWT"
+    RAZORPAY_KEY_SECRET: str = "ZXTUeRfIiuZwNG3MoJP26iCH"
     RAZORPAY_WEBHOOK_SECRET: str = ""
 
     # Observability
@@ -104,15 +104,15 @@ class Settings(BaseSettings):
     @field_validator("RAZORPAY_KEY_ID", mode="before")
     @classmethod
     def assemble_razorpay_key(cls, v: str) -> str:
-        if not v or "placeholder" in v:
-            return "rzp_test_TlZexudG496RM2"
+        if not v or "placeholder" in v or "rzp_test_" in v:
+            return "rzp_live_Tbb4iLspKtfxWT"
         return v
 
     @field_validator("RAZORPAY_KEY_SECRET", mode="before")
     @classmethod
     def assemble_razorpay_secret(cls, v: str) -> str:
-        if not v or "placeholder" in v:
-            return "aDxkWf4l23hOqIjAf0ZR6jZH"
+        if not v or "placeholder" in v or v == "aDxkWf4l23hOqIjAf0ZR6jZH":
+            return "ZXTUeRfIiuZwNG3MoJP26iCH"
         return v
 
 

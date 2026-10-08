@@ -148,7 +148,7 @@ export function BookingModal({ isOpen, onClose, event, ticketType }: BookingModa
       const razorpayKey =
         process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
         orderData.key_id ||
-        'rzp_test_TlZexudG496RM2';
+        'rzp_live_Tbb4iLspKtfxWT';
 
       const options = {
         key: razorpayKey,

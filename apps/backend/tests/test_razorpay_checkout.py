@@ -26,8 +26,8 @@ async def run_razorpay_tests():
 
     async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
         # 1. Environment & Credentials Configuration
-        assert_check("Razorpay Key ID Configured", settings.RAZORPAY_KEY_ID == "rzp_test_TlZexudG496RM2", f"({settings.RAZORPAY_KEY_ID})")
-        assert_check("Razorpay Key Secret Configured", settings.RAZORPAY_KEY_SECRET == "aDxkWf4l23hOqIjAf0ZR6jZH")
+        assert_check("Razorpay Key ID Configured", settings.RAZORPAY_KEY_ID == "rzp_live_Tbb4iLspKtfxWT", f"({settings.RAZORPAY_KEY_ID})")
+        assert_check("Razorpay Key Secret Configured", settings.RAZORPAY_KEY_SECRET == "ZXTUeRfIiuZwNG3MoJP26iCH")
 
         # 2. Step 1: Create Order - Minimum Amount Validation (< 100 paise)
         invalid_amount_res = await client.post("/api/create-order", json={"amount": 50, "currency": "INR"})
@@ -47,7 +47,7 @@ async def run_razorpay_tests():
         assert_check("Order ID Returned", bool(order_data.get("order_id")) and order_data["order_id"].startswith("order_"), f"({order_data.get('order_id')})")
         assert_check("Amount Matches Request", order_data.get("amount") == 29900)
         assert_check("Currency is INR", order_data.get("currency") == "INR")
-        assert_check("Key ID Matches Configured Gateway", order_data.get("key_id") == "rzp_test_TlZexudG496RM2")
+        assert_check("Key ID Matches Configured Gateway", order_data.get("key_id") == "rzp_live_Tbb4iLspKtfxWT")
         order_id = order_data["order_id"]
 
         # Also verify the alias route /api/payments/create-order

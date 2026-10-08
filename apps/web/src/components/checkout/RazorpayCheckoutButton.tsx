@@ -103,7 +103,7 @@ export function RazorpayCheckoutButton({
       const keyId =
         process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
         orderData.key_id ||
-        'rzp_test_TlZexudG496RM2';
+        'rzp_live_Tbb4iLspKtfxWT';
 
       // 3. Step 2: Frontend - Launch Razorpay Modal with order_id
       const options = {
