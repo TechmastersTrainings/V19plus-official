@@ -20,11 +20,13 @@ import {
   Compass,
   Play,
   Tv,
+  Ticket,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const NAV_LINKS = [
   { to: '/', label: 'Home', icon: Film },
+  { to: '/events', label: 'Events & Passes', icon: Ticket },
   { to: '/movies', label: 'Movies', icon: Film },
   { to: '/series', label: 'TV Shows', icon: Tv },
   { to: '/browse?type=DOCUMENTARY', label: 'Documentaries', icon: Layers },
@@ -221,6 +223,14 @@ export function Topbar() {
                       >
                         <Sparkles className="w-4 h-4 text-[#FF5C00]" />
                         <span>Passes & Billing</span>
+                      </Link>
+                      <Link
+                        href="/my-tickets"
+                        onClick={() => setProfileOpen(false)}
+                        className="flex items-center gap-3 px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-white hover:bg-white/10 rounded-xl transition-colors"
+                      >
+                        <Ticket className="w-4 h-4 text-[#FF8A00]" />
+                        <span>My Event Passes</span>
                       </Link>
                       {user?.role === 'ADMIN' && (
                         <Link

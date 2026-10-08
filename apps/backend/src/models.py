@@ -6,6 +6,13 @@ from src.modules.video_jobs.models import VideoJob
 from src.modules.subscriptions.models import SubscriptionPlan, Entitlement, UserSubscription
 from src.modules.payments.models import Payment, PaymentWebhook
 from src.modules.streaming.models import WatchHistory, Watchlist
+from src.modules.events.models import (
+    Event,
+    TicketType,
+    EventBooking,
+    EventTicket,
+    TicketAuditLog,
+)
 
 __all__ = [
     "Base",
@@ -25,4 +32,9 @@ __all__ = [
     "PaymentWebhook",
     "WatchHistory",
     "Watchlist",
+    "Event",
+    "TicketType",
+    "EventBooking",
+    "EventTicket",
+    "TicketAuditLog",
 ]

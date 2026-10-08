@@ -14,12 +14,16 @@ import {
   Settings as SettingsIcon,
   LogOut,
   Menu,
-  X
+  X,
+  Ticket,
+  QrCode,
 } from 'lucide-react';
 import { useState } from 'react';
 
 const navItems = [
   { label: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { label: 'Events & Passes', href: '/events', icon: Ticket },
+  { label: 'Gate QR Scanner', href: '/events/scanner', icon: QrCode },
   { label: 'Content', href: '/content', icon: Film },
   { label: 'Categories', href: '/categories', icon: FolderTree },
   { label: 'Users', href: '/users', icon: Users },

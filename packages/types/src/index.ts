@@ -204,3 +204,117 @@ export interface Notification {
   isRead: boolean;
   createdAt: Date | string;
 }
+
+// -------------------------------------------------------------
+// Event Ticketing Module Types
+// -------------------------------------------------------------
+export interface TicketType {
+  id: string;
+  eventId: string;
+  name: string;
+  description?: string | null;
+  pricePaise: number;
+  priceInr: number;
+  currency: string;
+  totalCapacity: number;
+  soldCount: number;
+  availableQuantity: number;
+  maxPerBooking: number;
+  saleStartTime?: string | null;
+  saleEndTime?: string | null;
+  isActive: boolean;
+}
+
+export interface EventItem {
+  id: string;
+  title: string;
+  slug: string;
+  description?: string | null;
+  category: string;
+  posterUrl?: string | null;
+  bannerUrl?: string | null;
+  venueName: string;
+  venueAddress: string;
+  city: string;
+  startTime: string;
+  endTime: string;
+  gatesOpenTime?: string | null;
+  restrictions?: string | null;
+  termsAndConditions?: string | null;
+  status: 'DRAFT' | 'PUBLISHED' | 'SOLD_OUT' | 'COMPLETED' | 'CANCELLED' | string;
+  isFeatured: boolean;
+  totalCapacity: number;
+  totalSold: number;
+  remainingCapacity: number;
+  isSoldOut: boolean;
+  startingPricePaise: number;
+  startingPriceInr: number;
+  ticketTypes?: TicketType[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface EventTicket {
+  id: string;
+  ticketNumber: string;
+  attendeeName: string;
+  attendeePhone?: string | null;
+  qrToken: string;
+  status: 'VALID' | 'CHECKED_IN' | 'CANCELLED' | 'REFUNDED' | string;
+  isCheckedIn: boolean;
+  checkedInAt?: string | null;
+  eventId: string;
+  eventTitle: string;
+  venueName: string;
+  venueAddress: string;
+  city: string;
+  startTime: string;
+  endTime: string;
+  restrictions?: string | null;
+  ticketTypeName: string;
+  unitPricePaise: number;
+  unitPriceInr: number;
+  bookingReference: string;
+}
+
+export interface EventBooking {
+  id: string;
+  bookingReference: string;
+  eventId: string;
+  eventTitle: string;
+  eventSlug: string;
+  posterUrl?: string | null;
+  venueName: string;
+  venueAddress: string;
+  startTime: string;
+  endTime: string;
+  restrictions?: string | null;
+  ticketTypeName: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  quantity: number;
+  unitPricePaise: number;
+  totalAmountPaise: number;
+  totalAmountInr: number;
+  currency: string;
+  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'EXPIRED' | 'REFUNDED' | string;
+  razorpayOrderId?: string | null;
+  razorpayPaymentId?: string | null;
+  createdAt: string;
+  tickets: EventTicket[];
+}
+
+export interface CheckInResult {
+  success: boolean;
+  resultCode: 'CHECK_IN_SUCCESS' | 'ALREADY_CHECKED_IN' | 'INVALID_TICKET' | 'CANCELLED_TICKET' | string;
+  message: string;
+  ticketId?: string | null;
+  ticketNumber?: string | null;
+  attendeeName?: string | null;
+  attendeePhone?: string | null;
+  ticketTypeName?: string | null;
+  eventTitle?: string | null;
+  checkedInAt?: string | null;
+  alreadyCheckedInAt?: string | null;
+}
