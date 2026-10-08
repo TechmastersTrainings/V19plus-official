@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -41,6 +41,36 @@ export function BookingModal({ isOpen, onClose, event, ticketType }: BookingModa
   const [attendeeNames, setAttendeeNames] = useState<string[]>(['']);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
+  const loadRazorpayScript = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if (typeof window === 'undefined') return resolve(false);
+      if ((window as any).Razorpay) return resolve(true);
+
+      const existingScript = document.querySelector(
+        'script[src="https://checkout.razorpay.com/v1/checkout.js"]'
+      );
+      if (existingScript) {
+        if ((window as any).Razorpay) return resolve(true);
+        existingScript.addEventListener('load', () => resolve(true));
+        existingScript.addEventListener('error', () => resolve(false));
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      loadRazorpayScript();
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleQuantityChange = (newQty: number) => {
@@ -63,20 +93,6 @@ export function BookingModal({ isOpen, onClose, event, ticketType }: BookingModa
 
   const totalPaise = ticketType.price_paise * quantity;
   const totalInr = totalPaise / 100;
-
-  const loadRazorpayScript = (): Promise<boolean> => {
-    return new Promise((resolve) => {
-      if (typeof window === 'undefined') return resolve(false);
-      if ((window as any).Razorpay) return resolve(true);
-
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.async = true;
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,31 +138,20 @@ export function BookingModal({ isOpen, onClose, event, ticketType }: BookingModa
 
       // 3. Load Razorpay script
       const scriptLoaded = await loadRazorpayScript();
-
-      // Check if real gateway or mock mode
-      const isMock = !scriptLoaded || !orderData.key_id || orderData.key_id.includes('placeholder');
-
-      if (isMock) {
-        // Mock gateway confirmation (for local testing/staging)
-        toast.loading('Processing ticket confirmation...');
-        const verifyRes = await eventsApi.verifyPayment({
-          booking_id: orderData.booking_id,
-          razorpay_order_id: orderData.order_id,
-          razorpay_payment_id: `pay_mock_${Date.now()}`,
-          razorpay_signature: 'mock_signature_dev_mode',
-          attendees: attendeesPayload,
-        });
-
-        toast.dismiss();
-        toast.success('🎉 Tickets confirmed successfully!');
-        onClose();
-        router.push(`/events/booking/${verifyRes.data.booking_id}`);
+      if (!scriptLoaded || typeof (window as any).Razorpay === 'undefined') {
+        setIsSubmitting(false);
+        toast.error('Unable to load Razorpay payment gateway. Please check your internet connection and try again.');
         return;
       }
 
       // 4. Launch official Razorpay Checkout modal
+      const razorpayKey =
+        process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
+        orderData.key_id ||
+        'rzp_test_TlZexudG496RM2';
+
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || orderData.key_id,
+        key: razorpayKey,
         amount: orderData.amount_paise,
         currency: orderData.currency,
         name: 'V19PLUS LIVE EVENTS',

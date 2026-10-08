@@ -277,22 +277,19 @@ class EventService:
         if user_id:
             order_notes["user_id"] = str(user_id)
 
-        if not self.key_id or not self.key_secret or "placeholder" in self.key_id:
-            order_id = f"order_evt_{uuid.uuid4().hex[:14]}"
-        else:
-            rzp = self._get_razorpay_client()
-            try:
-                rzp_order = rzp.order.create(
-                    data={
-                        "amount": total_amount,
-                        "currency": "INR",
-                        "receipt": f"rcpt_{booking_ref[:20]}",
-                        "notes": order_notes,
-                    }
-                )
-                order_id = rzp_order["id"]
-            except Exception as e:
-                raise V19plusException(f"Failed to initiate order with payment gateway: {str(e)}", status_code=502)
+        rzp = self._get_razorpay_client()
+        try:
+            rzp_order = rzp.order.create(
+                data={
+                    "amount": total_amount,
+                    "currency": "INR",
+                    "receipt": f"rcpt_{booking_ref[:20]}",
+                    "notes": order_notes,
+                }
+            )
+            order_id = rzp_order["id"]
+        except Exception as e:
+            raise V19plusException(f"Failed to initiate order with Razorpay payment gateway: {str(e)}", status_code=502)
 
         # 5. Insert Booking Ledger Record
         booking = EventBooking(
@@ -359,7 +356,7 @@ class EventService:
         Duplicate calls return the existing confirmed tickets safely.
         """
         # Cryptographic verification
-        if self.key_secret and not req.razorpay_order_id.startswith("order_evt_"):
+        if self.key_secret:
             message = f"{req.razorpay_order_id}|{req.razorpay_payment_id}"
             expected_sig = hmac.new(
                 self.key_secret.encode("utf-8"),

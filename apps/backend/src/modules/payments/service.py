@@ -60,26 +60,23 @@ class PaymentService:
         if not plan or not plan.is_active:
             raise NotFoundException("SubscriptionPlan", req.plan_id)
 
-        if not self.key_id or not self.key_secret or "placeholder" in self.key_id:
-            order_id = f"order_mock_{uuid.uuid4().hex[:14]}"
-        else:
-            rzp = self._get_razorpay_client()
-            order_data = {
-                "amount": plan.price_inr_paise,
-                "currency": "INR",
-                "receipt": f"rcpt_{uuid.uuid4().hex[:12]}",
-                "notes": {
-                    "user_id": str(user_id),
-                    "plan_id": str(plan.id),
-                    "plan_name": plan.name,
-                },
-            }
+        rzp = self._get_razorpay_client()
+        order_data = {
+            "amount": plan.price_inr_paise,
+            "currency": "INR",
+            "receipt": f"rcpt_{uuid.uuid4().hex[:12]}",
+            "notes": {
+                "user_id": str(user_id),
+                "plan_id": str(plan.id),
+                "plan_name": plan.name,
+            },
+        }
 
-            try:
-                rzp_order = rzp.order.create(data=order_data)
-                order_id = rzp_order["id"]
-            except Exception as e:
-                raise V19plusException(f"Failed to initiate order with Razorpay: {str(e)}", status_code=502)
+        try:
+            rzp_order = rzp.order.create(data=order_data)
+            order_id = rzp_order["id"]
+        except Exception as e:
+            raise V19plusException(f"Failed to initiate order with Razorpay: {str(e)}", status_code=502)
 
         # Insert pending payment ledger entry
         payment = Payment(

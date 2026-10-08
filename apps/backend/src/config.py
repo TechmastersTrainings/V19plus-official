@@ -60,8 +60,8 @@ class Settings(BaseSettings):
         return ""
 
     # Razorpay Payment Gateway
-    RAZORPAY_KEY_ID: str = ""
-    RAZORPAY_KEY_SECRET: str = ""
+    RAZORPAY_KEY_ID: str = "rzp_test_TlZexudG496RM2"
+    RAZORPAY_KEY_SECRET: str = "aDxkWf4l23hOqIjAf0ZR6jZH"
     RAZORPAY_WEBHOOK_SECRET: str = ""
 
     # Observability
