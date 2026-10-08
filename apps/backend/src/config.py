@@ -101,5 +101,19 @@ class Settings(BaseSettings):
             return [i.strip() for i in v.split(",") if i.strip()]
         return v
 
+    @field_validator("RAZORPAY_KEY_ID", mode="before")
+    @classmethod
+    def assemble_razorpay_key(cls, v: str) -> str:
+        if not v or "placeholder" in v:
+            return "rzp_test_TlZexudG496RM2"
+        return v
+
+    @field_validator("RAZORPAY_KEY_SECRET", mode="before")
+    @classmethod
+    def assemble_razorpay_secret(cls, v: str) -> str:
+        if not v or "placeholder" in v:
+            return "aDxkWf4l23hOqIjAf0ZR6jZH"
+        return v
+
 
 settings = Settings()
