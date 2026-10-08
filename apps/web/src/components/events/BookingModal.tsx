@@ -146,7 +146,7 @@ export function BookingModal({ isOpen, onClose, event, ticketType }: BookingModa
 
       // 4. Launch official Razorpay Checkout modal
       const options = {
-        key: orderData.key_id,
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || orderData.key_id,
         amount: orderData.amount_paise,
         currency: orderData.currency,
         name: 'V19PLUS LIVE EVENTS',

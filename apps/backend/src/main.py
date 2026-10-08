@@ -11,7 +11,7 @@ from src.modules.auth.router import router as auth_router
 from src.modules.content.router import router as content_router
 from src.modules.media.router import router as media_router
 from src.modules.streaming.router import router as streaming_router
-from src.modules.payments.router import router as payments_router
+from src.modules.payments.router import router as payments_router, standard_payments_router
 from src.modules.video_jobs.router import router as video_jobs_router
 from src.modules.content.search_router import router as search_router
 from src.modules.streaming.watchlist_router import router as watchlist_router
@@ -87,6 +87,7 @@ app.include_router(content_router, prefix="/api")
 app.include_router(media_router, prefix="/api")
 app.include_router(streaming_router, prefix="/api")
 app.include_router(payments_router, prefix="/api")
+app.include_router(standard_payments_router, prefix="/api")
 app.include_router(video_jobs_router, prefix="/api")
 app.include_router(search_router, prefix="/api")
 app.include_router(watchlist_router, prefix="/api")
