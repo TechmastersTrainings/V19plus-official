@@ -29,6 +29,9 @@ class SpriteGenerator:
         cmd = [
             "ffmpeg",
             "-y",
+            "-err_detect", "ignore_err",
+            "-fflags", "+genpts+discardcorrupt",
+            "-max_error_rate", "1.0",
             "-i", input_path,
             "-vf", f"fps=1/{interval_secs},scale={thumb_w}:{thumb_h},tile={cols}x{rows}",
             "-an",

@@ -111,7 +111,8 @@ async def process_video_job(job_id_str: str) -> None:
             await loop.run_in_executor(None, transfer.upload_hls_directory, output_hls_dir, target_bucket, target_prefix)
 
             # 9. Finalize VideoJob & Content records
-            master_key = f"{target_prefix.rstrip('/')}/master.m3u8"
+            # 9. Finalize VideoJob & Content records
+            master_key = f"{worker_settings.CDN_STREAMING_BASE_URL.rstrip('/')}/{target_prefix.rstrip('/')}/master.m3u8"
             sprite_key = f"{target_prefix.rstrip('/')}/thumbnails.vtt"
 
             await db.execute(
@@ -123,12 +124,32 @@ async def process_video_job(job_id_str: str) -> None:
                 {"id": job_id, "duration": probe_data["duration"]},
             )
 
-            # Link master HLS manifest to Content or Episode
+            # Auto-associate with Content if content_id was None (e.g. uploaded prior to catalog creation)
+            if not content_id and not episode_id and source_key:
+                c_res = await db.execute(
+                    text("SELECT id FROM content WHERE master_storage_key = :key LIMIT 1"),
+                    {"key": source_key},
+                )
+                c_row = c_res.mappings().first()
+                if c_row:
+                    content_id = c_row["id"]
+                    logger.info(f"Associated job {job_id} with Content {content_id} via master_storage_key '{source_key}'.")
+                else:
+                    e_res = await db.execute(
+                        text("SELECT id FROM episodes WHERE master_storage_key = :key LIMIT 1"),
+                        {"key": source_key},
+                    )
+                    e_row = e_res.mappings().first()
+                    if e_row:
+                        episode_id = e_row["id"]
+                        logger.info(f"Associated job {job_id} with Episode {episode_id} via master_storage_key '{source_key}'.")
+
+            # Link master HLS manifest to Content or Episode only after successful validation
             if content_id:
                 await db.execute(
                     text("""
                         UPDATE content 
-                        SET hls_manifest_key = :manifest, sprite_vtt_key = :sprite, duration_seconds = :duration, status = 'READY', updated_at = NOW()
+                        SET hls_manifest_key = :manifest, sprite_vtt_key = :sprite, duration_seconds = :duration, status = 'PUBLISHED', updated_at = NOW()
                         WHERE id = :cid
                     """),
                     {
@@ -175,18 +196,43 @@ async def process_video_job(job_id_str: str) -> None:
 
 
 async def run_worker_loop():
-    """Background polling loop listening on Redis queue for video jobs"""
-    logger.info(f"V19plus Video Worker initialized. Listening on Redis {worker_settings.REDIS_URL}...")
-    redis = aioredis.from_url(worker_settings.REDIS_URL, decode_responses=True)
+    """Background polling loop listening on Redis queue and PostgreSQL for pending video jobs"""
+    logger.info(f"V19plus Video Worker initialized. Polling Redis ({worker_settings.REDIS_URL}) and PostgreSQL...")
+    redis = None
+    try:
+        redis = aioredis.from_url(worker_settings.REDIS_URL, decode_responses=True)
+    except Exception as e:
+        logger.warning(f"Could not connect to Redis: {e}. Falling back to PostgreSQL polling mode.")
 
     while True:
         try:
-            # Blocking pop with 5 second timeout
-            item = await redis.brpop("v19plus:video_jobs", timeout=5)
-            if item:
-                _, job_id_str = item
-                logger.info(f"Dequeued job {job_id_str} from queue.")
-                await process_video_job(job_id_str)
+            job_found = False
+
+            # 1. Check Redis queue first
+            if redis:
+                try:
+                    item = await redis.brpop("v19plus:video_jobs", timeout=2)
+                    if item:
+                        _, job_id_str = item
+                        logger.info(f"Dequeued job {job_id_str} from Redis queue.")
+                        job_found = True
+                        await process_video_job(job_id_str)
+                except Exception as re:
+                    logger.debug(f"Redis poll warning: {re}")
+
+            # 2. Check PostgreSQL for any orphan jobs in QUEUED status
+            if not job_found:
+                async with SessionLocal() as db:
+                    res = await db.execute(
+                        text("SELECT id FROM video_jobs WHERE status = 'QUEUED' ORDER BY created_at ASC LIMIT 1")
+                    )
+                    row = res.mappings().first()
+                    if row:
+                        orphan_id = str(row["id"])
+                        logger.info(f"Picked up queued job {orphan_id} directly from PostgreSQL.")
+                        await process_video_job(orphan_id)
+                    else:
+                        await asyncio.sleep(5)
         except asyncio.CancelledError:
             break
         except Exception as e:

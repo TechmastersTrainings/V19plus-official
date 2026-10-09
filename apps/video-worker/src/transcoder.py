@@ -30,6 +30,9 @@ class FFmpegTranscoder:
         cmd = [
             "ffmpeg",
             "-y",
+            "-err_detect", "ignore_err",
+            "-fflags", "+genpts+discardcorrupt",
+            "-max_error_rate", "1.0",
             "-i", self.input_path,
         ]
 
