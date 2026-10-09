@@ -97,11 +97,17 @@ export function VideoPlayer({
     bufferTimeoutRef.current = setTimeout(() => {
       const video = videoRef.current;
       if (video && !video.paused) {
-        setIsBuffering(true);
-        if (!prolongedBufferTimeoutRef.current) {
-          prolongedBufferTimeoutRef.current = setTimeout(() => {
-            setIsProlongedBuffer(true);
-          }, 8000);
+        // Only trigger buffering overlay if media engine is genuinely starved of data (readyState < 3)
+        if (video.readyState < 3) {
+          setIsBuffering(true);
+          if (!prolongedBufferTimeoutRef.current) {
+            prolongedBufferTimeoutRef.current = setTimeout(() => {
+              const currentVideo = videoRef.current;
+              if (currentVideo && !currentVideo.paused && currentVideo.readyState < 3) {
+                setIsProlongedBuffer(true);
+              }
+            }, 8000);
+          }
         }
       }
     }, 350);
@@ -499,7 +505,7 @@ export function VideoPlayer({
     if (!video) return;
 
     // Video is advancing, so clear any lingering buffering state immediately
-    if (isBuffering || isLoading) {
+    if (isBuffering || isLoading || isProlongedBuffer) {
       clearBuffering();
     }
 
@@ -550,10 +556,55 @@ export function VideoPlayer({
   };
 
   const handleStalled = () => {
-    if (isPlaying) {
-      triggerBuffering();
-    }
+    const video = videoRef.current;
+    if (!video || !isPlaying) return;
+
+    // In WebKit / iOS Safari, the 'stalled' event fires whenever download pauses,
+    // which happens normally when the browser buffer limit is satisfied.
+    // If the browser already has forward buffer ahead of current playback, ignore 'stalled'.
+    try {
+      const buffered = video.buffered;
+      if (buffered && buffered.length > 0) {
+        for (let i = 0; i < buffered.length; i++) {
+          if (buffered.start(i) <= video.currentTime && video.currentTime < buffered.end(i)) {
+            if (buffered.end(i) - video.currentTime > 1.5) {
+              return;
+            }
+          }
+        }
+      }
+    } catch {}
+
+    triggerBuffering();
   };
+
+  const handleForceResume = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      clearBuffering();
+      const video = videoRef.current;
+      if (!video) return;
+
+      console.info("V19Plus Force Resume triggered at position:", video.currentTime);
+
+      // 1. If HLS.js is active, tell it to force reload segments immediately
+      if (hlsRef.current) {
+        hlsRef.current.startLoad();
+      }
+
+      // 2. Re-kick the playback pipeline
+      const currentPos = video.currentTime;
+      if (video.readyState < 2) {
+        // Pipeline starved or connection suspended: re-trigger play
+        video.play().catch(() => {});
+      } else {
+        // Nudge forward slightly past micro-gap
+        video.currentTime = Math.min(video.duration || Infinity, currentPos + 0.15);
+        video.play().catch(() => {});
+      }
+    },
+    [clearBuffering]
+  );
 
   const handleCanPlay = () => {
     clearBuffering();
@@ -801,14 +852,7 @@ export function VideoPlayer({
                 </p>
                 <button
                   type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const v = videoRef.current;
-                    if (v) {
-                      v.currentTime = Math.max(0, v.currentTime - 0.5);
-                      v.play().catch(() => {});
-                    }
-                  }}
+                  onClick={handleForceResume}
                   className="mt-1 px-3 py-1 bg-white/15 hover:bg-white/25 active:scale-95 text-white rounded-lg text-xs font-medium transition cursor-pointer border border-white/10"
                 >
                   Force Resume
