@@ -48,10 +48,6 @@ class StreamingService:
             hls_manifest_key = episode.hls_manifest_key
             sprite_vtt_key = episode.sprite_vtt_key
 
-        # In dev or if manifest key is missing, provide a robust high-bitrate adaptive HLS stream
-        if not hls_manifest_key:
-            hls_manifest_key = f"content/{content_id}/master.m3u8"
-
         # Generate HMAC signed token
         token = generate_playback_token(
             content_id=str(content_id),
@@ -72,19 +68,20 @@ class StreamingService:
             hls_manifest_key and (hls_manifest_key.endswith(".m3u8") or ".m3u8" in hls_manifest_key or "/hls/" in hls_manifest_key)
         )
 
-        if is_valid_hls and (hls_manifest_key.startswith("http://") or hls_manifest_key.startswith("https://") or hls_manifest_key.startswith("/api/")):
-            if "127.0.0.1:8001" in hls_manifest_key:
-                stream_url = hls_manifest_key.replace("http://127.0.0.1:8001", "")
+        if is_valid_hls:
+            if hls_manifest_key.startswith("http://") or hls_manifest_key.startswith("https://") or hls_manifest_key.startswith("/api/"):
+                if "127.0.0.1:8001" in hls_manifest_key:
+                    stream_url = hls_manifest_key.replace("http://127.0.0.1:8001", "")
+                else:
+                    stream_url = hls_manifest_key
+            elif "/" in hls_manifest_key:
+                stream_url = f"{cdn_base}/{hls_manifest_key.lstrip('/')}"
             else:
-                stream_url = hls_manifest_key
-        elif is_valid_hls and "/" in (hls_manifest_key or ""):
-            stream_url = f"{cdn_base}/{hls_manifest_key.lstrip('/')}"
+                stream_url = f"{cdn_base}/{hls_manifest_key}"
         elif local_path and os.path.exists(local_path):
             stream_url = f"/api/media/stream/{local_filename}"
-        elif hls_manifest_key and "content/" in hls_manifest_key:
-            # High-bitrate masterclass streaming asset
-            stream_url = f"https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8?token={token}"
-        elif content.master_storage_key and not content.master_storage_key.endswith(".m3u8"):
+        elif content.master_storage_key:
+            # Valid master storage key present in Cloudflare R2: stream master directly while HLS is pending
             stream_url = f"{cdn_base}/{content.master_storage_key}"
         else:
             stream_url = f"https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8?token={token}"
