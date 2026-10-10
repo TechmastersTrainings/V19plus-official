@@ -205,6 +205,25 @@ async def process_video_job(job_id_str: str) -> None:
                 """),
                 {"id": job_id, "err": str(e)},
             )
+            # Ensure content is never marked as published if any step fails
+            if content_id:
+                await db.execute(
+                    text("""
+                        UPDATE content 
+                        SET status = 'FAILED', updated_at = NOW()
+                        WHERE id = :cid AND (status != 'PUBLISHED' OR hls_manifest_key IS NULL)
+                    """),
+                    {"cid": content_id},
+                )
+            elif episode_id:
+                await db.execute(
+                    text("""
+                        UPDATE episodes 
+                        SET status = 'FAILED', updated_at = NOW()
+                        WHERE id = :eid AND (status != 'READY' OR hls_manifest_key IS NULL)
+                    """),
+                    {"eid": episode_id},
+                )
             await db.commit()
 
         finally:
@@ -238,16 +257,16 @@ async def run_worker_loop():
                 except Exception as re:
                     logger.debug(f"Redis poll warning: {re}")
 
-            # 2. Check PostgreSQL for any orphan jobs in QUEUED status
+            # 2. Check PostgreSQL for any orphan jobs in PENDING or QUEUED status
             if not job_found:
                 async with SessionLocal() as db:
                     res = await db.execute(
-                        text("SELECT id FROM video_jobs WHERE status = 'QUEUED' ORDER BY created_at ASC LIMIT 1")
+                        text("SELECT id FROM video_jobs WHERE status IN ('PENDING', 'QUEUED') ORDER BY created_at ASC LIMIT 1")
                     )
                     row = res.mappings().first()
                     if row:
                         orphan_id = str(row["id"])
-                        logger.info(f"Picked up queued job {orphan_id} directly from PostgreSQL.")
+                        logger.info(f"Picked up pending job {orphan_id} directly from PostgreSQL.")
                         await process_video_job(orphan_id)
                     else:
                         await asyncio.sleep(5)

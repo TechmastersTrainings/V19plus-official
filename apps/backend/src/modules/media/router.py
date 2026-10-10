@@ -235,7 +235,7 @@ async def complete_chunked_upload(
             source_file_size_bytes=req.file_size_bytes,
             target_bucket=bucket,
             target_hls_prefix=hls_prefix,
-            status=JobStatus.QUEUED,
+            status=JobStatus.PENDING,
             progress_percent=0,
         )
         db.add(job)
@@ -440,7 +440,7 @@ async def complete_upload(
         source_file_size_bytes=req.file_size_bytes,
         target_bucket=settings.R2_STREAMING_BUCKET,
         target_hls_prefix=hls_prefix,
-        status=JobStatus.QUEUED,
+        status=JobStatus.PENDING,
         progress_percent=0,
     )
     db.add(job)

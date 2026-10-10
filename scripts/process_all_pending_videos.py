@@ -343,6 +343,27 @@ async def process_one(content_id: str, slug: str, source_key: str, job_id: str =
         validate_r2(target_prefix)
         await sync_database(content_id, slug, target_prefix, duration_sec, job_id)
         log(f"🎉 Successfully transcoded and published {slug or source_key}!")
+    except Exception as e:
+        log(f"❌ Processing failed for {slug or source_key}: {e}")
+        conn = await asyncpg.connect(DB_URL)
+        if job_id:
+            await conn.execute(
+                "UPDATE video_jobs SET status = 'FAILED', error_message = $1, updated_at = NOW() WHERE id = $2::uuid",
+                str(e), job_id
+            )
+        if content_id:
+            await conn.execute(
+                "UPDATE content SET status = 'FAILED', updated_at = NOW() WHERE id = $1::uuid AND (status != 'PUBLISHED' OR hls_manifest_key IS NULL)",
+                content_id
+            )
+        elif slug:
+            await conn.execute(
+                "UPDATE content SET status = 'FAILED', updated_at = NOW() WHERE slug = $1 AND (status != 'PUBLISHED' OR hls_manifest_key IS NULL)",
+                slug
+            )
+        await conn.close()
+        log(f"Recorded failure in database. Content remains unpublished for safe retry.")
+        raise
     finally:
         if os.path.exists(scratch_dir):
             shutil.rmtree(scratch_dir, ignore_errors=True)
@@ -374,13 +395,16 @@ async def main():
         await process_one(content_id, slug, args.key)
         return
 
-    # Process all QUEUED jobs in video_jobs
-    jobs = await conn.fetch("SELECT id, source_file_key, content_id FROM video_jobs WHERE status = 'QUEUED' ORDER BY created_at ASC")
-    log(f"Found {len(jobs)} queued video jobs in PostgreSQL.")
+    # Process all PENDING or QUEUED jobs in video_jobs
+    jobs = await conn.fetch("SELECT id, source_file_key, content_id FROM video_jobs WHERE status IN ('PENDING', 'QUEUED') ORDER BY created_at ASC")
+    log(f"Found {len(jobs)} pending/queued video jobs in PostgreSQL.")
     for j in jobs:
         c_row = await conn.fetchrow("SELECT slug FROM content WHERE id = $1", j["content_id"]) if j["content_id"] else None
         slug = c_row["slug"] if c_row else None
-        await process_one(str(j["content_id"]) if j["content_id"] else None, slug, j["source_file_key"], str(j["id"]))
+        try:
+            await process_one(str(j["content_id"]) if j["content_id"] else None, slug, j["source_file_key"], str(j["id"]))
+        except Exception:
+            log(f"Skipping to next job after failure on job {j['id']}...")
 
     await conn.close()
     log("All tasks completed.")

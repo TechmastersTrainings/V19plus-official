@@ -8,6 +8,7 @@ from src.database import Base, TimestampMixin
 
 
 class JobStatus(str, enum.Enum):
+    PENDING = "PENDING"
     QUEUED = "QUEUED"
     PROBING = "PROBING"
     TRANSCODING = "TRANSCODING"
