@@ -1,7 +1,8 @@
 import asyncio
 import os
 import re
-from typing import Any, Callable, Coroutine, Dict, List
+import sys
+from typing import Any, Callable, Coroutine, Dict, List, Optional
 
 
 class FFmpegTranscoder:
@@ -27,14 +28,18 @@ class FFmpegTranscoder:
         Execute single-pass multi-variant HLS transcoding command.
         Generates individual rendition playlists and unified master.m3u8.
         """
+        is_macos = sys.platform == "darwin"
         cmd = [
             "ffmpeg",
             "-y",
             "-err_detect", "ignore_err",
             "-fflags", "+genpts+discardcorrupt",
             "-max_error_rate", "1.0",
-            "-i", self.input_path,
         ]
+        if is_macos:
+            cmd.extend(["-hwaccel", "videotoolbox"])
+
+        cmd.extend(["-i", self.input_path])
 
         filter_complex_parts = []
         var_stream_map_parts = []
@@ -48,12 +53,19 @@ class FFmpegTranscoder:
 
         # Rendition mappings and encoding options
         for idx, rendition in enumerate(ladder):
+            video_codec = "h264_videotoolbox" if is_macos else "libx264"
             cmd.extend([
                 "-map", f"[v{idx}]",
                 "-map", "0:a:0?",
-                f"-c:v:{idx}", "libx264",
-                f"-preset:v:{idx}", "fast",
-                f"-crf:v:{idx}", "22",
+                f"-c:v:{idx}", video_codec,
+            ])
+            if not is_macos:
+                cmd.extend([
+                    f"-preset:v:{idx}", "fast",
+                    f"-crf:v:{idx}", "22",
+                ])
+            cmd.extend([
+                f"-b:v:{idx}", rendition["bitrate"],
                 f"-maxrate:v:{idx}", rendition["maxrate"],
                 f"-bufsize:v:{idx}", rendition["bufsize"],
                 f"-c:a:{idx}", "aac",

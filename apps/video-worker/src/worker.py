@@ -121,11 +121,18 @@ async def process_video_job(job_id_str: str) -> None:
             logger.info(f"Uploading transcoded HLS assets to {target_bucket}/{target_prefix}...")
             await loop.run_in_executor(None, transfer.upload_hls_directory, output_hls_dir, target_bucket, target_prefix)
 
-            # 9. Finalize VideoJob & Content records
-            # 9. Finalize VideoJob & Content records
+            # 8.5 Validate uploaded master manifest in R2 before touching database
             master_key = f"{worker_settings.CDN_STREAMING_BASE_URL.rstrip('/')}/{target_prefix.rstrip('/')}/master.m3u8"
             sprite_key = f"{target_prefix.rstrip('/')}/thumbnails.vtt"
 
+            import httpx
+            val_client = httpx.Client(headers={"User-Agent": "Mozilla/5.0"}, timeout=15.0)
+            master_check = val_client.get(master_key)
+            if master_check.status_code != 200:
+                raise AssertionError(f"Master playlist validation failed on R2 CDN: HTTP {master_check.status_code}")
+            logger.info(f"Master playlist verified accessible on Cloudflare R2: {master_key}")
+
+            # 9. Finalize VideoJob & Content records
             await db.execute(
                 text("""
                     UPDATE video_jobs 
