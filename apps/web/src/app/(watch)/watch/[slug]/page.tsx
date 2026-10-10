@@ -120,7 +120,10 @@ export default function WatchPage({ params }: { params: { slug: string } }) {
     const contentHls = (content as any)?.hls_manifest_key;
     if (contentHls && (contentHls.includes('.m3u8') || contentHls.includes('/hls/'))) return contentHls;
     if (content.videoUrl && (content.videoUrl.includes('.m3u8') || content.videoUrl.includes('/hls/'))) return content.videoUrl;
-    return (content as any)?.hls_manifest_key || content.videoUrl || '';
+    const masterFallback = (content as any)?.master_storage_key
+      ? `https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev/${(content as any).master_storage_key}`
+      : '';
+    return (content as any)?.hls_manifest_key || content.videoUrl || masterFallback || '';
   })();
 
   return (

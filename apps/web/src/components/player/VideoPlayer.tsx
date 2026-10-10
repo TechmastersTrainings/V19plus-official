@@ -217,6 +217,18 @@ export function VideoPlayer({
                   console.info(`HLS network error recovery attempt ${retryCount.current}/${MAX_AUTO_RETRIES}...`);
                   hls.startLoad();
                 } else {
+                  const mp4Fallback =
+                    content?.videoUrl ||
+                    ((content as any)?.master_storage_key
+                      ? `https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev/${(content as any).master_storage_key}`
+                      : null);
+                  if (mp4Fallback && mp4Fallback !== activeSrc) {
+                    console.info("HLS stream unavailable (transcoding pending), falling back to master MP4:", mp4Fallback);
+                    hls.destroy();
+                    hlsRef.current = null;
+                    setActiveSrc(formatStreamUrl(mp4Fallback));
+                    return;
+                  }
                   setHasError(true);
                   setIsLoading(false);
                 }

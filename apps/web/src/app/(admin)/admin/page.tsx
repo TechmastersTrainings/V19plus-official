@@ -533,7 +533,7 @@ export default function AdminStudioDesk() {
         });
 
         finalMasterKey = uploadRes.data.storage_key;
-        finalHlsKey = uploadRes.data.hls_manifest_url || undefined;
+        finalHlsKey = undefined; // Worker will link hls_manifest_key once transcoding is ready and validated
         setMasterStorageKey(uploadRes.data.storage_key);
         setStreamManifestKey(uploadRes.data.hls_manifest_url || '');
         setUploadProgress(100);
