@@ -12,6 +12,8 @@ class PlaybackAuthResponse(BaseModel):
     expires_in_seconds: int
     title: str
     sprite_vtt_url: Optional[str] = None
+    is_hls: bool = True
+    is_processing: bool = False
 
 
 class UpsertProgressRequest(BaseModel):

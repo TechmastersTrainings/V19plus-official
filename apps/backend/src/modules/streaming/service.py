@@ -68,7 +68,12 @@ class StreamingService:
             hls_manifest_key and (hls_manifest_key.endswith(".m3u8") or ".m3u8" in hls_manifest_key or "/hls/" in hls_manifest_key)
         )
 
+        is_processing = False
+        is_hls = False
+
         if is_valid_hls:
+            is_hls = True
+            is_processing = False
             if hls_manifest_key.startswith("http://") or hls_manifest_key.startswith("https://") or hls_manifest_key.startswith("/api/"):
                 if "127.0.0.1:8001" in hls_manifest_key:
                     stream_url = hls_manifest_key.replace("http://127.0.0.1:8001", "")
@@ -79,11 +84,17 @@ class StreamingService:
             else:
                 stream_url = f"{cdn_base}/{hls_manifest_key}"
         elif local_path and os.path.exists(local_path):
+            is_hls = False
+            is_processing = False
             stream_url = f"/api/media/stream/{local_filename}"
         elif content.master_storage_key:
-            # Valid master storage key present in Cloudflare R2: stream master directly while HLS is pending
+            # Valid master storage key present in Cloudflare R2: HLS transcoding is in progress / pending
+            is_hls = False
+            is_processing = True
             stream_url = f"{cdn_base}/{content.master_storage_key}"
         else:
+            is_hls = True
+            is_processing = False
             stream_url = f"https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8?token={token}"
 
         sprite_vtt_url = f"{cdn_base}/{sprite_vtt_key}" if sprite_vtt_key else None
@@ -96,6 +107,8 @@ class StreamingService:
             expires_in_seconds=settings.PLAYBACK_TOKEN_EXPIRE_MINUTES * 60,
             title=target_title,
             sprite_vtt_url=sprite_vtt_url,
+            is_hls=is_hls,
+            is_processing=is_processing,
         )
 
     async def update_progress(self, user_id: uuid.UUID, req: UpsertProgressRequest) -> None:

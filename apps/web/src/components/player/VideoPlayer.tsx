@@ -53,6 +53,14 @@ export function VideoPlayer({
   const bufferTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastClickTimeRef = useRef(0);
 
+  // Quality / ABR state
+  const [qualities, setQualities] = useState<{ id: number; label: string; height: number; bitrate: number }[]>([]);
+  const [currentQuality, setCurrentQuality] = useState<number>(-1); // -1 = Auto ABR
+  const [activeResolution, setActiveResolution] = useState<string>("");
+  const [showQualityMenu, setShowQualityMenu] = useState(false);
+  const [isProcessingHls, setIsProcessingHls] = useState<boolean>(false);
+  const [allowProgressiveOverride, setAllowProgressiveOverride] = useState<boolean>(false);
+
   const [activeSrc, setActiveSrc] = useState<string>(() => {
     // Prioritize published HLS manifests (.m3u8) over raw progressive MP4
     const hls =
@@ -64,6 +72,12 @@ export function VideoPlayer({
         : null);
 
     if (hls) return formatStreamUrl(hls);
+
+    // If only progressive MP4 is provided but title has a master_storage_key (large file),
+    // do not automatically start downloading 7.11 GB file
+    if ((content as any)?.master_storage_key && !(content as any)?.hls_manifest_key) {
+      return "";
+    }
 
     const raw =
       propSrc ||
@@ -137,6 +151,14 @@ export function VideoPlayer({
     // If a valid published HLS manifest is explicitly passed, use it directly
     if (propSrc && (propSrc.includes(".m3u8") || propSrc.includes("/hls/"))) {
       setActiveSrc(formatStreamUrl(propSrc));
+      setIsProcessingHls(false);
+      return;
+    }
+
+    const contentHls = (content as any)?.hls_manifest_key;
+    if (contentHls && (contentHls.includes(".m3u8") || contentHls.includes("/hls/"))) {
+      setActiveSrc(formatStreamUrl(contentHls));
+      setIsProcessingHls(false);
       return;
     }
 
@@ -150,26 +172,35 @@ export function VideoPlayer({
       .getPlaybackAuth(content.id, episodeId)
       .then((res) => {
         if (!isMounted) return;
-        if (res.data?.stream_url) {
-          setActiveSrc(formatStreamUrl(res.data.stream_url));
+        const streamUrl = res.data?.stream_url;
+        const isHls = Boolean(streamUrl && (streamUrl.includes(".m3u8") || streamUrl.includes("/hls/") || (res.data as any)?.is_hls));
+        const isProc = Boolean((res.data as any)?.is_processing);
+
+        if (isHls && streamUrl) {
+          setActiveSrc(formatStreamUrl(streamUrl));
+          setIsProcessingHls(false);
+        } else if (isProc || ((content as any)?.master_storage_key && !(content as any)?.hls_manifest_key)) {
+          // Adaptive HLS is pending transcode: do NOT automatically stream 7.11 GB MP4 on slow connections
+          setIsProcessingHls(true);
+        } else if (streamUrl) {
+          setActiveSrc(formatStreamUrl(streamUrl));
         }
       })
       .catch(() => {
         if (!isMounted) return;
         const hlsFallback = (content as any)?.hls_manifest_key;
-        const fallback =
-          (hlsFallback && (hlsFallback.includes(".m3u8") || hlsFallback.includes("/hls/")) ? hlsFallback : null) ||
-          propSrc ||
-          content.videoUrl ||
-          hlsFallback ||
-          "";
-        if (fallback) setActiveSrc(formatStreamUrl(fallback));
+        if (hlsFallback && (hlsFallback.includes(".m3u8") || hlsFallback.includes("/hls/"))) {
+          setActiveSrc(formatStreamUrl(hlsFallback));
+          setIsProcessingHls(false);
+        } else if ((content as any)?.master_storage_key) {
+          setIsProcessingHls(true);
+        }
       });
 
     return () => {
       isMounted = false;
     };
-  }, [content?.id, episodeId, propSrc, content?.videoUrl]);
+  }, [content?.id, episodeId, propSrc, content?.videoUrl, (content as any)?.hls_manifest_key]);
 
   // Attach media stream (Adaptive HLS with Hls.js or Native Safari HLS / MP4)
   useEffect(() => {
@@ -194,7 +225,7 @@ export function VideoPlayer({
         video.src = activeSrc;
         video.load();
       } else if (Hls.isSupported()) {
-        // Hls.js for Chrome, Firefox, Edge, Android
+        // Hls.js with Adaptive Bitrate (ABR) configuration
         const hls = new Hls({
           enableWorker: true,
           lowLatencyMode: false,
@@ -202,10 +233,33 @@ export function VideoPlayer({
           maxBufferLength: 30,
           maxMaxBufferLength: 60,
           maxBufferSize: 60 * 1000 * 1000,
+          startLevel: -1, // Auto ABR by default
+          abrEwmaDefaultEstimate: 1000000, // 1 Mbps default bandwidth estimate for fast start on mobile/slower networks
+          capLevelToPlayerSize: true,
+          testBandwidth: true,
         });
 
         hls.loadSource(activeSrc);
         hls.attachMedia(video);
+
+        hls.on(Hls.Events.MANIFEST_PARSED, (_event, data) => {
+          if (data.levels && data.levels.length > 0) {
+            const mapped = data.levels.map((lvl, idx) => ({
+              id: idx,
+              label: lvl.height ? `${lvl.height}p` : `${Math.round(lvl.bitrate / 1000)}k`,
+              height: lvl.height || 0,
+              bitrate: lvl.bitrate || 0,
+            }));
+            setQualities(mapped);
+          }
+        });
+
+        hls.on(Hls.Events.LEVEL_SWITCHED, (_event, data) => {
+          if (hls.levels && hls.levels[data.level]) {
+            const lvl = hls.levels[data.level];
+            setActiveResolution(lvl.height ? `${lvl.height}p` : "");
+          }
+        });
 
         hls.on(Hls.Events.ERROR, (_event, data) => {
           if (data.fatal) {
@@ -217,19 +271,16 @@ export function VideoPlayer({
                   console.info(`HLS network error recovery attempt ${retryCount.current}/${MAX_AUTO_RETRIES}...`);
                   hls.startLoad();
                 } else {
-                  const mp4Fallback =
-                    content?.videoUrl ||
-                    ((content as any)?.master_storage_key
-                      ? `https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev/${(content as any).master_storage_key}`
-                      : null);
-                  if (mp4Fallback && mp4Fallback !== activeSrc) {
-                    console.info("HLS stream unavailable (transcoding pending), falling back to master MP4:", mp4Fallback);
+                  // Do NOT automatically switch to 7.11 GB MP4 on slow connections
+                  if (allowProgressiveOverride && (content as any)?.master_storage_key) {
+                    const mp4Fallback = `https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev/${(content as any).master_storage_key}`;
+                    console.info("Explicit user override requested: streaming master MP4:", mp4Fallback);
                     hls.destroy();
                     hlsRef.current = null;
                     setActiveSrc(formatStreamUrl(mp4Fallback));
                     return;
                   }
-                  setHasError(true);
+                  setIsProcessingHls(true);
                   setIsLoading(false);
                 }
                 break;
@@ -654,6 +705,13 @@ export function VideoPlayer({
     [clearBuffering]
   );
 
+  const handleSelectQuality = useCallback((levelIndex: number) => {
+    if (!hlsRef.current) return;
+    hlsRef.current.currentLevel = levelIndex;
+    setCurrentQuality(levelIndex);
+    setShowQualityMenu(false);
+  }, []);
+
   const handleSeeking = () => {
     // When seeking starts, clear any prolonged buffering timer to avoid false warning overlays
     if (prolongedBufferTimeoutRef.current) {
@@ -927,6 +985,56 @@ export function VideoPlayer({
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* PROCESSING / STREAM OPTIMIZING OVERLAY */}
+      {isProcessingHls && !allowProgressiveOverride && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 text-center z-30 p-6 backdrop-blur-md">
+          <div className="flex flex-col items-center max-w-md">
+            <div className="relative mb-6">
+              <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full border-4 border-[#FF5C00]/20 border-t-[#FF5C00] animate-spin shadow-[0_0_25px_rgba(255,92,0,0.5)]" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <svg className="w-7 h-7 sm:w-8 sm:h-8 fill-[#FF5C00]" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                </svg>
+              </div>
+            </div>
+
+            <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 tracking-tight">
+              Optimizing Adaptive Stream
+            </h3>
+
+            <p className="text-sm text-white/70 mb-6 leading-relaxed">
+              This video is being prepared for high-speed adaptive streaming (1080p, 720p, 480p, 360p) for buffer-free playback on all network conditions.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full justify-center">
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.reload();
+                }}
+                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#FF5C00] to-[#E04800] hover:from-[#FF7A00] hover:to-[#FF5C00] font-bold text-sm text-white shadow-lg active:scale-95 transition cursor-pointer"
+              >
+                Check Stream Status
+              </button>
+
+              {(content as any)?.master_storage_key && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAllowProgressiveOverride(true);
+                    setIsProcessingHls(false);
+                    setActiveSrc(formatStreamUrl(`https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev/${(content as any).master_storage_key}`));
+                  }}
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-medium text-white/70 hover:text-white border border-white/10 active:scale-95 transition cursor-pointer"
+                >
+                  Stream Raw Master (High Bitrate)
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -1205,6 +1313,58 @@ export function VideoPlayer({
             {/* SPACER */}
 
             <div className="flex-1" />
+
+            {/* QUALITY / ABR SELECTOR */}
+            {qualities.length > 0 && (
+              <div className="relative">
+                <button
+                  type="button"
+                  aria-label="Quality settings"
+                  onClick={() => setShowQualityMenu((prev) => !prev)}
+                  className="flex h-9 sm:h-11 items-center gap-1.5 px-3 rounded-xl bg-black/60 hover:bg-black/90 text-white border border-white/20 hover:border-white/40 shadow-xl backdrop-blur-xl transition active:scale-95 cursor-pointer flex-shrink-0 text-xs font-bold"
+                >
+                  <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-white" fill="none" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                  <span>{currentQuality === -1 ? (activeResolution ? `Auto (${activeResolution})` : "Auto") : (qualities.find(q => q.id === currentQuality)?.label || "Auto")}</span>
+                </button>
+
+                {showQualityMenu && (
+                  <div
+                    className="absolute bottom-12 sm:bottom-14 right-0 min-w-[170px] rounded-xl bg-black/95 border border-white/20 p-1.5 shadow-2xl backdrop-blur-2xl z-50 flex flex-col gap-0.5 text-xs font-medium"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="px-3 py-1.5 text-[10px] uppercase font-bold text-white/50 tracking-wider border-b border-white/10 mb-1">
+                      Stream Quality
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectQuality(-1)}
+                      className={`flex items-center justify-between px-3 py-2 rounded-lg text-left transition cursor-pointer ${
+                        currentQuality === -1 ? "bg-[#FF5C00] text-white font-bold" : "text-white/80 hover:bg-white/10"
+                      }`}
+                    >
+                      <span>Auto (Adaptive)</span>
+                      {currentQuality === -1 && <span>✓</span>}
+                    </button>
+                    {qualities.map((q) => (
+                      <button
+                        key={q.id}
+                        type="button"
+                        onClick={() => handleSelectQuality(q.id)}
+                        className={`flex items-center justify-between px-3 py-2 rounded-lg text-left transition cursor-pointer ${
+                          currentQuality === q.id ? "bg-[#FF5C00] text-white font-bold" : "text-white/80 hover:bg-white/10"
+                        }`}
+                      >
+                        <span>{q.label}</span>
+                        {currentQuality === q.id && <span>✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* FULLSCREEN BUTTON */}
 
