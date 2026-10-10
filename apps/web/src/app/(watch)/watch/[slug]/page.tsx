@@ -110,12 +110,18 @@ export default function WatchPage({ params }: { params: { slug: string } }) {
       : 0;
 
   const activeEpisode = allEpisodes.find((e: Episode) => e.id === activeEpisodeId);
-  const videoSrc =
-    (activeEpisode as any)?.videoUrl ||
-    (activeEpisode as any)?.hls_manifest_key ||
-    content.videoUrl ||
-    (content as any)?.hls_manifest_key ||
-    '';
+  const videoSrc = (() => {
+    if (activeEpisode) {
+      const epHls = (activeEpisode as any).hls_manifest_key;
+      if (epHls && (epHls.includes('.m3u8') || epHls.includes('/hls/'))) return epHls;
+      if (activeEpisode.videoUrl && (activeEpisode.videoUrl.includes('.m3u8') || activeEpisode.videoUrl.includes('/hls/'))) return activeEpisode.videoUrl;
+      return (activeEpisode as any).hls_manifest_key || activeEpisode.videoUrl || '';
+    }
+    const contentHls = (content as any)?.hls_manifest_key;
+    if (contentHls && (contentHls.includes('.m3u8') || contentHls.includes('/hls/'))) return contentHls;
+    if (content.videoUrl && (content.videoUrl.includes('.m3u8') || content.videoUrl.includes('/hls/'))) return content.videoUrl;
+    return (content as any)?.hls_manifest_key || content.videoUrl || '';
+  })();
 
   return (
     <div className="w-full h-screen bg-black overflow-hidden">

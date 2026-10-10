@@ -41,11 +41,41 @@ class MediaProbe:
         duration = float(data.get("format", {}).get("duration", 0.0))
         bitrate = int(data.get("format", {}).get("bit_rate", 0))
 
+        # Check if the claimed end of the file is decodable
+        # Prevents aborted exports that padded gigabytes of zeroes from being published
+        is_truncated = False
+        if duration > 10:
+            test_ts = max(0.0, duration - 5.0)
+            verify_cmd = [
+                "ffmpeg",
+                "-ss", str(test_ts),
+                "-t", "1",
+                "-i", file_path,
+                "-f", "null", "-",
+            ]
+            try:
+                v_proc = await asyncio.create_subprocess_exec(
+                    *verify_cmd,
+                    stdout=asyncio.subprocess.DEVNULL,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                _, v_stderr = await asyncio.wait_for(v_proc.communicate(), timeout=8.0)
+                v_err_text = v_stderr.decode("utf-8", errors="ignore")
+                if v_proc.returncode != 0 or "Output file is empty" in v_err_text or "Conversion failed" in v_err_text:
+                    is_truncated = True
+                    logger.warning(
+                        f"Media integrity warning: Video claimed {duration:.1f}s but failed decodability test at {test_ts:.1f}s!"
+                    )
+            except Exception as e:
+                is_truncated = True
+                logger.warning(f"Media decodability check timed out or failed: {e}")
+
         return {
             "width": width,
             "height": height,
             "duration": duration,
             "bitrate": bitrate,
+            "is_truncated": is_truncated,
             "video_codec": video_stream.get("codec_name"),
             "audio_codec": audio_stream.get("codec_name") if audio_stream else None,
             "audio_channels": int(audio_stream.get("channels", 2)) if audio_stream else 0,

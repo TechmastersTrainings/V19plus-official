@@ -54,10 +54,21 @@ export function VideoPlayer({
   const lastClickTimeRef = useRef(0);
 
   const [activeSrc, setActiveSrc] = useState<string>(() => {
+    // Prioritize published HLS manifests (.m3u8) over raw progressive MP4
+    const hls =
+      (propSrc && (propSrc.includes(".m3u8") || propSrc.includes("/hls/")) ? propSrc : null) ||
+      ((content as any)?.hls_manifest_key &&
+      ((content as any).hls_manifest_key.includes(".m3u8") ||
+        (content as any).hls_manifest_key.includes("/hls/"))
+        ? (content as any).hls_manifest_key
+        : null);
+
+    if (hls) return formatStreamUrl(hls);
+
     const raw =
       propSrc ||
-      content?.videoUrl ||
       (content as any)?.hls_manifest_key ||
+      content?.videoUrl ||
       "";
     return formatStreamUrl(raw);
   });
@@ -121,14 +132,18 @@ export function VideoPlayer({
     "";
   const title = propTitle || content?.title || "V19Plus";
 
-  // Fetch authorized streaming URL from backend if not provided directly
+  // Fetch authorized streaming URL from backend if not provided directly as valid HLS
   useEffect(() => {
-    if (propSrc) {
+    // If a valid published HLS manifest is explicitly passed, use it directly
+    if (propSrc && (propSrc.includes(".m3u8") || propSrc.includes("/hls/"))) {
       setActiveSrc(formatStreamUrl(propSrc));
       return;
     }
 
-    if (!content?.id) return;
+    if (!content?.id) {
+      if (propSrc) setActiveSrc(formatStreamUrl(propSrc));
+      return;
+    }
 
     let isMounted = true;
     streamingApi
@@ -141,9 +156,12 @@ export function VideoPlayer({
       })
       .catch(() => {
         if (!isMounted) return;
+        const hlsFallback = (content as any)?.hls_manifest_key;
         const fallback =
+          (hlsFallback && (hlsFallback.includes(".m3u8") || hlsFallback.includes("/hls/")) ? hlsFallback : null) ||
+          propSrc ||
           content.videoUrl ||
-          (content as any)?.hls_manifest_key ||
+          hlsFallback ||
           "";
         if (fallback) setActiveSrc(formatStreamUrl(fallback));
       });
@@ -311,11 +329,17 @@ export function VideoPlayer({
       const video = videoRef.current;
       if (!video) return;
 
-      video.currentTime = Math.max(0, video.currentTime - 10);
-      setCurrentTime(video.currentTime);
+      const newTime = Math.max(0, video.currentTime - 10);
+      video.currentTime = newTime;
+      setCurrentTime(newTime);
+      clearBuffering();
+      setHasError(false);
+      if (hlsRef.current) {
+        hlsRef.current.startLoad();
+      }
       showPlayerControls();
     },
-    [showPlayerControls]
+    [showPlayerControls, clearBuffering]
   );
 
   const skipForward = useCallback(
@@ -325,14 +349,21 @@ export function VideoPlayer({
       const video = videoRef.current;
       if (!video) return;
 
-      video.currentTime = Math.min(
-        video.duration || Infinity,
+      const maxDuration = video.duration || duration || Infinity;
+      const newTime = Math.min(
+        maxDuration,
         video.currentTime + 10
       );
-      setCurrentTime(video.currentTime);
+      video.currentTime = newTime;
+      setCurrentTime(newTime);
+      clearBuffering();
+      setHasError(false);
+      if (hlsRef.current) {
+        hlsRef.current.startLoad();
+      }
       showPlayerControls();
     },
-    [showPlayerControls]
+    [showPlayerControls, clearBuffering, duration]
   );
 
   /*
@@ -350,6 +381,11 @@ export function VideoPlayer({
     const newTime = Number(event.target.value);
     video.currentTime = newTime;
     setCurrentTime(newTime);
+    clearBuffering();
+    setHasError(false);
+    if (hlsRef.current) {
+      hlsRef.current.startLoad();
+    }
     showPlayerControls();
   };
 
@@ -606,6 +642,24 @@ export function VideoPlayer({
     [clearBuffering]
   );
 
+  const handleSeeking = () => {
+    // When seeking starts, clear any prolonged buffering timer to avoid false warning overlays
+    if (prolongedBufferTimeoutRef.current) {
+      clearTimeout(prolongedBufferTimeoutRef.current);
+      prolongedBufferTimeoutRef.current = null;
+    }
+    setIsProlongedBuffer(false);
+  };
+
+  const handleSeeked = () => {
+    clearBuffering();
+    setHasError(false);
+    const video = videoRef.current;
+    if (video && isPlaying && video.paused) {
+      video.play().catch(() => {});
+    }
+  };
+
   const handleCanPlay = () => {
     clearBuffering();
     setHasError(false);
@@ -829,6 +883,8 @@ export function VideoPlayer({
         onPause={handlePause}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
+        onSeeking={handleSeeking}
+        onSeeked={handleSeeked}
         onWaiting={handleWaiting}
         onStalled={handleStalled}
         onCanPlay={handleCanPlay}

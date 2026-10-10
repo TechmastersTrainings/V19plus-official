@@ -244,6 +244,8 @@ export const mediaApi = {
       const completeRes = await api.post<{
         storage_key: string;
         stream_url: string;
+        hls_manifest_url?: string;
+        job_id?: string;
         file_size_bytes: number;
       }>(
         getChunkEndpoint('complete'),
@@ -274,6 +276,8 @@ export const mediaApi = {
           filename: file.name,
           file_size_bytes: file.size,
           stream_url: completeRes.data.stream_url,
+          hls_manifest_url: completeRes.data.hls_manifest_url,
+          job_id: completeRes.data.job_id,
           content_type: file.type || 'video/mp4',
         },
       };

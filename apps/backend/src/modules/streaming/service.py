@@ -68,18 +68,24 @@ class StreamingService:
         local_filename = os.path.basename(content.master_storage_key or "")
         local_path = os.path.join(media_dir, local_filename) if local_filename else None
 
-        if hls_manifest_key and (hls_manifest_key.startswith("http://") or hls_manifest_key.startswith("https://") or hls_manifest_key.startswith("/api/")):
+        is_valid_hls = bool(
+            hls_manifest_key and (hls_manifest_key.endswith(".m3u8") or ".m3u8" in hls_manifest_key or "/hls/" in hls_manifest_key)
+        )
+
+        if is_valid_hls and (hls_manifest_key.startswith("http://") or hls_manifest_key.startswith("https://") or hls_manifest_key.startswith("/api/")):
             if "127.0.0.1:8001" in hls_manifest_key:
                 stream_url = hls_manifest_key.replace("http://127.0.0.1:8001", "")
             else:
                 stream_url = hls_manifest_key
+        elif is_valid_hls and "/" in (hls_manifest_key or ""):
+            stream_url = f"{cdn_base}/{hls_manifest_key.lstrip('/')}"
         elif local_path and os.path.exists(local_path):
             stream_url = f"/api/media/stream/{local_filename}"
         elif hls_manifest_key and "content/" in hls_manifest_key:
             # High-bitrate masterclass streaming asset
             stream_url = f"https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8?token={token}"
-        elif content.master_storage_key:
-            stream_url = f"/api/media/stream/{local_filename}"
+        elif content.master_storage_key and not content.master_storage_key.endswith(".m3u8"):
+            stream_url = f"{cdn_base}/{content.master_storage_key}"
         else:
             stream_url = f"https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8?token={token}"
 

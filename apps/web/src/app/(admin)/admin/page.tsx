@@ -533,9 +533,9 @@ export default function AdminStudioDesk() {
         });
 
         finalMasterKey = uploadRes.data.storage_key;
-        finalHlsKey = uploadRes.data.stream_url;
+        finalHlsKey = uploadRes.data.hls_manifest_url || undefined;
         setMasterStorageKey(uploadRes.data.storage_key);
-        setStreamManifestKey(uploadRes.data.stream_url);
+        setStreamManifestKey(uploadRes.data.hls_manifest_url || '');
         setUploadProgress(100);
         setUploadStep('Video securely stored in Cloudflare R2 and verified!');
       } else {
@@ -544,6 +544,12 @@ export default function AdminStudioDesk() {
       }
 
       setUploadStep('Registering title in V19plus catalog...');
+
+      // Only set hls_manifest_key if it is actually an HLS manifest, never a raw progressive MP4
+      const validatedHlsKey =
+        finalHlsKey && (finalHlsKey.includes('.m3u8') || finalHlsKey.includes('/hls/'))
+          ? finalHlsKey
+          : undefined;
 
       const payload: any = {
         title: title.trim(),
@@ -556,7 +562,7 @@ export default function AdminStudioDesk() {
         backdrop_url: backdropUrl.trim() || undefined,
         trailer_url: trailerUrl.trim() || undefined,
         master_storage_key: finalMasterKey,
-        hls_manifest_key: finalHlsKey,
+        hls_manifest_key: validatedHlsKey,
         is_original: isOriginal,
         is_featured: isFeatured,
         is_published: publishImmediately,

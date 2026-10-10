@@ -72,6 +72,17 @@ async def process_video_job(job_id_str: str) -> None:
 
             # 3. Probe master video
             probe_data = await MediaProbe.inspect(local_master)
+            if probe_data.get("is_truncated"):
+                claimed_mins = int(probe_data["duration"]) // 60
+                claimed_secs = int(probe_data["duration"]) % 60
+                err_msg = (
+                    f"Uploaded media master is corrupt or truncated! Container claims {claimed_mins}:{claimed_secs:02d} "
+                    f"({int(probe_data['duration'])}s), but decodable video stream ends prematurely or contains unwritten data. "
+                    "Rejecting upload to prevent publishing broken stream or overwriting verified content."
+                )
+                logger.error(f"[INTEGRITY REJECTION] {err_msg}")
+                raise ValueError(err_msg)
+
             ladder = MediaProbe.determine_abr_ladder(probe_data["width"], probe_data["height"])
             logger.info(f"Probed master: {probe_data['width']}x{probe_data['height']} ({probe_data['duration']}s). ABR Renditions: {[r['name'] for r in ladder]}")
 
