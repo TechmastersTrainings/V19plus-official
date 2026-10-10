@@ -48,6 +48,25 @@ const nextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: '/deletion',
+        destination: '/delete-account',
+        permanent: true,
+      },
+      {
+        source: '/account/delete',
+        destination: '/delete-account',
+        permanent: true,
+      },
+      {
+        source: '/data-deletion',
+        destination: '/delete-account',
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {
