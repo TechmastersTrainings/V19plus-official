@@ -10,10 +10,13 @@ const config: CapacitorConfig = {
   webDir: 'public',
   backgroundColor: '#0a0a0a',
   server: {
-    url: process.env.CAPACITOR_SERVER_URL || 'https://v19plus-web--v19-plus.asia-southeast1.hosted.app',
+    url: process.env.CAPACITOR_SERVER_URL || 'https://www.v19plus.com',
     cleartext: true,
     androidScheme: 'https',
     allowNavigation: [
+      'www.v19plus.com',
+      'v19plus.com',
+      '*.v19plus.com',
       'v19plus-web.vercel.app',
       '*.vercel.app',
       'v19plus-official.onrender.com',
