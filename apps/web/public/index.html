@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>V19 Plus</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #070605;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 24px;
+      max-width: 360px;
+    }
+    .logo {
+      width: 88px;
+      height: 88px;
+      margin-bottom: 24px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(255, 92, 0, 0.25);
+      animation: pulse 2.5s infinite ease-in-out;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.04); opacity: 0.9; }
+    }
+    .brand {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #ffffff 0%, #ff5c00 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: #9e9589;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 32px;
+    }
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(255, 255, 255, 0.08);
+      border-top-color: #ff5c00;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .status {
+      margin-top: 18px;
+      font-size: 13px;
+      color: #7a7368;
+    }
+    .retry-btn {
+      display: none;
+      margin-top: 20px;
+      padding: 12px 28px;
+      background: #ff5c00;
+      color: #ffffff;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(255, 92, 0, 0.35);
+      transition: transform 0.15s, background-color 0.15s;
+    }
+    .retry-btn:active {
+      transform: scale(0.96);
+      background: #e05200;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="logo.png" alt="V19 Plus" class="logo" />
+    <div class="brand">V19 PLUS</div>
+    <div class="subtitle">Premiere Cinema & Streaming</div>
+    <div class="spinner" id="spinner"></div>
+    <div class="status" id="status">Connecting to streaming service...</div>
+    <button class="retry-btn" id="retryBtn" onclick="tryConnect()">Retry Connection</button>
+  </div>
+
+  <script>
+    const TARGET_URL = "https://www.v19plus.com";
+    let attempts = 0;
+
+    function tryConnect() {
+      const statusEl = document.getElementById("status");
+      const retryBtn = document.getElementById("retryBtn");
+      const spinner = document.getElementById("spinner");
+
+      statusEl.textContent = "Connecting to V19 Plus...";
+      retryBtn.style.display = "none";
+      spinner.style.display = "block";
+
+      // Redirect immediately
+      window.location.replace(TARGET_URL);
+
+      // If still here after 5 seconds, show retry
+      setTimeout(function() {
+        attempts++;
+        if (attempts >= 2) {
+          statusEl.textContent = "Network connection is slow or offline. Please check your internet connection.";
+          retryBtn.style.display = "inline-block";
+          spinner.style.display = "none";
+        }
+      }, 5000);
+    }
+
+    tryConnect();
+  </script>
+</body>
+</html>

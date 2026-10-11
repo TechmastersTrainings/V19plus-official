@@ -19,6 +19,8 @@ const config: CapacitorConfig = {
       '*.v19plus.com',
       'v19plus-web.vercel.app',
       '*.vercel.app',
+      '*.r2.dev',
+      'pub-2b3faff7804a4ba8b00830cca1749352.r2.dev',
       'v19plus-official.onrender.com',
       'v19plus-api.onrender.com',
       '*.onrender.com',
