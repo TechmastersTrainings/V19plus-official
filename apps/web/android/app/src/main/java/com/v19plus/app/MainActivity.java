@@ -5,6 +5,7 @@ import android.util.Log;
 import android.view.WindowManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import androidx.core.splashscreen.SplashScreen;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
@@ -12,17 +13,33 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+        // Must be called before super.onCreate to satisfy Android 12+ SplashScreen contract
+        try {
+            SplashScreen.installSplashScreen(this);
+        } catch (Throwable t) {
+            Log.w(TAG, "SplashScreen initialization handled: ", t);
+        }
 
-        // 1. Enable Chrome remote debugging (navigate to chrome://inspect in desktop Chrome)
-        WebView.setWebContentsDebuggingEnabled(true);
-
-        // 2. Keep screen on during active app lifecycle / video playback
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+            Log.e(TAG, "Uncaught exception on thread: " + thread.getName(), throwable);
+        });
 
         try {
-            WebView webView = this.getBridge().getWebView();
-            if (webView != null) {
+            super.onCreate(savedInstanceState);
+        } catch (Throwable t) {
+            Log.e(TAG, "Fatal error during BridgeActivity onCreate", t);
+            return;
+        }
+
+        try {
+            // 1. Enable Chrome remote debugging (navigate to chrome://inspect in desktop Chrome)
+            WebView.setWebContentsDebuggingEnabled(true);
+
+            // 2. Keep screen on during active app lifecycle / video playback
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
+            if (this.getBridge() != null && this.getBridge().getWebView() != null) {
+                WebView webView = this.getBridge().getWebView();
                 WebSettings settings = webView.getSettings();
 
                 // Core JavaScript and Storage
@@ -43,7 +60,7 @@ public class MainActivity extends BridgeActivity {
                 settings.setLoadWithOverviewMode(true);
                 settings.setUseWideViewPort(true);
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             Log.e(TAG, "Error configuring WebView settings", e);
         }
     }

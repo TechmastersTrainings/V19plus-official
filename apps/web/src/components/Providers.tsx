@@ -152,40 +152,46 @@ function CapacitorNativeInit() {
         });
         activeHandles.push(urlHandle);
 
-        // 3. Push notifications
-        let permStatus = await PushNotifications.checkPermissions();
-        if (permStatus.receive === 'prompt') {
-          permStatus = await PushNotifications.requestPermissions();
-        }
-
-        if (permStatus.receive === 'granted') {
-          await PushNotifications.register();
-        }
-
-        const pushRegHandle = await PushNotifications.addListener('registration', (token: { value: string }) => {
-          console.log('Push registration success, token:', token.value);
-        });
-        activeHandles.push(pushRegHandle);
-
-        const pushErrHandle = await PushNotifications.addListener('registrationError', (error: any) => {
-          console.error('Push registration error:', error);
-        });
-        activeHandles.push(pushErrHandle);
-
-        const pushRecHandle = await PushNotifications.addListener('pushNotificationReceived', (notification: any) => {
-          console.log('Push notification received:', notification);
-          toast(notification.body || notification.title || 'New Notification', { icon: '🔔' });
-        });
-        activeHandles.push(pushRecHandle);
-
-        const pushActHandle = await PushNotifications.addListener('pushNotificationActionPerformed', (action: any) => {
-          console.log('Push notification clicked:', action);
-          const data = action.notification?.data;
-          if (data && data.route && isSubscribed) {
-            router.push(data.route);
+        // 3. Push notifications (safe initialization)
+        try {
+          let permStatus = await PushNotifications.checkPermissions();
+          if (permStatus.receive === 'prompt') {
+            permStatus = await PushNotifications.requestPermissions();
           }
-        });
-        activeHandles.push(pushActHandle);
+
+          if (permStatus.receive === 'granted') {
+            await PushNotifications.register().catch((err: any) => {
+              console.warn('Push registration warning (Firebase uninitialized or unavailable):', err);
+            });
+          }
+
+          const pushRegHandle = await PushNotifications.addListener('registration', (token: { value: string }) => {
+            console.log('Push registration success, token:', token.value);
+          });
+          activeHandles.push(pushRegHandle);
+
+          const pushErrHandle = await PushNotifications.addListener('registrationError', (error: any) => {
+            console.warn('Push registration error:', error);
+          });
+          activeHandles.push(pushErrHandle);
+
+          const pushRecHandle = await PushNotifications.addListener('pushNotificationReceived', (notification: any) => {
+            console.log('Push notification received:', notification);
+            toast(notification.body || notification.title || 'New Notification', { icon: '🔔' });
+          });
+          activeHandles.push(pushRecHandle);
+
+          const pushActHandle = await PushNotifications.addListener('pushNotificationActionPerformed', (action: any) => {
+            console.log('Push notification clicked:', action);
+            const data = action.notification?.data;
+            if (data && data.route && isSubscribed) {
+              router.push(data.route);
+            }
+          });
+          activeHandles.push(pushActHandle);
+        } catch (pushErr) {
+          console.warn('Push notifications setup safely skipped:', pushErr);
+        }
 
         // If unmounted during async init, clean up immediately
         if (!isSubscribed) {
