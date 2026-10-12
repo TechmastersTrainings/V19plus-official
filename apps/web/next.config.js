@@ -1,38 +1,4 @@
 /** @type {import('next').NextConfig} */
-const withPWA = require('@ducanh2912/next-pwa').default({
-  dest: 'public',
-  disable: process.env.NODE_ENV === 'development',
-  workboxOptions: {
-    skipWaiting: true,
-    clientsClaim: true,
-    cleanupOutdatedCaches: true,
-    runtimeCaching: [
-      {
-        urlPattern: ({ url }) =>
-          url.pathname.endsWith('.m3u8') ||
-          url.pathname.endsWith('.ts') ||
-          url.hostname.includes('r2.dev'),
-        handler: 'NetworkOnly',
-      },
-      {
-        urlPattern: /\/_next\/static.+\.js$/i,
-        handler: 'StaleWhileRevalidate',
-        options: {
-          cacheName: 'next-static-js-assets',
-          expiration: {
-            maxEntries: 64,
-            maxAgeSeconds: 86400,
-          },
-        },
-      },
-      ...require('@ducanh2912/next-pwa').runtimeCaching.filter(
-        (entry) =>
-          !entry.options?.cacheName ||
-          entry.options.cacheName !== 'next-static-js-assets'
-      ),
-    ],
-  },
-});
 const backendUrl =
   process.env.BACKEND_URL ||
   (process.env.NODE_ENV === 'production'
@@ -88,6 +54,14 @@ const nextConfig = {
   async headers() {
     return [
       {
+        source: '/sw.js',
+        headers: [
+          { key: 'Content-Type', value: 'application/javascript; charset=utf-8' },
+          { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0' },
+          { key: 'Service-Worker-Allowed', value: '/' },
+        ],
+      },
+      {
         source: '/.well-known/assetlinks.json',
         headers: [
           { key: 'Content-Type', value: 'application/json' },
@@ -107,4 +81,4 @@ const nextConfig = {
   },
 };
 
-module.exports = withPWA(nextConfig);
+module.exports = nextConfig;

@@ -289,19 +289,52 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
     window.addEventListener('unhandledrejection', handleRejection);
 
-    // In native Capacitor Android app, unregister any service workers so WebView never caches stale chunks
+    // 2. Unregister any lingering Service Workers across Web & Capacitor to ensure clean live delivery
     if ('serviceWorker' in navigator) {
-      import('@capacitor/core')
-        .then(({ Capacitor }) => {
-          if (Capacitor.isNativePlatform()) {
-            navigator.serviceWorker.getRegistrations().then((registrations) => {
-              for (const registration of registrations) {
-                registration.unregister();
-              }
-            });
+      navigator.serviceWorker
+        .getRegistrations()
+        .then(async (registrations) => {
+          for (const registration of registrations) {
+            try {
+              await registration.unregister();
+            } catch {}
           }
         })
         .catch(() => {});
+
+      // One-time cleanup of stale Workbox/PWA caches belonging to this app
+      if ('caches' in window) {
+        try {
+          const cleaned = sessionStorage.getItem('v19_sw_cleaned');
+          if (!cleaned) {
+            caches.keys().then((keys) => {
+              const pwaKeys = keys.filter((k) => {
+                const lower = k.toLowerCase();
+                return (
+                  lower.startsWith('workbox-') ||
+                  lower.startsWith('next-') ||
+                  lower.includes('v19') ||
+                  lower === 'start-url' ||
+                  lower === 'pages' ||
+                  lower === 'pages-rsc' ||
+                  lower === 'pages-rsc-prefetch' ||
+                  lower === 'apis' ||
+                  lower === 'cross-origin' ||
+                  lower.startsWith('static-') ||
+                  lower.startsWith('google-fonts-')
+                );
+              });
+              if (pwaKeys.length > 0) {
+                Promise.all(pwaKeys.map((k) => caches.delete(k))).then(() => {
+                  try { sessionStorage.setItem('v19_sw_cleaned', 'true'); } catch {}
+                });
+              } else {
+                try { sessionStorage.setItem('v19_sw_cleaned', 'true'); } catch {}
+              }
+            });
+          }
+        } catch {}
+      }
     }
 
     return () => {

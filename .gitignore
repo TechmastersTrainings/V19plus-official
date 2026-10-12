@@ -69,7 +69,6 @@ apps/backend/media_storage/
 media_storage/
 
 # PWA service worker generated assets
-apps/web/public/sw.js
 apps/web/public/sw.js.map
 apps/web/public/workbox-*.js
 apps/web/public/workbox-*.js.map
