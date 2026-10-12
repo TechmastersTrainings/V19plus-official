@@ -269,9 +269,12 @@ export const useAuthStore = create<AuthState>((set, get) => {
 
     logout: async () => {
       try {
-        await authApi.logout();
+        const token = get().accessToken;
+        if (token) {
+          await authApi.logout();
+        }
       } catch (err) {
-        console.warn('[authStore] logout warning:', err);
+        // Silently clear credentials locally
       } finally {
         clearPersistedTokens();
         set({
@@ -321,27 +324,27 @@ export const useAuthStore = create<AuthState>((set, get) => {
         const normalized = normalizeUser(data);
         get().setUser(normalized);
       } catch (err) {
-        console.warn('[authStore] fetchMe failed:', err);
+        // Unauthenticated session, state remains guest
       }
     },
   };
 });
 
-// Auto-validate session on client mount after hydration
+// Immediately hydrate credentials on client module execution
 if (typeof window !== 'undefined') {
-  setTimeout(() => {
+  try {
     useAuthStore.getState().hydrateFromStorage();
     const token = localStorage.getItem('v19_access_token');
     if (token) {
       useAuthStore.getState().fetchMe().catch(() => {});
     }
-  }, 0);
+  } catch (e) {}
 }
 
 export function useAuth() {
   const store = useAuthStore();
   return {
     ...store,
-    loading: store.isLoading,
+    loading: !store._initialized || store.isLoading,
   };
 }

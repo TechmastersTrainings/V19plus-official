@@ -11,28 +11,49 @@ const SHUTTER_DUR   = 0.15;  // fast transition shutter
 const FADE_OUT_DUR  = 0.1;   // rapid fade-out of wrapper
 
 export function SplashScreen() {
-  const [visible, setVisible] = useState(true);
+  const [visible, setVisible] = useState(false);
   const [opening, setOpening] = useState(false);
   const [audioPlayed, setAudioPlayed] = useState(false);
   const { isAuthenticated } = useAuthStore();
 
   // ─── Lifecycle ───────────────────────────────────────────────────────────
   useEffect(() => {
-    if (isAuthenticated || sessionStorage.getItem('v19_splash_seen') === 'true') {
+    let seen = false;
+    try {
+      seen = sessionStorage.getItem('v19_splash_seen') === 'true';
+    } catch {
+      seen = true; // If sessionStorage is unavailable or throws, fail open (skip splash)
+    }
+
+    if (isAuthenticated || seen) {
       setVisible(false);
       return;
     }
+
+    // Only show on first brand-new visit
+    setVisible(true);
 
     // After the logo hold, trigger the shutter opening
     const t1 = setTimeout(() => setOpening(true), LOGO_HOLD * 1000);
 
     // After shutter finishes, remove the splash
     const t2 = setTimeout(() => {
-      sessionStorage.setItem('v19_splash_seen', 'true');
+      try {
+        sessionStorage.setItem('v19_splash_seen', 'true');
+      } catch {}
       setVisible(false);
     }, (LOGO_HOLD + SHUTTER_DUR + FADE_OUT_DUR + 0.05) * 1000);
 
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    // Hard fallback: Splash screen CANNOT stay visible longer than 350ms under any circumstance
+    const tFallback = setTimeout(() => {
+      setVisible(false);
+    }, 350);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(tFallback);
+    };
   }, [isAuthenticated]);
 
   // ─── Cinematic sound ─────────────────────────────────────────────────────

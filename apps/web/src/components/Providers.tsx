@@ -11,36 +11,82 @@ import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import { useDownloadStore } from '../store/downloadStore';
 
-// Top-level error boundary to prevent blank white screen on JS errors
-function AppErrorBoundary({ children }: { children: React.ReactNode }) {
-  const [hasError, setHasError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
 
-  useEffect(() => {
-    const errorHandler = (event: ErrorEvent) => {
-      console.error('Unhandled window error:', event.error);
-    };
-    window.addEventListener('error', errorHandler);
-    return () => window.removeEventListener('error', errorHandler);
-  }, []);
-
-  if (hasError) {
-    return (
-      <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#e5e5e5', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
-        <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Something went wrong</h2>
-        <p style={{ fontSize: 14, color: '#888', marginBottom: 24, textAlign: 'center' }}>{errorMessage || 'An error occurred'}</p>
-        <button
-          onClick={() => { setHasError(false); setErrorMessage(''); window.location.reload(); }}
-          style={{ background: 'linear-gradient(to right, #E50914, #FF5C00)', color: '#FFFFFF', border: 'none', borderRadius: 8, padding: '10px 24px', fontWeight: 700, cursor: 'pointer', boxShadow: '0 0 15px rgba(229,9,20,0.4)' }}
-        >
-          Retry
-        </button>
-      </div>
-    );
+// Robust class-based error boundary to catch render & hydration failures without blank screens
+class AppErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  ErrorBoundaryState
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
   }
 
-  return <>{children}</>;
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('AppErrorBoundary caught React runtime/hydration error:', error, errorInfo);
+  }
+
+  handleRetry = () => {
+    this.setState({ hasError: false, error: null });
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    }
+  };
+
+  handleHardReset = () => {
+    if (typeof window !== 'undefined') {
+      try {
+        sessionStorage.clear();
+        if ('caches' in window) {
+          caches.keys().then((names) => {
+            names.forEach((name) => caches.delete(name));
+          });
+        }
+      } catch (e) {}
+      window.location.href = '/';
+    }
+  };
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ minHeight: '100vh', background: '#080808', color: '#e5e5e5', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+          <div style={{ width: 64, height: 64, borderRadius: 20, background: 'rgba(229,9,20,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, marginBottom: 20, boxShadow: '0 0 25px rgba(229,9,20,0.35)' }}>
+            🎬
+          </div>
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: '#ffffff', marginBottom: 8, letterSpacing: '-0.02em', textAlign: 'center' }}>
+            Unable to load view
+          </h2>
+          <p style={{ fontSize: 13, color: '#9A9286', marginBottom: 28, textAlign: 'center', maxWidth: 440, lineHeight: 1.5 }}>
+            {this.state.error?.message || 'A transient connection or rendering issue occurred while refreshing.'}
+          </p>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <button
+              onClick={this.handleRetry}
+              style={{ background: 'linear-gradient(135deg, #E50914, #FF5C00)', color: '#FFFFFF', border: 'none', borderRadius: 12, padding: '12px 28px', fontWeight: 700, fontSize: 14, cursor: 'pointer', boxShadow: '0 0 20px rgba(229,9,20,0.45)' }}
+            >
+              Refresh Page
+            </button>
+            <button
+              onClick={this.handleHardReset}
+              style={{ background: 'rgba(255,255,255,0.08)', color: '#C8C2B8', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: '12px 20px', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
+            >
+              Return Home
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
 
 let socket: Socket | null = null;
@@ -219,6 +265,49 @@ export function Providers({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     initDownloads();
   }, [initDownloads]);
+
+  // Auto-recover from chunk loading errors on redeploy/refresh and ensure native WebView is clean
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleRejection = (event: PromiseRejectionEvent) => {
+      const msg = event.reason?.message || String(event.reason || '');
+      if (
+        event.reason?.name === 'ChunkLoadError' ||
+        msg.includes('Loading chunk') ||
+        msg.includes('Failed to fetch')
+      ) {
+        console.warn('[Providers] ChunkLoadError detected, performing recovery reload:', event.reason);
+        const lastReload = sessionStorage.getItem('v19_chunk_reload');
+        const now = Date.now();
+        if (!lastReload || now - parseInt(lastReload, 10) > 8000) {
+          sessionStorage.setItem('v19_chunk_reload', String(now));
+          window.location.reload();
+        }
+      }
+    };
+
+    window.addEventListener('unhandledrejection', handleRejection);
+
+    // In native Capacitor Android app, unregister any service workers so WebView never caches stale chunks
+    if ('serviceWorker' in navigator) {
+      import('@capacitor/core')
+        .then(({ Capacitor }) => {
+          if (Capacitor.isNativePlatform()) {
+            navigator.serviceWorker.getRegistrations().then((registrations) => {
+              for (const registration of registrations) {
+                registration.unregister();
+              }
+            });
+          }
+        })
+        .catch(() => {});
+    }
+
+    return () => {
+      window.removeEventListener('unhandledrejection', handleRejection);
+    };
+  }, []);
 
 function ClientPortalToaster() {
   const [mounted, setMounted] = useState(false);

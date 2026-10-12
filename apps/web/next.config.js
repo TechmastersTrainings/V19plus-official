@@ -3,6 +3,9 @@ const withPWA = require('@ducanh2912/next-pwa').default({
   dest: 'public',
   disable: process.env.NODE_ENV === 'development',
   workboxOptions: {
+    skipWaiting: true,
+    clientsClaim: true,
+    cleanupOutdatedCaches: true,
     runtimeCaching: [
       {
         urlPattern: ({ url }) =>
@@ -11,7 +14,22 @@ const withPWA = require('@ducanh2912/next-pwa').default({
           url.hostname.includes('r2.dev'),
         handler: 'NetworkOnly',
       },
-      ...require('@ducanh2912/next-pwa').runtimeCaching,
+      {
+        urlPattern: /\/_next\/static.+\.js$/i,
+        handler: 'StaleWhileRevalidate',
+        options: {
+          cacheName: 'next-static-js-assets',
+          expiration: {
+            maxEntries: 64,
+            maxAgeSeconds: 86400,
+          },
+        },
+      },
+      ...require('@ducanh2912/next-pwa').runtimeCaching.filter(
+        (entry) =>
+          !entry.options?.cacheName ||
+          entry.options.cacheName !== 'next-static-js-assets'
+      ),
     ],
   },
 });
