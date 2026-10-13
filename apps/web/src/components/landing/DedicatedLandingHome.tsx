@@ -38,8 +38,8 @@ const FAQ_LIST: FaqItem[] = [
     a: 'Watch anywhere, anytime. Sign in to your V19Plus account to stream instantly on your Smart TV, iPhone, Android device, iPad, laptop, or desktop browser with instant state synchronization across all screens.',
   },
   {
-    q: 'What makes V19Plus streaming quality superior?',
-    a: 'Unlike traditional platforms that route video through overloaded backend proxies, V19Plus delivers adaptive multi-bitrate HLS directly from Cloudflare global edge storage (R2). You experience instant sub-second playback, crisp 4K fidelity, and Dolby 5.1 surround sound.',
+    q: 'What streaming quality does V19Plus support?',
+    a: 'V19Plus delivers up to 4K Ultra HD streaming with adaptive multi-bitrate technology. Playback adjusts smoothly to your network connection for instant, high-definition streaming with Dolby 5.1 surround sound.',
   },
   {
     q: 'Can I stream on multiple screens simultaneously?',
@@ -101,7 +101,7 @@ export function DedicatedLandingHome() {
           >
             <span className="w-2 h-2 rounded-full bg-[#FF5C00] shadow-[0_0_10px_#FF5C00] animate-pulse" />
             <span className="text-xs sm:text-sm font-bold tracking-wide text-white uppercase">
-              V19Plus Premiere Cinema • 4K Direct Edge Streaming
+              Premier Cinema & Series • 4K UHD Streaming
             </span>
           </motion.div>
 
@@ -172,7 +172,7 @@ export function DedicatedLandingHome() {
             </div>
           </motion.div>
 
-          {/* Key Specs Pills with Red, White, & Orange Highlights */}
+          {/* Key Specs Pills with Clean OTT Attributes */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -180,13 +180,13 @@ export function DedicatedLandingHome() {
             className="pt-6 flex flex-wrap items-center justify-center gap-3 text-xs font-semibold text-[#D0D0D0]"
           >
             <span className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#141414] border border-white/10 shadow-sm">
-              <Check className="w-3.5 h-3.5 text-[#FF5C00]" /> Direct 4K UHD Edge Delivery
+              <Check className="w-3.5 h-3.5 text-[#FF5C00]" /> 4K Ultra HD Quality
             </span>
             <span className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#141414] border border-white/10 shadow-sm">
-              <Check className="w-3.5 h-3.5 text-[#E50914]" /> Zero-Buffer Adaptive HLS
+              <Check className="w-3.5 h-3.5 text-[#E50914]" /> Smooth Adaptive Playback
             </span>
             <span className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#141414] border border-white/10 shadow-sm">
-              <Check className="w-3.5 h-3.5 text-white" /> Dolby 5.1 Lossless Audio
+              <Check className="w-3.5 h-3.5 text-white" /> Dolby 5.1 Surround Sound
             </span>
             <span className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#141414] border border-white/10 shadow-sm">
               <Check className="w-3.5 h-3.5 text-[#FF7A00]" /> Cancel Online Anytime
@@ -211,7 +211,7 @@ export function DedicatedLandingHome() {
             </h2>
             <p className="text-base sm:text-lg text-[#C0C0C0] leading-relaxed">
               Watch on Smart TVs, PlayStation, Xbox, Chromecast, Apple TV, PC, and Mac with cinema-grade
-              adaptive multi-rendition streaming.
+              4K picture and surround sound.
             </p>
             <div className="pt-2 flex flex-wrap gap-2.5 text-xs font-semibold text-[#D0D0D0]">
               <span className="px-3.5 py-1.5 rounded-lg bg-[#141414] border border-white/10 flex items-center gap-2">
@@ -241,7 +241,7 @@ export function DedicatedLandingHome() {
                 </p>
                 <div className="mt-4 flex items-center gap-2 text-[10px] font-mono font-bold text-[#FF5C00] bg-[#141414] px-3 py-1 rounded-full border border-[#FF5C00]/30 shadow-[0_0_12px_rgba(255,92,0,0.2)]">
                   <span className="w-2 h-2 rounded-full bg-[#FF5C00] animate-pulse" />
-                  DIRECT EDGE HLS 4K
+                  4K ULTRA HD
                 </div>
               </div>
             </div>
@@ -270,7 +270,7 @@ export function DedicatedLandingHome() {
                 </div>
                 <h4 className="text-sm font-bold text-white">Laptop & Desktop</h4>
                 <p className="text-xs text-[#9E9E9E] leading-relaxed">
-                  Full browser studio player with keyboard shortcuts, multi-track audio, and subtitles.
+                  Full browser playback with subtitles, audio selection, and responsive controls.
                 </p>
               </div>
 
@@ -278,9 +278,9 @@ export function DedicatedLandingHome() {
                 <div className="w-10 h-10 rounded-xl bg-[#FF7A00]/15 flex items-center justify-center text-[#FF7A00]">
                   <Zap className="w-5 h-5" />
                 </div>
-                <h4 className="text-sm font-bold text-white">Instant Resumption</h4>
+                <h4 className="text-sm font-bold text-white">Seamless Resume</h4>
                 <p className="text-xs text-[#9E9E9E] leading-relaxed">
-                  Pause in the living room, resume exactly where you left off on your phone.
+                  Pause in the living room, resume right where you left off on your mobile device.
                 </p>
               </div>
 
@@ -288,9 +288,9 @@ export function DedicatedLandingHome() {
                 <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center text-white">
                   <ShieldCheck className="w-5 h-5" />
                 </div>
-                <h4 className="text-sm font-bold text-white">Secure Sessions</h4>
+                <h4 className="text-sm font-bold text-white">Multi-Device Sync</h4>
                 <p className="text-xs text-[#9E9E9E] leading-relaxed">
-                  Encrypted token-authenticated streaming preventing unauthorized access.
+                  Your watchlist and viewing history stay synchronized across all your screens.
                 </p>
               </div>
             </div>
@@ -371,7 +371,7 @@ export function DedicatedLandingHome() {
                   'Full Movie & Series Catalog',
                   'All Masterclasses & Workshops',
                   'Ad-Free Uninterrupted Viewing',
-                  'Direct Edge 4K UHD Multi-Rendition',
+                  'Ultra HD 4K Streaming Quality',
                   'Instant Personal Watchlist & Sync',
                 ].map((item, idx) => (
                   <li key={idx} className="flex items-center gap-2.5">
@@ -456,10 +456,10 @@ export function DedicatedLandingHome() {
         </div>
         <div className="relative z-10 max-w-3xl mx-auto space-y-6">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold font-display text-white leading-tight">
-            Ready to experience masterclass streaming?
+            Ready to start watching?
           </h2>
           <p className="text-sm sm:text-base text-[#C0C0C0]">
-            Enter your email to create your account or resume your streaming pass.
+            Enter your email to create your account or restart your membership.
           </p>
 
           <form

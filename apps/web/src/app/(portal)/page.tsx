@@ -23,7 +23,6 @@ import {
   Film,
   Compass,
   X,
-  ShieldCheck,
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -173,7 +172,7 @@ export default function HomePage() {
       sections.push({
         id: 'trending',
         title: 'Trending Now',
-        subtitle: 'Most popular titles streaming on V19Plus this week',
+        subtitle: 'Most popular titles streaming this week',
         items: primaryTrending,
         showRank: true,
         seeAllHref: '/browse',
@@ -186,29 +185,29 @@ export default function HomePage() {
       sections.push({
         id: 'originals',
         title: 'V19Plus Originals',
-        subtitle: 'Exclusive productions crafted by premier storytellers',
+        subtitle: 'Exclusive productions and features',
         items: primaryOriginals,
         seeAllHref: '/browse?type=ORIGINAL',
       });
     }
 
-    // 3. Series & Episodic Stories
+    // 3. Series & Shows
     const primarySeries = allPool.filter((c) => c.content_type === 'SERIES' || (c as any).type === 'SERIES');
     if (primarySeries.length > 0) {
       sections.push({
         id: 'series',
-        title: 'Series & Episodic Stories',
-        subtitle: 'Binge-worthy drama and multi-part journeys',
+        title: 'Series & Shows',
+        subtitle: 'Binge-worthy drama and multi-part series',
         items: primarySeries,
         seeAllHref: '/series',
       });
     }
 
-    // 4. Complete Vault Catalog
+    // 4. Curated Catalog
     if (allPool.length > 0) {
       sections.push({
         id: 'all-vault',
-        title: 'Curated Streaming Vault',
+        title: 'Curated Catalog',
         subtitle: 'Explore the complete streaming library',
         items: allPool,
         seeAllHref: '/browse',
@@ -370,45 +369,6 @@ export default function HomePage() {
             />
           )}
 
-          {/* Modern Direct Edge Experience Strip */}
-          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 sm:mt-16">
-            <div className="rounded-2xl bg-[#141414] border border-white/10 p-6 sm:p-8 relative overflow-hidden shadow-2xl">
-              <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-[#E50914]/15 via-[#FF5C00]/10 to-transparent blur-[80px] pointer-events-none" />
-              <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-2 text-[#FF5C00] text-xs font-bold uppercase tracking-wider">
-                    <ShieldCheck className="w-4 h-4 text-[#FF5C00]" />
-                    <span>V19Plus Direct-to-Edge Architecture</span>
-                  </div>
-                  <h4 className="text-lg sm:text-xl font-black text-white tracking-tight">
-                    Pure Cinema Fidelity. Zero Intermediate Server Latency.
-                  </h4>
-                  <p className="text-xs sm:text-sm text-[#A0A0A0] max-w-2xl leading-relaxed">
-                    Stream your favorite masterclasses and feature films delivered directly from Cloudflare global edge storage with multi-bitrate adaptive 4K HLS streaming.
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-3">
-                  <Link
-                    href="/browse"
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-[#FF5C00] hover:text-white text-white font-bold text-xs border border-white/15 transition-all shadow-sm"
-                  >
-                    <Compass className="w-3.5 h-3.5" />
-                    <span>Explore Library</span>
-                  </Link>
-                  {isAdmin && (
-                    <Link
-                      href="/admin"
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#E50914] to-[#B80710] hover:from-[#FF1E27] hover:to-[#E50914] text-white font-bold text-xs shadow-md transition-all active:scale-95"
-                    >
-                      <UploadCloud className="w-3.5 h-3.5" />
-                      <span>Studio Dashboard</span>
-                    </Link>
-                  )}
-                </div>
-              </div>
-            </div>
-          </section>
         </>
       )}
 

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Content } from '../../api/content';
 import { useAuthStore } from '../../store/authStore';
 import { useWatchlist, useAddToWatchlist, useRemoveFromWatchlist } from '../../hooks/useWatchlist';
-import { Film, Bookmark, Check, Play, Sparkles, Clock } from 'lucide-react';
+import { Film, Bookmark, Check, Play, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export interface ContentCardProps {
@@ -157,27 +157,6 @@ export function ContentCard({
           {inList ? <Check className="w-3.5 h-3.5 text-white stroke-[3]" /> : <Bookmark className="w-3.5 h-3.5" />}
         </button>
 
-        {/* Bottom Badges */}
-        <div className="absolute bottom-2 left-2 right-2 z-10 flex items-center justify-between pointer-events-none">
-          {/* Duration Badge */}
-          {durationMins > 0 ? (
-            <span className="px-1.5 py-0.5 rounded bg-black/80 backdrop-blur-md text-[10px] font-medium text-white/90 border border-white/10 flex items-center gap-1 shadow-sm">
-              <Clock className="w-2.5 h-2.5 text-[#FF5C00]" />
-              <span>{Math.floor(durationMins / 60) > 0 ? `${Math.floor(durationMins / 60)}h ` : ''}{durationMins % 60}m</span>
-            </span>
-          ) : <span />}
-
-          {/* Quality & Rating */}
-          <div className="flex items-center gap-1">
-            <span className="px-1.5 py-0.5 rounded bg-black/90 backdrop-blur-md text-[9px] font-bold text-[#FF5C00] border border-[#FF5C00]/40 shadow-sm">
-              4K UHD
-            </span>
-            <span className="px-1.5 py-0.5 rounded bg-black/80 backdrop-blur-md text-[9px] font-semibold text-white/90 border border-white/10">
-              {rating}
-            </span>
-          </div>
-        </div>
-
         {/* Continue Watching Sleek Progress Bar */}
         {progress !== undefined && progress > 0 && (
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/80 z-20 overflow-hidden">
@@ -189,7 +168,7 @@ export function ContentCard({
         )}
       </div>
 
-      {/* Metadata Below Card */}
+      {/* Metadata Below Card: Content-First, Clean Cinema Focus */}
       <div className="pt-2 px-0.5 space-y-0.5">
         <h3
           className="font-bold text-white text-xs sm:text-sm tracking-tight truncate group-hover/card:text-[#FF5C00] transition-colors"
@@ -202,8 +181,14 @@ export function ContentCard({
           <span className="text-[#FF5C00] font-semibold">{primaryGenre}</span>
           <span>•</span>
           <span className="text-white/80">{releaseYear}</span>
-          <span>•</span>
-          <span className="text-white/60">Direct Edge</span>
+          {rating && (
+            <>
+              <span>•</span>
+              <span className="px-1.5 py-0.2 rounded bg-white/10 text-[9px] font-semibold text-white/90">
+                {rating}
+              </span>
+            </>
+          )}
         </div>
       </div>
     </div>

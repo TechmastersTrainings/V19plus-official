@@ -42,7 +42,7 @@ export function Footer() {
                 <Film className="w-3 h-3 text-[#E50914]" /> V19Plus Originals
               </span>
               <span className="px-2.5 py-1 rounded-md bg-[#141414] border border-white/10 text-[11px] font-semibold text-white flex items-center gap-1.5">
-                <ShieldCheck className="w-3 h-3 text-[#FF5C00]" /> Direct Edge 4K
+                <ShieldCheck className="w-3 h-3 text-[#FF5C00]" /> 4K Ultra HD
               </span>
             </div>
           </div>
@@ -155,7 +155,7 @@ export function Footer() {
 
         {/* Bottom Strip: Copyright & Specs */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
-          <p>© 2026 V19Plus Entertainment. All rights reserved.</p>
+          <p>© 2026 V19Plus Entertainment. A product of TechMasters Innovations Private Limited. All rights reserved.</p>
           <div className="flex items-center gap-4 text-[11px]">
             <span>Unlimited Entertainment</span>
             <span>•</span>
