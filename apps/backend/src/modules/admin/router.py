@@ -10,10 +10,12 @@ from starlette.concurrency import run_in_threadpool
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import json
 from src.config import settings
 from src.database import get_db_session
 from src.dependencies import TokenUser, require_admin
 from src.core.security import hash_password
+from src.redis import get_redis_client
 from src.modules.users.models import User, RefreshToken
 from src.modules.subscriptions.models import SubscriptionPlan, UserSubscription
 from src.modules.payments.models import Payment, PaymentStatus
@@ -581,10 +583,48 @@ async def terminate_session(session_id: uuid.UUID, db: AsyncSession = Depends(ge
 
 # ─── 5. Push Notifications & Reminders ────────────────────────────────────────
 
+REDIS_NOTIFICATIONS_KEY = "v19plus:notifications"
+REDIS_PUSH_CHANNEL = "v19plus:push_channel"
+
+
 @router.get("/notifications", response_model=List[NotificationRecord], dependencies=[Depends(require_admin)])
 async def get_notification_history():
-    """Return history of dispatched push notifications and scheduled reminders"""
+    """Return history of dispatched push notifications and scheduled reminders from Redis / Memory"""
+    try:
+        redis = get_redis_client()
+        if redis:
+            raw_items = await redis.lrange(REDIS_NOTIFICATIONS_KEY, 0, 49)
+            if raw_items:
+                results = []
+                for item in raw_items:
+                    payload = json.loads(item)
+                    results.append(NotificationRecord(**payload))
+                return results
+    except Exception as e:
+        logger.warning(f"Error fetching notifications from Redis: {e}")
+
     return _NOTIFICATION_HISTORY
+
+
+@router.get("/notifications/latest")
+async def get_latest_notifications():
+    """Public / Viewer endpoint for active broadcast alerts"""
+    try:
+        redis = get_redis_client()
+        if redis:
+            raw_items = await redis.lrange(REDIS_NOTIFICATIONS_KEY, 0, 9)
+            if raw_items:
+                return [json.loads(item) for item in raw_items]
+    except Exception as e:
+        logger.warning(f"Error fetching latest notifications from Redis: {e}")
+
+    return [
+        {
+            **item,
+            "sent_at": item["sent_at"].isoformat() if isinstance(item["sent_at"], datetime) else item["sent_at"],
+        }
+        for item in _NOTIFICATION_HISTORY[:10]
+    ]
 
 
 @router.post("/notifications/broadcast", response_model=NotificationRecord, dependencies=[Depends(require_admin)])
@@ -593,8 +633,8 @@ async def broadcast_notification(
     current_user: TokenUser = Depends(require_admin),
     db: AsyncSession = Depends(get_db_session),
 ):
-    """Dispatch or schedule real push alert or reminder to platform users"""
-    # Count recipient pool
+    """Dispatch or schedule real push alert or reminder to platform users, persisted in Redis"""
+    # Count recipient pool from PostgreSQL
     recipient_count = 0
     if req.target_audience == "ALL":
         res = await db.execute(select(func.count(User.id)))
@@ -613,6 +653,7 @@ async def broadcast_notification(
         res = await db.execute(select(func.count(User.id)).where(User.role == "ADMIN"))
         recipient_count = res.scalar() or 0
 
+    now_utc = datetime.now(timezone.utc)
     record = {
         "id": str(uuid.uuid4()),
         "title": req.title.strip(),
@@ -620,12 +661,29 @@ async def broadcast_notification(
         "target_audience": req.target_audience,
         "action_url": req.action_url.strip() if req.action_url else None,
         "notification_type": req.notification_type,
-        "sent_at": datetime.now(timezone.utc),
+        "sent_at": now_utc,
         "sent_by": current_user.id,
         "recipients_count": recipient_count,
     }
 
+    # 1. Update in-memory fallback
     _NOTIFICATION_HISTORY.insert(0, record)
+
+    # 2. Persist in Redis and publish to event channel
+    try:
+        redis = get_redis_client()
+        if redis:
+            serialized = json.dumps({
+                **record,
+                "sent_at": now_utc.isoformat(),
+            })
+            await redis.lpush(REDIS_NOTIFICATIONS_KEY, serialized)
+            await redis.ltrim(REDIS_NOTIFICATIONS_KEY, 0, 99)
+            await redis.publish(REDIS_PUSH_CHANNEL, serialized)
+            logger.info("Push notification recorded and published to Redis channel successfully.")
+    except Exception as e:
+        logger.warning(f"Could not persist push notification to Redis: {e}")
+
     logger.info(
         f"Push broadcast '{req.title}' dispatched to {recipient_count} users by admin {current_user.id}"
     )
