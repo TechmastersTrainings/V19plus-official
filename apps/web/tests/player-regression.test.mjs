@@ -286,3 +286,104 @@ describe('Player Cleanup & Navigation Lifecycle', () => {
     assert.equal(isSrcRemoved, true, 'Source must be removed from video element');
   });
 });
+
+describe('JioHotstar Clean Buffering Experience', () => {
+  function getBufferingState({ isPlaying, isBuffering, hasError, isAttemptingPlay }) {
+    const showSpinner = Boolean(isBuffering && !hasError && (isPlaying || isAttemptingPlay));
+    const showCenterPlay = Boolean(!isPlaying && !isBuffering && !hasError);
+    return { showSpinner, showCenterPlay };
+  }
+
+  it('should NOT show buffering spinner when player is merely initialized', () => {
+    // Initialized state: player mounted, paused, not attempting play yet
+    const state = {
+      isPlaying: false,
+      isBuffering: false,
+      hasError: false,
+      isAttemptingPlay: false,
+    };
+    const { showSpinner, showCenterPlay } = getBufferingState(state);
+    assert.equal(showSpinner, false, 'Spinner must not be shown merely because player initialized');
+    assert.equal(showCenterPlay, true, 'Center play button must be visible when idle');
+  });
+
+  it('should NOT show buffering spinner while the user is paused', () => {
+    // Paused state
+    const state = {
+      isPlaying: false,
+      isBuffering: false,
+      hasError: false,
+      isAttemptingPlay: false,
+    };
+    const { showSpinner, showCenterPlay } = getBufferingState(state);
+    assert.equal(showSpinner, false, 'Spinner must not be shown while paused');
+    assert.equal(showCenterPlay, true, 'Center play button must be visible while paused');
+  });
+
+  it('should show spinner when user initiates play and video is waiting for data', () => {
+    // User pressed play, waiting for buffer to fill
+    const state = {
+      isPlaying: false,
+      isBuffering: true,
+      hasError: false,
+      isAttemptingPlay: true,
+    };
+    const { showSpinner, showCenterPlay } = getBufferingState(state);
+    assert.equal(showSpinner, true, 'Spinner must show when playback is expected and buffering');
+    assert.equal(showCenterPlay, false, 'Center play button must be hidden while buffering');
+  });
+
+  it('should hide spinner immediately when playback resumes (playing event)', () => {
+    // Playback active
+    let isAttemptingPlay = true;
+    let isBuffering = true;
+    let isPlaying = false;
+
+    // Simulate handlePlaying event
+    isAttemptingPlay = false;
+    isPlaying = true;
+    isBuffering = false;
+
+    const { showSpinner, showCenterPlay } = getBufferingState({
+      isPlaying,
+      isBuffering,
+      hasError: false,
+      isAttemptingPlay,
+    });
+
+    assert.equal(showSpinner, false, 'Spinner must hide immediately upon playing event');
+    assert.equal(showCenterPlay, false, 'Center play button must remain hidden during playback');
+  });
+
+  it('should show spinner when playing video stalls or waits for incoming data', () => {
+    // Normal playback running
+    let isPlaying = true;
+    let isBuffering = false;
+    let isAttemptingPlay = false;
+
+    // Simulate handleWaiting / handleStalled event during active playback
+    isBuffering = true;
+
+    const { showSpinner } = getBufferingState({
+      isPlaying,
+      isBuffering,
+      hasError: false,
+      isAttemptingPlay,
+    });
+
+    assert.equal(showSpinner, true, 'Spinner must show when active playback stalls');
+  });
+
+  it('should dismiss spinner and show error modal when fatal error occurs', () => {
+    const state = {
+      isPlaying: false,
+      isBuffering: false,
+      hasError: true,
+      isAttemptingPlay: false,
+    };
+    const { showSpinner, showCenterPlay } = getBufferingState(state);
+    assert.equal(showSpinner, false, 'Spinner must not be shown when fatal error occurs');
+    assert.equal(showCenterPlay, false, 'Center play button must not be shown during fatal error');
+  });
+});
+

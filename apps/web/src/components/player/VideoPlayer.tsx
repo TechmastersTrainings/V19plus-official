@@ -52,6 +52,7 @@ export function VideoPlayer({
   const MAX_AUTO_RETRIES = 3;
   const bufferTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastClickTimeRef = useRef(0);
+  const isAttemptingPlay = useRef(false);
 
   // Quality / ABR state
   const [qualities, setQualities] = useState<{ id: number; label: string; height: number; bitrate: number }[]>([]);
@@ -105,6 +106,7 @@ export function VideoPlayer({
       clearTimeout(prolongedBufferTimeoutRef.current);
       prolongedBufferTimeoutRef.current = null;
     }
+    isAttemptingPlay.current = false;
     setIsBuffering(false);
     setIsLoading(false);
   }, []);
@@ -113,14 +115,14 @@ export function VideoPlayer({
     if (bufferTimeoutRef.current) clearTimeout(bufferTimeoutRef.current);
     bufferTimeoutRef.current = setTimeout(() => {
       const video = videoRef.current;
-      if (video && !video.paused) {
+      if (video && (!video.paused || isAttemptingPlay.current)) {
         // Only trigger buffering overlay if media engine is genuinely starved of data (readyState < 3)
         if (video.readyState < 3) {
           setIsBuffering(true);
           if (!prolongedBufferTimeoutRef.current) {
             prolongedBufferTimeoutRef.current = setTimeout(() => {
               const currentVideo = videoRef.current;
-              if (currentVideo && !currentVideo.paused && currentVideo.readyState < 3) {
+              if (currentVideo && (!currentVideo.paused || isAttemptingPlay.current) && currentVideo.readyState < 3) {
                 // Auto-recover if stalled at segment boundary
                 if (hlsRef.current) {
                   hlsRef.current.startLoad();
@@ -136,7 +138,7 @@ export function VideoPlayer({
           }
         }
       }
-    }, 350);
+    }, 150);
   }, []);
 
   // Derive poster and title
@@ -274,33 +276,35 @@ export function VideoPlayer({
                 if (retryCount.current < MAX_AUTO_RETRIES) {
                   retryCount.current += 1;
                   console.info(`HLS network error recovery attempt ${retryCount.current}/${MAX_AUTO_RETRIES}...`);
+                  triggerBuffering();
                   hls.startLoad();
                 } else {
                   console.error("HLS network error: exhausted auto-retries.");
                   hls.destroy();
                   hlsRef.current = null;
+                  clearBuffering();
                   setHasError(true);
-                  setIsLoading(false);
                 }
                 break;
               case Hls.ErrorTypes.MEDIA_ERROR:
                 if (retryCount.current < MAX_AUTO_RETRIES) {
                   retryCount.current += 1;
                   console.info(`HLS media error recovery attempt ${retryCount.current}/${MAX_AUTO_RETRIES}...`);
+                  triggerBuffering();
                   hls.recoverMediaError();
                 } else {
                   console.error("HLS media error: exhausted auto-retries.");
                   hls.destroy();
                   hlsRef.current = null;
+                  clearBuffering();
                   setHasError(true);
-                  setIsLoading(false);
                 }
                 break;
               default:
                 hls.destroy();
                 hlsRef.current = null;
+                clearBuffering();
                 setHasError(true);
-                setIsLoading(false);
                 break;
             }
           }
@@ -382,21 +386,26 @@ export function VideoPlayer({
 
       try {
         if (video.paused) {
-          setIsLoading(true);
+          isAttemptingPlay.current = true;
+          if (video.readyState < 3) {
+            triggerBuffering();
+          }
           await video.play();
           setIsPlaying(true);
-          setIsLoading(false);
         } else {
+          isAttemptingPlay.current = false;
           video.pause();
           setIsPlaying(false);
+          clearBuffering();
           setShowControls(true);
         }
       } catch (error) {
+        isAttemptingPlay.current = false;
+        clearBuffering();
         console.error("Playback error:", error);
-        setIsLoading(false);
       }
     },
-    []
+    [clearBuffering, triggerBuffering]
   );
 
   /*
@@ -598,11 +607,17 @@ export function VideoPlayer({
 
   const handlePlay = () => {
     setIsPlaying(true);
-    clearBuffering();
     setHasError(false);
+    const video = videoRef.current;
+    if (video && video.readyState < 3) {
+      triggerBuffering();
+    } else {
+      clearBuffering();
+    }
   };
 
   const handlePlaying = () => {
+    isAttemptingPlay.current = false;
     setIsPlaying(true);
     clearBuffering();
     setHasError(false);
@@ -610,6 +625,7 @@ export function VideoPlayer({
   };
 
   const handlePause = () => {
+    isAttemptingPlay.current = false;
     setIsPlaying(false);
     clearBuffering();
     setShowControls(true);
@@ -669,14 +685,14 @@ export function VideoPlayer({
   };
 
   const handleWaiting = () => {
-    if (isPlaying) {
+    if (isPlaying || isAttemptingPlay.current) {
       triggerBuffering();
     }
   };
 
   const handleStalled = () => {
     const video = videoRef.current;
-    if (!video || !isPlaying) return;
+    if (!video || (!isPlaying && !isAttemptingPlay.current)) return;
 
     // In WebKit / iOS Safari, the 'stalled' event fires whenever download pauses,
     // which happens normally when the browser buffer limit is satisfied.
@@ -709,19 +725,29 @@ export function VideoPlayer({
       clearTimeout(prolongedBufferTimeoutRef.current);
       prolongedBufferTimeoutRef.current = null;
     }
-  };
-
-  const handleSeeked = () => {
-    clearBuffering();
-    setHasError(false);
     const video = videoRef.current;
-    if (video && isPlaying && video.paused) {
-      video.play().catch(() => {});
+    if (isPlaying && video && video.readyState < 3) {
+      triggerBuffering();
     }
   };
 
+  const handleSeeked = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (isPlaying && video.paused) {
+      video.play().catch(() => {});
+    }
+    if (video.readyState >= 3) {
+      clearBuffering();
+    }
+    setHasError(false);
+  };
+
   const handleCanPlay = () => {
-    clearBuffering();
+    const video = videoRef.current;
+    if (!video || video.readyState >= 3) {
+      clearBuffering();
+    }
     setHasError(false);
   };
 
@@ -739,7 +765,7 @@ export function VideoPlayer({
       retryCount.current += 1;
       const resumePos = video.currentTime || currentTime;
       console.info(`Attempting seamless stream reconnection ${retryCount.current}/${MAX_AUTO_RETRIES} at ${resumePos.toFixed(1)}s...`);
-      setIsLoading(true);
+      triggerBuffering();
 
       setTimeout(() => {
         const v = videoRef.current;
@@ -764,7 +790,7 @@ export function VideoPlayer({
 
     // Only show fatal error if repeated retries fail
     console.error("V19Plus video playback exhausted auto-retries:", video.error);
-    setIsLoading(false);
+    clearBuffering();
     setHasError(true);
     setIsPlaying(false);
   };
@@ -951,15 +977,13 @@ export function VideoPlayer({
         onEnded={handleEnded}
       />
 
-      {/* ACTIVE PLAYBACK BUFFERING & LOADING INDICATOR */}
-      {(isLoading || isBuffering) && !hasError && (
-        <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none transition-opacity duration-300">
-          <div className="flex flex-col items-center gap-3 rounded-2xl bg-black/75 backdrop-blur-md px-7 py-5 shadow-2xl border border-white/10 max-w-sm text-center pointer-events-auto">
-            <div className="h-10 w-10 sm:h-12 sm:w-12 animate-spin rounded-full border-3 sm:border-4 border-white/20 border-t-white shadow-[0_0_20px_rgba(255,255,255,0.6)]" />
-            <span className="text-xs font-semibold text-white/90 tracking-wider">
-              {isBuffering ? "Buffering..." : "Loading stream..."}
-            </span>
-          </div>
+      {/* JIOHOTSTAR-STYLE CLEAN BUFFERING SPINNER (NO TEXT, PURE FLOATING SPINNER) */}
+      {isBuffering && !hasError && (isPlaying || isAttemptingPlay.current) && (
+        <div
+          data-testid="buffering-spinner"
+          className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none transition-opacity duration-200"
+        >
+          <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full border-[3px] sm:border-4 border-white/20 border-t-[#FF5C00] animate-spin drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)]" />
         </div>
       )}
 
@@ -979,7 +1003,8 @@ export function VideoPlayer({
             onClick={(event) => {
               event.stopPropagation();
               setHasError(false);
-              setIsLoading(true);
+              isAttemptingPlay.current = true;
+              setIsBuffering(true);
               retryCount.current = 0;
               setReloadKey((prev) => prev + 1);
             }}
@@ -992,7 +1017,7 @@ export function VideoPlayer({
 
       {/* PROMINENT PURE-WHITE CENTER PLAY BUTTON WHEN PAUSED */}
 
-      {!isPlaying && !hasError && (
+      {!isPlaying && !isBuffering && !hasError && (
         <button
           type="button"
           aria-label="Play video"
