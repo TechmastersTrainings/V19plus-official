@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "test": "node --test tests/player-regression.test.mjs",
     "cap:sync": "cap sync",
     "cap:android": "cap open android",
     "mobile:init": "cap add android",

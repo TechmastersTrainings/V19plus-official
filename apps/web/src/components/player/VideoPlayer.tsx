@@ -58,11 +58,10 @@ export function VideoPlayer({
   const [currentQuality, setCurrentQuality] = useState<number>(-1); // -1 = Auto ABR
   const [activeResolution, setActiveResolution] = useState<string>("");
   const [showQualityMenu, setShowQualityMenu] = useState(false);
-  const [isProcessingHls, setIsProcessingHls] = useState<boolean>(false);
-  const [allowProgressiveOverride, setAllowProgressiveOverride] = useState<boolean>(false);
+  const [reloadKey, setReloadKey] = useState<number>(0);
 
   const [activeSrc, setActiveSrc] = useState<string>(() => {
-    // Prioritize published HLS manifests (.m3u8) over raw progressive MP4
+    // Prioritize published HLS manifests (.m3u8)
     const hls =
       (propSrc && (propSrc.includes(".m3u8") || propSrc.includes("/hls/")) ? propSrc : null) ||
       ((content as any)?.hls_manifest_key &&
@@ -73,17 +72,12 @@ export function VideoPlayer({
 
     if (hls) return formatStreamUrl(hls);
 
-    // If only progressive MP4 is provided but title has a master_storage_key (large file),
-    // do not automatically start downloading 7.11 GB file
-    if ((content as any)?.master_storage_key && !(content as any)?.hls_manifest_key) {
+    // For catalog titles, wait for authorized HLS stream and never fall back to raw master MP4
+    if (content?.id || (content as any)?.master_storage_key) {
       return "";
     }
 
-    const raw =
-      propSrc ||
-      (content as any)?.hls_manifest_key ||
-      content?.videoUrl ||
-      "";
+    const raw = (propSrc && (propSrc.includes(".m3u8") || propSrc.includes("/hls/"))) ? propSrc : "";
     return formatStreamUrl(raw);
   });
 
@@ -97,7 +91,6 @@ export function VideoPlayer({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
-  const [isProlongedBuffer, setIsProlongedBuffer] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
   const [hoverX, setHoverX] = useState<number>(0);
@@ -113,7 +106,6 @@ export function VideoPlayer({
       prolongedBufferTimeoutRef.current = null;
     }
     setIsBuffering(false);
-    setIsProlongedBuffer(false);
     setIsLoading(false);
   }, []);
 
@@ -129,9 +121,18 @@ export function VideoPlayer({
             prolongedBufferTimeoutRef.current = setTimeout(() => {
               const currentVideo = videoRef.current;
               if (currentVideo && !currentVideo.paused && currentVideo.readyState < 3) {
-                setIsProlongedBuffer(true);
+                // Auto-recover if stalled at segment boundary
+                if (hlsRef.current) {
+                  hlsRef.current.startLoad();
+                }
+                if (currentVideo.readyState < 2) {
+                  currentVideo.play().catch(() => {});
+                } else {
+                  currentVideo.currentTime = Math.min(currentVideo.duration || Infinity, currentVideo.currentTime + 0.1);
+                  currentVideo.play().catch(() => {});
+                }
               }
-            }, 8000);
+            }, 6000);
           }
         }
       }
@@ -151,58 +152,64 @@ export function VideoPlayer({
     // If a valid published HLS manifest is explicitly passed, use it directly
     if (propSrc && (propSrc.includes(".m3u8") || propSrc.includes("/hls/"))) {
       setActiveSrc(formatStreamUrl(propSrc));
-      setIsProcessingHls(false);
       return;
     }
 
     const contentHls = (content as any)?.hls_manifest_key;
     if (contentHls && (contentHls.includes(".m3u8") || contentHls.includes("/hls/"))) {
       setActiveSrc(formatStreamUrl(contentHls));
-      setIsProcessingHls(false);
       return;
     }
 
     if (!content?.id) {
-      if (propSrc) setActiveSrc(formatStreamUrl(propSrc));
+      if (propSrc && (propSrc.includes(".m3u8") || propSrc.includes("/hls/"))) {
+        setActiveSrc(formatStreamUrl(propSrc));
+      }
       return;
     }
 
     let isMounted = true;
+    setIsLoading(true);
+    setHasError(false);
+
     streamingApi
       .getPlaybackAuth(content.id, episodeId)
       .then((res) => {
         if (!isMounted) return;
         const streamUrl = res.data?.stream_url;
-        const isHls = Boolean(streamUrl && (streamUrl.includes(".m3u8") || streamUrl.includes("/hls/") || (res.data as any)?.is_hls));
-        const isProc = Boolean((res.data as any)?.is_processing);
+        const isHls = Boolean(
+          streamUrl &&
+            (streamUrl.includes(".m3u8") ||
+              streamUrl.includes("/hls/") ||
+              (res.data as any)?.is_hls)
+        );
 
         if (isHls && streamUrl) {
           setActiveSrc(formatStreamUrl(streamUrl));
-          setIsProcessingHls(false);
-        } else if (isProc || ((content as any)?.master_storage_key && !(content as any)?.hls_manifest_key)) {
-          // Adaptive HLS is pending transcode: do NOT automatically stream 7.11 GB MP4 on slow connections
-          setIsProcessingHls(true);
-        } else if (streamUrl) {
-          setActiveSrc(formatStreamUrl(streamUrl));
+        } else {
+          console.error("No adaptive HLS stream available for this title.");
+          setHasError(true);
+          setIsLoading(false);
         }
       })
-      .catch(() => {
+      .catch((err) => {
         if (!isMounted) return;
+        console.error("Playback authorization failed:", err);
         const hlsFallback = (content as any)?.hls_manifest_key;
         if (hlsFallback && (hlsFallback.includes(".m3u8") || hlsFallback.includes("/hls/"))) {
           setActiveSrc(formatStreamUrl(hlsFallback));
-          setIsProcessingHls(false);
-        } else if ((content as any)?.master_storage_key) {
-          setIsProcessingHls(true);
+        } else {
+          setHasError(true);
+          setIsLoading(false);
         }
       });
 
     return () => {
       isMounted = false;
     };
-  }, [content?.id, episodeId, propSrc, content?.videoUrl, (content as any)?.hls_manifest_key]);
+  }, [content?.id, episodeId, propSrc, (content as any)?.hls_manifest_key, reloadKey]);
 
-  // Attach media stream (Adaptive HLS with Hls.js or Native Safari HLS / MP4)
+  // Attach media stream (Capability-based Adaptive HLS: MSE with Hls.js -> Native HLS for iOS -> Graceful error)
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !activeSrc) return;
@@ -220,12 +227,8 @@ export function VideoPlayer({
     const isHls = activeSrc.includes(".m3u8") || activeSrc.includes("/hls/");
 
     if (isHls) {
-      if (video.canPlayType("application/vnd.apple.mpegurl")) {
-        // Native HLS for Safari (macOS & iOS)
-        video.src = activeSrc;
-        video.load();
-      } else if (Hls.isSupported()) {
-        // Hls.js with Adaptive Bitrate (ABR) configuration
+      if (Hls.isSupported()) {
+        // 1. MSE-supported environments (Desktop Chrome, Safari, Firefox, Edge, Android Chrome, Samsung Internet)
         const hls = new Hls({
           enableWorker: true,
           lowLatencyMode: false,
@@ -234,7 +237,7 @@ export function VideoPlayer({
           maxMaxBufferLength: 60,
           maxBufferSize: 60 * 1000 * 1000,
           startLevel: -1, // Auto ABR by default
-          abrEwmaDefaultEstimate: 1000000, // 1 Mbps default bandwidth estimate for fast start on mobile/slower networks
+          abrEwmaDefaultEstimate: 1000000, // 1 Mbps default bandwidth estimate for smooth start
           capLevelToPlayerSize: true,
           testBandwidth: true,
         });
@@ -243,6 +246,8 @@ export function VideoPlayer({
         hls.attachMedia(video);
 
         hls.on(Hls.Events.MANIFEST_PARSED, (_event, data) => {
+          setIsLoading(false);
+          setHasError(false);
           if (data.levels && data.levels.length > 0) {
             const mapped = data.levels.map((lvl, idx) => ({
               id: idx,
@@ -271,25 +276,29 @@ export function VideoPlayer({
                   console.info(`HLS network error recovery attempt ${retryCount.current}/${MAX_AUTO_RETRIES}...`);
                   hls.startLoad();
                 } else {
-                  // Do NOT automatically switch to 7.11 GB MP4 on slow connections
-                  if (allowProgressiveOverride && (content as any)?.master_storage_key) {
-                    const mp4Fallback = `https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev/${(content as any).master_storage_key}`;
-                    console.info("Explicit user override requested: streaming master MP4:", mp4Fallback);
-                    hls.destroy();
-                    hlsRef.current = null;
-                    setActiveSrc(formatStreamUrl(mp4Fallback));
-                    return;
-                  }
-                  setIsProcessingHls(true);
+                  console.error("HLS network error: exhausted auto-retries.");
+                  hls.destroy();
+                  hlsRef.current = null;
+                  setHasError(true);
                   setIsLoading(false);
                 }
                 break;
               case Hls.ErrorTypes.MEDIA_ERROR:
-                console.info("HLS media error, recovering media stream...");
-                hls.recoverMediaError();
+                if (retryCount.current < MAX_AUTO_RETRIES) {
+                  retryCount.current += 1;
+                  console.info(`HLS media error recovery attempt ${retryCount.current}/${MAX_AUTO_RETRIES}...`);
+                  hls.recoverMediaError();
+                } else {
+                  console.error("HLS media error: exhausted auto-retries.");
+                  hls.destroy();
+                  hlsRef.current = null;
+                  setHasError(true);
+                  setIsLoading(false);
+                }
                 break;
               default:
                 hls.destroy();
+                hlsRef.current = null;
                 setHasError(true);
                 setIsLoading(false);
                 break;
@@ -298,9 +307,15 @@ export function VideoPlayer({
         });
 
         hlsRef.current = hls;
-      } else {
+      } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+        // 2. Native HLS for iOS Safari and iOS WebViews (where MSE is unsupported)
         video.src = activeSrc;
         video.load();
+      } else {
+        // 3. Graceful handling of unsupported browser environments
+        console.error("Adaptive HLS streaming is not supported on this browser.");
+        setHasError(true);
+        setIsLoading(false);
       }
     } else {
       // Standard Progressive MP4 video
@@ -313,8 +328,13 @@ export function VideoPlayer({
         hlsRef.current.destroy();
         hlsRef.current = null;
       }
+      if (video) {
+        video.pause();
+        video.removeAttribute("src");
+        video.load();
+      }
     };
-  }, [activeSrc]);
+  }, [activeSrc, reloadKey]);
 
   /*
    * ---------------------------------------------------------
@@ -604,7 +624,7 @@ export function VideoPlayer({
     if (!video) return;
 
     // Video is advancing, so clear any lingering buffering state immediately
-    if (isBuffering || isLoading || isProlongedBuffer) {
+    if (isBuffering || isLoading) {
       clearBuffering();
     }
 
@@ -677,34 +697,6 @@ export function VideoPlayer({
     triggerBuffering();
   };
 
-  const handleForceResume = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      clearBuffering();
-      const video = videoRef.current;
-      if (!video) return;
-
-      console.info("V19Plus Force Resume triggered at position:", video.currentTime);
-
-      // 1. If HLS.js is active, tell it to force reload segments immediately
-      if (hlsRef.current) {
-        hlsRef.current.startLoad();
-      }
-
-      // 2. Re-kick the playback pipeline
-      const currentPos = video.currentTime;
-      if (video.readyState < 2) {
-        // Pipeline starved or connection suspended: re-trigger play
-        video.play().catch(() => {});
-      } else {
-        // Nudge forward slightly past micro-gap
-        video.currentTime = Math.min(video.duration || Infinity, currentPos + 0.15);
-        video.play().catch(() => {});
-      }
-    },
-    [clearBuffering]
-  );
-
   const handleSelectQuality = useCallback((levelIndex: number) => {
     if (!hlsRef.current) return;
     hlsRef.current.currentLevel = levelIndex;
@@ -713,12 +705,10 @@ export function VideoPlayer({
   }, []);
 
   const handleSeeking = () => {
-    // When seeking starts, clear any prolonged buffering timer to avoid false warning overlays
     if (prolongedBufferTimeoutRef.current) {
       clearTimeout(prolongedBufferTimeoutRef.current);
       prolongedBufferTimeoutRef.current = null;
     }
-    setIsProlongedBuffer(false);
   };
 
   const handleSeeked = () => {
@@ -942,7 +932,6 @@ export function VideoPlayer({
 
       <video
         ref={videoRef}
-        src={activeSrc && !activeSrc.includes(".m3u8") ? activeSrc : undefined}
         poster={poster}
         preload="metadata"
         playsInline
@@ -962,79 +951,14 @@ export function VideoPlayer({
         onEnded={handleEnded}
       />
 
-      {/* ACTIVE PLAYBACK BUFFERING INDICATOR (NETFLIX STYLE) */}
-
-      {isBuffering && isPlaying && !hasError && (
-        <div className="absolute inset-0 flex items-center justify-center z-20 transition-all duration-300 pointer-events-none">
+      {/* ACTIVE PLAYBACK BUFFERING & LOADING INDICATOR */}
+      {(isLoading || isBuffering) && !hasError && (
+        <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none transition-opacity duration-300">
           <div className="flex flex-col items-center gap-3 rounded-2xl bg-black/75 backdrop-blur-md px-7 py-5 shadow-2xl border border-white/10 max-w-sm text-center pointer-events-auto">
             <div className="h-10 w-10 sm:h-12 sm:w-12 animate-spin rounded-full border-3 sm:border-4 border-white/20 border-t-white shadow-[0_0_20px_rgba(255,255,255,0.6)]" />
             <span className="text-xs font-semibold text-white/90 tracking-wider">
-              {isProlongedBuffer ? "Buffering high-bitrate stream..." : "Buffering..."}
+              {isBuffering ? "Buffering..." : "Loading stream..."}
             </span>
-            {isProlongedBuffer && (
-              <div className="flex flex-col items-center gap-2 mt-1">
-                <p className="text-[11px] text-white/60 leading-relaxed">
-                  This video stream is waiting on incoming packets.
-                </p>
-                <button
-                  type="button"
-                  onClick={handleForceResume}
-                  className="mt-1 px-3 py-1 bg-white/15 hover:bg-white/25 active:scale-95 text-white rounded-lg text-xs font-medium transition cursor-pointer border border-white/10"
-                >
-                  Force Resume
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* PROCESSING / STREAM OPTIMIZING OVERLAY */}
-      {isProcessingHls && !allowProgressiveOverride && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 text-center z-30 p-6 backdrop-blur-md">
-          <div className="flex flex-col items-center max-w-md">
-            <div className="relative mb-6">
-              <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full border-4 border-[#FF5C00]/20 border-t-[#FF5C00] animate-spin shadow-[0_0_25px_rgba(255,92,0,0.5)]" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <svg className="w-7 h-7 sm:w-8 sm:h-8 fill-[#FF5C00]" viewBox="0 0 24 24">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
-                </svg>
-              </div>
-            </div>
-
-            <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 tracking-tight">
-              Optimizing Adaptive Stream
-            </h3>
-
-            <p className="text-sm text-white/70 mb-6 leading-relaxed">
-              This video is being prepared for high-speed adaptive streaming (1080p, 720p, 480p, 360p) for buffer-free playback on all network conditions.
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-center gap-3 w-full justify-center">
-              <button
-                type="button"
-                onClick={() => {
-                  window.location.reload();
-                }}
-                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#FF5C00] to-[#E04800] hover:from-[#FF7A00] hover:to-[#FF5C00] font-bold text-sm text-white shadow-lg active:scale-95 transition cursor-pointer"
-              >
-                Check Stream Status
-              </button>
-
-              {(content as any)?.master_storage_key && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAllowProgressiveOverride(true);
-                    setIsProcessingHls(false);
-                    setActiveSrc(formatStreamUrl(`https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev/${(content as any).master_storage_key}`));
-                  }}
-                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-medium text-white/70 hover:text-white border border-white/10 active:scale-95 transition cursor-pointer"
-                >
-                  Stream Raw Master (High Bitrate)
-                </button>
-              )}
-            </div>
           </div>
         </div>
       )}
@@ -1054,33 +978,10 @@ export function VideoPlayer({
             type="button"
             onClick={(event) => {
               event.stopPropagation();
-              const video = videoRef.current;
-              if (!video) return;
-
               setHasError(false);
               setIsLoading(true);
               retryCount.current = 0;
-
-              const resumePos = currentTime;
-              if (hlsRef.current) {
-                hlsRef.current.startLoad();
-              } else {
-                video.load();
-                if (resumePos > 0) {
-                  video.currentTime = resumePos;
-                }
-              }
-
-              video
-                .play()
-                .then(() => {
-                  setIsPlaying(true);
-                  setIsLoading(false);
-                })
-                .catch((error) => {
-                  console.warn("Retry playback caught rejected promise:", error);
-                  setIsLoading(false);
-                });
+              setReloadKey((prev) => prev + 1);
             }}
             className="rounded-xl bg-white px-6 py-2.5 font-bold text-black transition hover:bg-white/90 shadow-xl active:scale-95 cursor-pointer"
           >

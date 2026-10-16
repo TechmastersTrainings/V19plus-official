@@ -59,7 +59,7 @@ class MediaProbe:
                     stdout=asyncio.subprocess.DEVNULL,
                     stderr=asyncio.subprocess.PIPE,
                 )
-                _, v_stderr = await asyncio.wait_for(v_proc.communicate(), timeout=8.0)
+                _, v_stderr = await asyncio.wait_for(v_proc.communicate(), timeout=30.0)
                 v_err_text = v_stderr.decode("utf-8", errors="ignore")
                 if v_proc.returncode != 0 or "Output file is empty" in v_err_text or "Conversion failed" in v_err_text:
                     is_truncated = True

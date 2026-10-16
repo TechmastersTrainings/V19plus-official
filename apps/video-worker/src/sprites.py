@@ -17,6 +17,8 @@ class SpriteGenerator:
 
         thumb_w = 160
         thumb_h = 90
+        if duration > 1500:
+            interval_secs = max(interval_secs, math.ceil(duration / 250))
         total_thumbs = math.ceil(duration / interval_secs)
         if total_thumbs <= 0:
             return ""

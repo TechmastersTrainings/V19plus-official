@@ -19,42 +19,41 @@ class R2MediaTransfer:
             config=Config(
                 signature_version="s3v4",
                 s3={"addressing_style": "path"},
-                retries={"max_attempts": 3, "mode": "standard"},
+                retries={"max_attempts": 5, "mode": "adaptive"},
+                max_pool_connections=50,
             ),
         )
 
     def download_master(self, bucket: str, key: str, local_destination: str) -> None:
         """
-        Download master video from Cloudflare R2 using high-speed parallel chunk range requests.
-        Falls back to standard download for smaller files (< 64MB).
+        Download master video from Cloudflare R2 using resilient multi-threaded transfer config
+        with automatic per-part retries.
         """
+        import time
+        from boto3.s3.transfer import TransferConfig
+
         os.makedirs(os.path.dirname(local_destination), exist_ok=True)
-        head = self.s3_client.head_object(Bucket=bucket, Key=key)
-        file_size = head.get("ContentLength", 0)
+        transfer_config = TransferConfig(
+            multipart_threshold=32 * 1024 * 1024,
+            max_concurrency=12,
+            multipart_chunksize=32 * 1024 * 1024,
+            use_threads=True,
+        )
 
-        chunk_size = 32 * 1024 * 1024  # 32MB chunks
-        if file_size < chunk_size * 2:
-            self.s3_client.download_file(bucket, key, local_destination)
-            return
-
-        total_chunks = math.ceil(file_size / chunk_size)
-        with open(local_destination, "wb") as f:
-            f.truncate(file_size)
-
-        def download_chunk(idx):
-            start = idx * chunk_size
-            end = min(file_size - 1, (idx + 1) * chunk_size - 1)
-            resp = self.s3_client.get_object(Bucket=bucket, Key=key, Range=f"bytes={start}-{end}")
-            data = resp["Body"].read()
-            with open(local_destination, "r+b") as f:
-                f.seek(start)
-                f.write(data)
-            return idx
-
-        with ThreadPoolExecutor(max_workers=20) as executor:
-            futures = [executor.submit(download_chunk, i) for i in range(total_chunks)]
-            for fut in as_completed(futures):
-                fut.result()
+        # Retry outer download up to 3 times in case of entire socket disconnect
+        for attempt in range(1, 4):
+            try:
+                self.s3_client.download_file(
+                    Bucket=bucket,
+                    Key=key,
+                    Filename=local_destination,
+                    Config=transfer_config,
+                )
+                return
+            except Exception as e:
+                if attempt == 3:
+                    raise
+                time.sleep(2 * attempt)
 
     def upload_hls_directory(self, local_dir: str, bucket: str, s3_prefix: str) -> List[str]:
         """

@@ -64,12 +64,16 @@ class FFmpegTranscoder:
                     f"-preset:v:{idx}", "fast",
                     f"-crf:v:{idx}", "22",
                 ])
+            video_bitrate = rendition.get("video_bitrate") or rendition.get("bitrate", "2000k")
+            audio_bitrate = rendition.get("audio_bitrate", "128k")
+            maxrate = rendition.get("maxrate", "2400k")
+            bufsize = rendition.get("bufsize", "4500k")
             cmd.extend([
-                f"-b:v:{idx}", rendition["bitrate"],
-                f"-maxrate:v:{idx}", rendition["maxrate"],
-                f"-bufsize:v:{idx}", rendition["bufsize"],
+                f"-b:v:{idx}", video_bitrate,
+                f"-maxrate:v:{idx}", maxrate,
+                f"-bufsize:v:{idx}", bufsize,
                 f"-c:a:{idx}", "aac",
-                f"-b:a:{idx}", rendition["audio_bitrate"],
+                f"-b:a:{idx}", audio_bitrate,
                 f"-ac:a:{idx}", "2",
             ])
             var_stream_map_parts.append(f"v:{idx},a:{idx},name:{rendition['name']}")

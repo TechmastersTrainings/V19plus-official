@@ -115,7 +115,7 @@ export default function WatchPage({ params }: { params: { slug: string } }) {
       const epHls = (activeEpisode as any).hls_manifest_key;
       if (epHls && (epHls.includes('.m3u8') || epHls.includes('/hls/'))) return epHls;
       if (activeEpisode.videoUrl && (activeEpisode.videoUrl.includes('.m3u8') || activeEpisode.videoUrl.includes('/hls/'))) return activeEpisode.videoUrl;
-      return (activeEpisode as any).hls_manifest_key || activeEpisode.videoUrl || '';
+      return '';
     }
     const contentHls = (content as any)?.hls_manifest_key;
     if (contentHls && (contentHls.includes('.m3u8') || contentHls.includes('/hls/'))) return contentHls;

@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 import os
 import shutil
@@ -35,9 +36,16 @@ async def process_video_job(job_id_str: str) -> None:
     local_master = os.path.join(scratch_dir, "master.mp4")
     output_hls_dir = os.path.join(scratch_dir, "hls")
 
+    source_bucket = None
+    source_key = None
+    target_bucket = None
+    target_prefix = None
+    content_id = None
+    episode_id = None
+
+    from sqlalchemy import text
+
     async with SessionLocal() as db:
-        # Import models locally to avoid circular dependencies
-        from sqlalchemy import text
         res = await db.execute(
             text("SELECT id, source_bucket, source_file_key, target_bucket, target_hls_prefix, content_id, episode_id FROM video_jobs WHERE id = :job_id"),
             {"job_id": job_id},
@@ -54,85 +62,91 @@ async def process_video_job(job_id_str: str) -> None:
         content_id = row["content_id"]
         episode_id = row["episode_id"]
 
-        try:
-            logger.info(f"▶️ Starting job {job_id}: {source_key}")
+        logger.info(f"▶️ Starting job {job_id}: {source_key}")
+        await db.execute(
+            text("UPDATE video_jobs SET status = 'PROBING', progress_percent = 5, updated_at = NOW() WHERE id = :id"),
+            {"id": job_id},
+        )
+        await db.commit()
 
-            # 1. Update status: PROBING
-            await db.execute(
-                text("UPDATE video_jobs SET status = 'PROBING', progress_percent = 5, updated_at = NOW() WHERE id = :id"),
-                {"id": job_id},
+    try:
+        # 2. Resolve master asset stream URL or local path directly (no large disk download needed)
+        transfer = R2MediaTransfer()
+        loop = asyncio.get_event_loop()
+        if os.path.exists(local_master):
+            master_input = local_master
+        elif source_key.startswith("http://") or source_key.startswith("https://"):
+            master_input = source_key
+        else:
+            master_input = f"{worker_settings.CDN_STREAMING_BASE_URL.rstrip('/')}/{source_key.lstrip('/')}"
+        logger.info(f"Targeting master input source: {master_input}")
+
+        # 3. Probe master video
+        probe_data = await MediaProbe.inspect(master_input)
+        if probe_data.get("is_truncated"):
+            claimed_mins = int(probe_data["duration"]) // 60
+            claimed_secs = int(probe_data["duration"]) % 60
+            err_msg = (
+                f"Uploaded media master is corrupt or truncated! Container claims {claimed_mins}:{claimed_secs:02d} "
+                f"({int(probe_data['duration'])}s), but decodable video stream ends prematurely or contains unwritten data. "
+                "Rejecting upload to prevent publishing broken stream or overwriting verified content."
             )
-            await db.commit()
+            logger.error(f"[INTEGRITY REJECTION] {err_msg}")
+            raise ValueError(err_msg)
 
-            # 2. Download master from Cloudflare R2
-            transfer = R2MediaTransfer()
-            logger.info(f"Downloading master asset from {source_bucket}/{source_key}...")
-            loop = asyncio.get_event_loop()
-            await loop.run_in_executor(None, transfer.download_master, source_bucket, source_key, local_master)
+        ladder = MediaProbe.determine_abr_ladder(probe_data["width"], probe_data["height"])
+        logger.info(f"Probed master: {probe_data['width']}x{probe_data['height']} ({probe_data['duration']}s). ABR Renditions: {[r['name'] for r in ladder]}")
 
-            # 3. Probe master video
-            probe_data = await MediaProbe.inspect(local_master)
-            if probe_data.get("is_truncated"):
-                claimed_mins = int(probe_data["duration"]) // 60
-                claimed_secs = int(probe_data["duration"]) % 60
-                err_msg = (
-                    f"Uploaded media master is corrupt or truncated! Container claims {claimed_mins}:{claimed_secs:02d} "
-                    f"({int(probe_data['duration'])}s), but decodable video stream ends prematurely or contains unwritten data. "
-                    "Rejecting upload to prevent publishing broken stream or overwriting verified content."
-                )
-                logger.error(f"[INTEGRITY REJECTION] {err_msg}")
-                raise ValueError(err_msg)
-
-            ladder = MediaProbe.determine_abr_ladder(probe_data["width"], probe_data["height"])
-            logger.info(f"Probed master: {probe_data['width']}x{probe_data['height']} ({probe_data['duration']}s). ABR Renditions: {[r['name'] for r in ladder]}")
-
-            # 4. Update status: TRANSCODING
+        # 4. Update status: TRANSCODING
+        async with SessionLocal() as db:
             await db.execute(
                 text("UPDATE video_jobs SET status = 'TRANSCODING', source_metadata = :meta, progress_percent = 15, updated_at = NOW() WHERE id = :id"),
-                {"id": job_id, "meta": str(probe_data)},
+                {"id": job_id, "meta": json.dumps(probe_data)},
             )
             await db.commit()
 
-            # 5. Execute FFmpeg Multi-Rendition HLS Transcoding with real-time progress
-            async def progress_callback(pct: int):
-                mapped_pct = min(90, 15 + int(pct * 0.75))
-                async with SessionLocal() as progress_db:
-                    await progress_db.execute(
-                        text("UPDATE video_jobs SET progress_percent = :pct, updated_at = NOW() WHERE id = :id"),
-                        {"id": job_id, "pct": mapped_pct},
-                    )
-                    await progress_db.commit()
+        # 5. Execute FFmpeg Multi-Rendition HLS Transcoding with real-time progress
+        async def progress_callback(pct: int):
+            mapped_pct = min(90, 15 + int(pct * 0.75))
+            async with SessionLocal() as progress_db:
+                await progress_db.execute(
+                    text("UPDATE video_jobs SET progress_percent = :pct, updated_at = NOW() WHERE id = :id"),
+                    {"id": job_id, "pct": mapped_pct},
+                )
+                await progress_db.commit()
 
-            transcoder = FFmpegTranscoder(local_master, output_hls_dir, probe_data["duration"])
-            await transcoder.transcode_to_hls(ladder, on_progress=progress_callback)
+        transcoder = FFmpegTranscoder(master_input, output_hls_dir, probe_data["duration"])
+        await transcoder.transcode_to_hls(ladder, on_progress=progress_callback)
 
-            # 6. Generate Scrubbing Preview Sprites & WebVTT
-            logger.info("Generating scrubbing preview sprite sheets...")
-            await SpriteGenerator.generate_sprites(local_master, output_hls_dir, probe_data["duration"])
+        # 6. Generate Scrubbing Preview Sprites & WebVTT
+        logger.info("Generating scrubbing preview sprite sheets...")
+        await SpriteGenerator.generate_sprites(master_input, output_hls_dir, probe_data["duration"])
 
-            # 7. Update status: VALIDATING
+        # 7. Update status: VALIDATING
+        async with SessionLocal() as db:
             await db.execute(
                 text("UPDATE video_jobs SET status = 'VALIDATING', progress_percent = 92, updated_at = NOW() WHERE id = :id"),
                 {"id": job_id},
             )
             await db.commit()
 
-            # 8. Upload HLS assets to Cloudflare R2
-            logger.info(f"Uploading transcoded HLS assets to {target_bucket}/{target_prefix}...")
-            await loop.run_in_executor(None, transfer.upload_hls_directory, output_hls_dir, target_bucket, target_prefix)
+        # 8. Upload HLS assets to Cloudflare R2
+        logger.info(f"Uploading transcoded HLS assets to {target_bucket}/{target_prefix}...")
+        await loop.run_in_executor(None, transfer.upload_hls_directory, output_hls_dir, target_bucket, target_prefix)
 
-            # 8.5 Validate uploaded master manifest in R2 before touching database
-            master_key = f"{worker_settings.CDN_STREAMING_BASE_URL.rstrip('/')}/{target_prefix.rstrip('/')}/master.m3u8"
-            sprite_key = f"{target_prefix.rstrip('/')}/thumbnails.vtt"
+        # 8.5 Validate uploaded master manifest in R2 before touching database
+        master_key = f"{worker_settings.CDN_STREAMING_BASE_URL.rstrip('/')}/{target_prefix.rstrip('/')}/master.m3u8"
+        sprite_key = f"{target_prefix.rstrip('/')}/thumbnails.vtt"
 
-            import httpx
-            val_client = httpx.Client(headers={"User-Agent": "Mozilla/5.0"}, timeout=15.0)
-            master_check = val_client.get(master_key)
-            if master_check.status_code != 200:
-                raise AssertionError(f"Master playlist validation failed on R2 CDN: HTTP {master_check.status_code}")
-            logger.info(f"Master playlist verified accessible on Cloudflare R2: {master_key}")
+        import httpx
+        val_client = httpx.Client(headers={"User-Agent": "Mozilla/5.0"}, timeout=15.0)
+        master_check = val_client.get(master_key)
+        if master_check.status_code != 200:
+            raise AssertionError(f"Master playlist validation failed on R2 CDN: HTTP {master_check.status_code}")
+        logger.info(f"Master playlist verified accessible on Cloudflare R2: {master_key}")
 
-            # 9. Finalize VideoJob & Content records
+        # 9. Finalize VideoJob & Content records
+        async with SessionLocal() as db:
             await db.execute(
                 text("""
                     UPDATE video_jobs 
@@ -193,43 +207,46 @@ async def process_video_job(job_id_str: str) -> None:
                 )
 
             await db.commit()
-            logger.info(f"✅ Transcoding job {job_id} successfully finished! HLS Manifest: {master_key}")
+        logger.info(f"✅ Transcoding job {job_id} successfully finished! HLS Manifest: {master_key}")
 
-        except Exception as e:
-            logger.error(f"❌ Transcoding job {job_id} failed: {str(e)}", exc_info=True)
-            await db.execute(
-                text("""
-                    UPDATE video_jobs 
-                    SET status = 'FAILED', error_message = :err, updated_at = NOW()
-                    WHERE id = :id
-                """),
-                {"id": job_id, "err": str(e)},
-            )
-            # Ensure content is never marked as published if any step fails
-            if content_id:
-                await db.execute(
+    except Exception as e:
+        logger.error(f"❌ Transcoding job {job_id} failed: {str(e)}", exc_info=True)
+        try:
+            async with SessionLocal() as err_db:
+                await err_db.execute(
                     text("""
-                        UPDATE content 
-                        SET status = 'FAILED', updated_at = NOW()
-                        WHERE id = :cid AND (status != 'PUBLISHED' OR hls_manifest_key IS NULL)
+                        UPDATE video_jobs 
+                        SET status = 'FAILED', error_message = :err, updated_at = NOW()
+                        WHERE id = :id
                     """),
-                    {"cid": content_id},
+                    {"id": job_id, "err": str(e)[:500]},
                 )
-            elif episode_id:
-                await db.execute(
-                    text("""
-                        UPDATE episodes 
-                        SET status = 'FAILED', updated_at = NOW()
-                        WHERE id = :eid AND (status != 'READY' OR hls_manifest_key IS NULL)
-                    """),
-                    {"eid": episode_id},
-                )
-            await db.commit()
+                if content_id:
+                    await err_db.execute(
+                        text("""
+                            UPDATE content 
+                            SET status = 'FAILED', updated_at = NOW()
+                            WHERE id = :cid AND (status != 'PUBLISHED' OR hls_manifest_key IS NULL)
+                        """),
+                        {"cid": content_id},
+                    )
+                elif episode_id:
+                    await err_db.execute(
+                        text("""
+                            UPDATE episodes 
+                            SET status = 'FAILED', updated_at = NOW()
+                            WHERE id = :eid AND (status != 'READY' OR hls_manifest_key IS NULL)
+                        """),
+                        {"eid": episode_id},
+                    )
+                await err_db.commit()
+        except Exception as dbe:
+            logger.error(f"Could not record failure state in database: {dbe}")
 
-        finally:
-            # Clean up local scratch directory
-            if os.path.exists(scratch_dir):
-                shutil.rmtree(scratch_dir, ignore_errors=True)
+    finally:
+        # Clean up local scratch directory
+        if os.path.exists(scratch_dir):
+            shutil.rmtree(scratch_dir, ignore_errors=True)
 
 
 async def run_worker_loop():

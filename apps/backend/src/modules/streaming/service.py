@@ -88,10 +88,36 @@ class StreamingService:
             is_processing = False
             stream_url = f"/api/media/stream/{local_filename}"
         elif content.master_storage_key:
-            # Valid master storage key present in Cloudflare R2: HLS transcoding is in progress / pending
-            is_hls = False
-            is_processing = True
-            stream_url = f"{cdn_base}/{content.master_storage_key}"
+            # Check if an HLS manifest already exists in Cloudflare R2 matching the master storage key or slug
+            stem = os.path.splitext(content.master_storage_key)[0]
+            candidates = [
+                f"{cdn_base}/hls/{stem}/master.m3u8",
+                f"{cdn_base}/hls/{content.slug}/master.m3u8",
+            ]
+            discovered_hls = None
+            try:
+                import httpx
+                with httpx.Client(headers={"User-Agent": "Mozilla/5.0"}, timeout=2.0) as client:
+                    for cand in candidates:
+                        resp = client.head(cand)
+                        if resp.status_code == 200:
+                            discovered_hls = cand
+                            break
+            except Exception:
+                pass
+
+            if discovered_hls:
+                content.hls_manifest_key = discovered_hls
+                content.status = ContentStatus.PUBLISHED
+                await self.db.commit()
+                is_hls = True
+                is_processing = False
+                stream_url = discovered_hls
+            else:
+                # Valid master storage key present in Cloudflare R2: HLS transcoding is in progress / pending
+                is_hls = False
+                is_processing = True
+                stream_url = f"{cdn_base}/{content.master_storage_key}"
         else:
             is_hls = True
             is_processing = False
