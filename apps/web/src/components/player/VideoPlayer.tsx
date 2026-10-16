@@ -31,6 +31,58 @@ function formatStreamUrl(url: string): string {
   return url;
 }
 
+const lockMobileToLandscape = async () => {
+  if (typeof window === "undefined") return;
+
+  const isMobile =
+    /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    (window.innerWidth <= 840 && window.innerHeight > window.innerWidth);
+
+  if (!isMobile) return;
+
+  // 1. Try Capacitor Native ScreenOrientation if running in hybrid app
+  try {
+    const { Capacitor } = await import("@capacitor/core");
+    if (Capacitor.isNativePlatform()) {
+      const { ScreenOrientation } = await import("@capacitor/screen-orientation");
+      await ScreenOrientation.lock({ type: "landscape" as any });
+      return;
+    }
+  } catch {}
+
+  // 2. Try Web Screen Orientation API (Android Chrome, Samsung Internet, Edge mobile)
+  try {
+    if (screen?.orientation && typeof (screen.orientation as any).lock === "function") {
+      await (screen.orientation as any).lock("landscape");
+    }
+  } catch (err) {
+    // Non-fatal: Gracefully fall back if device/browser doesn't allow programmatic orientation lock
+  }
+};
+
+const restoreMobileOrientation = async () => {
+  if (typeof window === "undefined") return;
+
+  // 1. Try Capacitor Native ScreenOrientation unlock
+  try {
+    const { Capacitor } = await import("@capacitor/core");
+    if (Capacitor.isNativePlatform()) {
+      const { ScreenOrientation } = await import("@capacitor/screen-orientation");
+      await ScreenOrientation.unlock();
+      return;
+    }
+  } catch {}
+
+  // 2. Try Web Screen Orientation API unlock
+  try {
+    if (screen?.orientation && typeof (screen.orientation as any).unlock === "function") {
+      (screen.orientation as any).unlock();
+    }
+  } catch (err) {
+    // Non-fatal
+  }
+};
+
 export function VideoPlayer({
   src: propSrc,
   poster: propPoster,
@@ -532,18 +584,50 @@ export function VideoPlayer({
     event?.stopPropagation();
 
     const container = containerRef.current;
+    const video = videoRef.current;
     if (!container) return;
 
+    const isCurrentlyFullscreen = Boolean(
+      document.fullscreenElement ||
+      (document as any).webkitFullscreenElement ||
+      (document as any).mozFullScreenElement ||
+      (document as any).msFullscreenElement ||
+      (video as any)?.webkitDisplayingFullscreen
+    );
+
     try {
-      if (!document.fullscreenElement) {
-        await container.requestFullscreen();
+      if (!isCurrentlyFullscreen) {
+        if (container.requestFullscreen) {
+          await container.requestFullscreen();
+        } else if ((container as any).webkitRequestFullscreen) {
+          await (container as any).webkitRequestFullscreen();
+        } else if ((container as any).mozRequestFullScreen) {
+          await (container as any).mozRequestFullScreen();
+        } else if ((container as any).msRequestFullscreen) {
+          await (container as any).msRequestFullscreen();
+        } else if (video && (video as any).webkitEnterFullscreen) {
+          // Native fullscreen on iOS Safari iPhone
+          (video as any).webkitEnterFullscreen();
+        }
         setIsFullscreen(true);
+        await lockMobileToLandscape();
       } else {
-        await document.exitFullscreen();
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if ((document as any).webkitExitFullscreen) {
+          await (document as any).webkitExitFullscreen();
+        } else if ((document as any).mozCancelFullScreen) {
+          await (document as any).mozCancelFullScreen();
+        } else if ((document as any).msExitFullscreen) {
+          await (document as any).msExitFullscreen();
+        } else if (video && (video as any).webkitExitFullscreen) {
+          (video as any).webkitExitFullscreen();
+        }
         setIsFullscreen(false);
+        await restoreMobileOrientation();
       }
     } catch (error) {
-      console.error("Fullscreen error:", error);
+      console.warn("Fullscreen toggle non-fatal notice:", error);
     }
 
     showPlayerControls();
@@ -551,19 +635,55 @@ export function VideoPlayer({
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(Boolean(document.fullscreenElement));
+      const video = videoRef.current;
+      const isFs = Boolean(
+        document.fullscreenElement ||
+        (document as any).webkitFullscreenElement ||
+        (document as any).mozFullScreenElement ||
+        (document as any).msFullscreenElement ||
+        (video as any)?.webkitDisplayingFullscreen
+      );
+
+      setIsFullscreen(isFs);
+
+      if (!isFs) {
+        restoreMobileOrientation().catch(() => {});
+      }
     };
 
-    document.addEventListener(
-      "fullscreenchange",
-      handleFullscreenChange
-    );
+    const handleIOSBeginFullscreen = () => {
+      setIsFullscreen(true);
+    };
+
+    const handleIOSEndFullscreen = () => {
+      setIsFullscreen(false);
+      restoreMobileOrientation().catch(() => {});
+    };
+
+    const video = videoRef.current;
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+    document.addEventListener("mozfullscreenchange", handleFullscreenChange);
+    document.addEventListener("MSFullscreenChange", handleFullscreenChange);
+
+    if (video) {
+      video.addEventListener("webkitbeginfullscreen", handleIOSBeginFullscreen);
+      video.addEventListener("webkitendfullscreen", handleIOSEndFullscreen);
+    }
 
     return () => {
-      document.removeEventListener(
-        "fullscreenchange",
-        handleFullscreenChange
-      );
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener("webkitfullscreenchange", handleFullscreenChange);
+      document.removeEventListener("mozfullscreenchange", handleFullscreenChange);
+      document.removeEventListener("MSFullscreenChange", handleFullscreenChange);
+
+      if (video) {
+        video.removeEventListener("webkitbeginfullscreen", handleIOSBeginFullscreen);
+        video.removeEventListener("webkitendfullscreen", handleIOSEndFullscreen);
+      }
+
+      restoreMobileOrientation().catch(() => {});
     };
   }, []);
 
@@ -936,7 +1056,7 @@ export function VideoPlayer({
   return (
     <div
       ref={containerRef}
-      className={`relative w-full h-full overflow-hidden bg-black select-none group ${
+      className={`relative w-full h-full overflow-hidden bg-black select-none group flex items-center justify-center ${
         !showControls && isPlaying ? "cursor-none" : "cursor-default"
       } ${className}`}
       onMouseMove={showPlayerControls}
@@ -961,8 +1081,10 @@ export function VideoPlayer({
         poster={poster}
         preload="metadata"
         playsInline
+        webkit-playsinline="true"
+        x5-playsinline="true"
         crossOrigin={activeSrc && (activeSrc.includes(".m3u8") || activeSrc.includes("/hls/")) ? "anonymous" : undefined}
-        className="block h-full w-full object-contain bg-black"
+        className="block max-w-full max-h-full w-full h-full object-contain bg-black m-auto"
         onPlay={handlePlay}
         onPlaying={handlePlaying}
         onPause={handlePause}
@@ -1133,55 +1255,7 @@ export function VideoPlayer({
               )}
             </button>
 
-            {/* BACKWARD 10 SECONDS */}
 
-            <button
-              type="button"
-              aria-label="Skip backward 10 seconds"
-              onClick={skipBackward}
-              className="group/skip relative flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-black/60 hover:bg-black/90 text-white border border-white/20 hover:border-white/40 shadow-xl backdrop-blur-xl transition active:scale-95 cursor-pointer flex-shrink-0"
-            >
-              <svg
-                className="w-5 h-5 sm:w-6 sm:h-6 stroke-white"
-                viewBox="0 0 24 24"
-                fill="none"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M9 14 5 10l4-4" />
-                <path d="M5 10h7a6 6 0 1 1-5.2 9" />
-              </svg>
-
-              <span className="absolute -top-8 whitespace-nowrap rounded-md bg-black/95 text-white border border-white/20 px-2 py-0.5 text-[10px] sm:text-[11px] font-bold opacity-0 transition group-hover/skip:opacity-100 shadow-md">
-                -10s
-              </span>
-            </button>
-
-            {/* FORWARD 10 SECONDS */}
-
-            <button
-              type="button"
-              aria-label="Skip forward 10 seconds"
-              onClick={skipForward}
-              className="group/skip relative flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-black/60 hover:bg-black/90 text-white border border-white/20 hover:border-white/40 shadow-xl backdrop-blur-xl transition active:scale-95 cursor-pointer flex-shrink-0"
-            >
-              <svg
-                className="w-5 h-5 sm:w-6 sm:h-6 stroke-white"
-                viewBox="0 0 24 24"
-                fill="none"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="m15 14 4-4-4-4" />
-                <path d="M19 10h-7a6 6 0 1 0 5.2 9" />
-              </svg>
-
-              <span className="absolute -top-8 whitespace-nowrap rounded-md bg-black/95 text-white border border-white/20 px-2 py-0.5 text-[10px] sm:text-[11px] font-bold opacity-0 transition group-hover/skip:opacity-100 shadow-md">
-                +10s
-              </span>
-            </button>
 
             {/* VOLUME & MUTE TOGGLE CAPSULE */}
 

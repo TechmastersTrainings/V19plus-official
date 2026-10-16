@@ -124,7 +124,7 @@ export default function WatchPage({ params }: { params: { slug: string } }) {
   })();
 
   return (
-    <div className="w-full h-screen bg-black overflow-hidden">
+    <div className="w-full h-screen h-[100dvh] bg-black overflow-hidden flex items-center justify-center">
       <VideoPlayer
         src={videoSrc}
         poster={content.thumbnailUrl || (content as any)?.bannerUrl}

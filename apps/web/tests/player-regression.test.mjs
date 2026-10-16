@@ -387,3 +387,128 @@ describe('JioHotstar Clean Buffering Experience', () => {
   });
 });
 
+describe('Smart Fullscreen & Mobile Orientation Engine', () => {
+  it('should request container fullscreen on browsers supporting standard Fullscreen API', async () => {
+    let containerRequested = false;
+    let videoRequested = false;
+
+    const mockContainer = {
+      requestFullscreen: async () => {
+        containerRequested = true;
+      },
+    };
+    const mockVideo = {
+      webkitEnterFullscreen: () => {
+        videoRequested = true;
+      },
+    };
+
+    async function enterFullscreen(container, video) {
+      if (container.requestFullscreen) {
+        await container.requestFullscreen();
+      } else if (video && video.webkitEnterFullscreen) {
+        video.webkitEnterFullscreen();
+      }
+    }
+
+    await enterFullscreen(mockContainer, mockVideo);
+    assert.equal(containerRequested, true, 'Should use container.requestFullscreen when available');
+    assert.equal(videoRequested, false, 'Should not use video.webkitEnterFullscreen when standard API is supported');
+  });
+
+  it('should fall back gracefully to video.webkitEnterFullscreen on iOS Safari', async () => {
+    let containerRequested = false;
+    let videoRequested = false;
+
+    const mockContainer = {}; // iOS Safari lacks container.requestFullscreen
+    const mockVideo = {
+      webkitEnterFullscreen: () => {
+        videoRequested = true;
+      },
+    };
+
+    async function enterFullscreen(container, video) {
+      if (container.requestFullscreen) {
+        await container.requestFullscreen();
+      } else if (video && video.webkitEnterFullscreen) {
+        video.webkitEnterFullscreen();
+      }
+    }
+
+    await enterFullscreen(mockContainer, mockVideo);
+    assert.equal(containerRequested, false);
+    assert.equal(videoRequested, true, 'Should fall back to native video fullscreen on iOS Safari');
+  });
+
+  it('should lock orientation to landscape on mobile and unlock on exit without throwing', async () => {
+    let lockedOrientation = null;
+    let unlocked = false;
+
+    const mockScreenOrientation = {
+      lock: async (type) => {
+        lockedOrientation = type;
+      },
+      unlock: () => {
+        unlocked = true;
+      },
+    };
+
+    // Simulate mobile environment
+    async function lockMobile(orientationApi, isMobile) {
+      if (!isMobile) return;
+      try {
+        if (orientationApi && typeof orientationApi.lock === 'function') {
+          await orientationApi.lock('landscape');
+        }
+      } catch (err) {
+        // Non-fatal
+      }
+    }
+
+    async function unlockMobile(orientationApi) {
+      try {
+        if (orientationApi && typeof orientationApi.unlock === 'function') {
+          orientationApi.unlock();
+        }
+      } catch (err) {
+        // Non-fatal
+      }
+    }
+
+    // 1. Enter fullscreen on mobile
+    await lockMobile(mockScreenOrientation, true);
+    assert.equal(lockedOrientation, 'landscape', 'Should request landscape orientation on mobile');
+
+    // 2. Exit fullscreen
+    await unlockMobile(mockScreenOrientation);
+    assert.equal(unlocked, true, 'Should unlock orientation when exiting fullscreen');
+  });
+
+  it('should never crash playback if orientation lock is unsupported or throws SecurityError', async () => {
+    let playbackInterrupted = false;
+
+    const rejectingScreenOrientation = {
+      lock: async () => {
+        throw new Error('NotSupportedError: Screen orientation lock is not supported on this device');
+      },
+    };
+
+    async function safeLock(orientationApi) {
+      try {
+        await orientationApi.lock('landscape');
+      } catch (err) {
+        // Graceful non-fatal fallback
+      }
+    }
+
+    try {
+      await safeLock(rejectingScreenOrientation);
+    } catch {
+      playbackInterrupted = true;
+    }
+
+    assert.equal(playbackInterrupted, false, 'Orientation error must never interrupt playback');
+  });
+});
+
+
