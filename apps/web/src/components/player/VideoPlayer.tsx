@@ -45,7 +45,7 @@ const lockMobileToLandscape = async () => {
     const { Capacitor } = await import("@capacitor/core");
     if (Capacitor.isNativePlatform()) {
       const { ScreenOrientation } = await import("@capacitor/screen-orientation");
-      await ScreenOrientation.lock({ type: "landscape" as any });
+      await ScreenOrientation.lock({ orientation: "landscape" });
       return;
     }
   } catch {}
