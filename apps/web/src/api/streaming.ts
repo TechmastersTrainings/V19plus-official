@@ -8,6 +8,8 @@ export interface PlaybackAuthResponse {
   expires_in_seconds: number;
   title: string;
   sprite_vtt_url?: string | null;
+  is_hls?: boolean;
+  is_processing?: boolean;
 }
 
 export interface UpsertProgressRequest {

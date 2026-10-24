@@ -8,10 +8,11 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently -k -n api,web,admin \"npm run dev --workspace=apps/backend\" \"npm run dev --workspace=apps/web\" \"npm run dev --workspace=apps/admin\"",
+    "dev": "concurrently -k -n api,web,admin,worker \"npm run dev --workspace=apps/backend\" \"npm run dev --workspace=apps/web\" \"npm run dev --workspace=apps/admin\" \"npm run dev:worker\"",
     "dev:backend": "npm run dev --workspace=apps/backend",
     "dev:web": "npm run dev --workspace=apps/web",
     "dev:admin": "npm run dev --workspace=apps/admin",
+    "dev:worker": "PYTHONPATH=apps/video-worker apps/backend/.venv/bin/python -m src.worker",
     "dev:setup": "npm run dev:setup --workspace=apps/backend",
     "dev:docker": "docker-compose up --build",
     "down": "docker-compose down",

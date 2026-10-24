@@ -252,6 +252,24 @@ async def complete_chunked_upload(
                     await queue_task
             except Exception as e:
                 logger.warning(f"Could not push chunked video job to Redis: {e}")
+
+        # If local host has ffmpeg available, auto-trigger background pipeline immediately
+        try:
+            import subprocess
+            import sys
+            from pathlib import Path
+            if shutil.which("ffmpeg"):
+                script_path = Path(__file__).resolve().parent.parent.parent.parent.parent / "scripts" / "process_all_pending_videos.py"
+                if script_path.exists():
+                    logger.info(f"Auto-triggering background transcoding pipeline for key '{req.key}'...")
+                    subprocess.Popen(
+                        [sys.executable, str(script_path), "--key", req.key],
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                        start_new_session=True,
+                    )
+        except Exception as te:
+            logger.warning(f"Notice during background transcode spawn: {te}")
     except Exception as e:
         logger.warning(f"Notice during chunked upload VideoJob registration: {e}")
 

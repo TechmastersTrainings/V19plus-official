@@ -187,6 +187,29 @@ class ContentService:
             genres_res = await self.db.execute(select(Genre).where(Genre.id.in_(req.genre_ids)))
             content.genres = list(genres_res.scalars().all())
 
+        if content.master_storage_key:
+            from src.modules.video_jobs.models import VideoJob, JobStatus
+            from src.core.config import settings
+
+            j_stmt = (
+                select(VideoJob)
+                .where(VideoJob.source_file_key == content.master_storage_key)
+                .order_by(desc(VideoJob.created_at))
+                .limit(1)
+            )
+            j_res = await self.db.execute(j_stmt)
+            job = j_res.scalar_one_or_none()
+            if job:
+                if not job.content_id:
+                    job.content_id = content.id
+                if job.status == JobStatus.READY and job.target_hls_prefix and not content.hls_manifest_key:
+                    cdn_base = (settings.CDN_STREAMING_BASE_URL or "").rstrip("/")
+                    content.hls_manifest_key = f"{cdn_base}/{job.target_hls_prefix.rstrip('/')}/master.m3u8"
+                    content.sprite_vtt_key = f"{job.target_hls_prefix.rstrip('/')}/thumbnails.vtt"
+                    if job.duration_seconds and not content.duration_seconds:
+                        content.duration_seconds = int(job.duration_seconds)
+                    content.status = ContentStatus.PUBLISHED
+
         self.db.add(content)
         await self.db.commit()
         return await self.get_by_id(content.id)
@@ -197,6 +220,29 @@ class ContentService:
         update_data = req.model_dump(exclude_unset=True, exclude={"genre_ids"})
         for field, value in update_data.items():
             setattr(content, field, value)
+
+        if content.master_storage_key and not content.hls_manifest_key:
+            from src.modules.video_jobs.models import VideoJob, JobStatus
+            from src.core.config import settings
+
+            j_stmt = (
+                select(VideoJob)
+                .where(VideoJob.source_file_key == content.master_storage_key)
+                .order_by(desc(VideoJob.created_at))
+                .limit(1)
+            )
+            j_res = await self.db.execute(j_stmt)
+            job = j_res.scalar_one_or_none()
+            if job:
+                if not job.content_id:
+                    job.content_id = content.id
+                if job.status == JobStatus.READY and job.target_hls_prefix:
+                    cdn_base = (settings.CDN_STREAMING_BASE_URL or "").rstrip("/")
+                    content.hls_manifest_key = f"{cdn_base}/{job.target_hls_prefix.rstrip('/')}/master.m3u8"
+                    content.sprite_vtt_key = f"{job.target_hls_prefix.rstrip('/')}/thumbnails.vtt"
+                    if job.duration_seconds and not content.duration_seconds:
+                        content.duration_seconds = int(job.duration_seconds)
+                    content.status = ContentStatus.PUBLISHED
 
         if req.status == ContentStatus.PUBLISHED or req.is_published is True:
             content.is_published = True

@@ -145,6 +145,9 @@ export function VideoPlayer({
   const [isLoading, setIsLoading] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [rawPreviewUrl, setRawPreviewUrl] = useState<string>("");
+  const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
   const [hoverX, setHoverX] = useState<number>(0);
   const prolongedBufferTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -239,7 +242,22 @@ export function VideoPlayer({
         );
 
         if (isHls && streamUrl) {
+          setIsProcessing(false);
           setActiveSrc(formatStreamUrl(streamUrl));
+        } else if (
+          res.data?.is_processing ||
+          (res.data as any)?.status === "PROCESSING" ||
+          (content as any)?.status === "PROCESSING" ||
+          ((content as any)?.master_storage_key && !(content as any)?.hls_manifest_key)
+        ) {
+          setIsProcessing(true);
+          setRawPreviewUrl(streamUrl || "");
+          setIsLoading(false);
+          setHasError(false);
+          if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
+          pollTimeoutRef.current = setTimeout(() => {
+            if (isMounted) setReloadKey((prev) => prev + 1);
+          }, 6000);
         } else {
           console.error("No adaptive HLS stream available for this title.");
           setHasError(true);
@@ -251,6 +269,7 @@ export function VideoPlayer({
         console.error("Playback authorization failed:", err);
         const hlsFallback = (content as any)?.hls_manifest_key;
         if (hlsFallback && (hlsFallback.includes(".m3u8") || hlsFallback.includes("/hls/"))) {
+          setIsProcessing(false);
           setActiveSrc(formatStreamUrl(hlsFallback));
         } else {
           setHasError(true);
@@ -260,6 +279,10 @@ export function VideoPlayer({
 
     return () => {
       isMounted = false;
+      if (pollTimeoutRef.current) {
+        clearTimeout(pollTimeoutRef.current);
+        pollTimeoutRef.current = null;
+      }
     };
   }, [content?.id, episodeId, propSrc, (content as any)?.hls_manifest_key, reloadKey]);
 
@@ -1109,6 +1132,32 @@ export function VideoPlayer({
         </div>
       )}
 
+      {/* STREAM PROCESSING / OPTIMIZATION OVERLAY */}
+      {isProcessing && !hasError && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 text-center z-30 p-6 backdrop-blur-md">
+          <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full border-[3px] sm:border-4 border-white/20 border-t-[#FF5C00] animate-spin drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)] mb-4" />
+          <div className="mb-2 text-lg font-bold text-white tracking-wide">
+            Optimizing Video Stream
+          </div>
+          <p className="text-sm text-white/70 max-w-sm mb-5 leading-relaxed">
+            This title is currently being prepared for high-speed adaptive streaming. Playback will begin automatically once ready.
+          </p>
+          {rawPreviewUrl && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsProcessing(false);
+                setActiveSrc(formatStreamUrl(rawPreviewUrl));
+              }}
+              className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition border border-white/10 active:scale-95 cursor-pointer"
+            >
+              Watch Raw Master Preview
+            </button>
+          )}
+        </div>
+      )}
+
       {/* ERROR MODAL */}
 
       {hasError && (
@@ -1139,7 +1188,7 @@ export function VideoPlayer({
 
       {/* PROMINENT PURE-WHITE CENTER PLAY BUTTON WHEN PAUSED */}
 
-      {!isPlaying && !isBuffering && !hasError && (
+      {!isPlaying && !isBuffering && !hasError && !isProcessing && (
         <button
           type="button"
           aria-label="Play video"

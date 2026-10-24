@@ -281,8 +281,8 @@ def validate_r2(target_prefix: str):
         log(f"  ✓ Quality Tier {tier} OK: {tier_url}")
 
 
-async def sync_database(content_id: str, slug: str, target_prefix: str, duration: int, job_id: str = None):
-    log(f"💾 Updating PostgreSQL database for '{slug or content_id}'...")
+async def sync_database(content_id: str, slug: str, source_key: str, target_prefix: str, duration: int, job_id: str = None):
+    log(f"💾 Updating PostgreSQL database for '{slug or content_id or source_key}'...")
     master_url = f"{CDN_BASE}/{target_prefix}/master.m3u8"
     sprite_key = f"{target_prefix}/thumbnails.vtt"
 
@@ -304,6 +304,16 @@ async def sync_database(content_id: str, slug: str, target_prefix: str, duration
             WHERE id = $4::uuid
             """,
             master_url, sprite_key, duration, content_id
+        )
+
+    if source_key:
+        await conn.execute(
+            """
+            UPDATE content
+            SET hls_manifest_key = $1, sprite_vtt_key = $2, duration_seconds = $3, status = 'PUBLISHED', updated_at = NOW()
+            WHERE master_storage_key = $4
+            """,
+            master_url, sprite_key, duration, source_key
         )
 
     if job_id:
@@ -332,16 +342,23 @@ async def process_one(content_id: str, slug: str, source_key: str, job_id: str =
 
     os.makedirs(scratch_dir, exist_ok=True)
     try:
-        download_master_parallel(source_key, local_master)
-        meta = probe_video(local_master)
+        # If local master already exists on disk, use it; otherwise stream directly from R2 CDN to save disk space
+        if os.path.exists(local_master) and os.path.getsize(local_master) > 1024 * 1024:
+            input_source = local_master
+            log(f"Using existing local master on disk: {local_master}")
+        else:
+            input_source = f"{CDN_BASE}/{source_key.lstrip('/')}"
+            log(f"Streaming master input directly from Cloudflare R2 CDN: {input_source}")
+
+        meta = probe_video(input_source)
         duration_sec = int(meta["duration"])
         log(f"Probed duration: {duration_sec}s ({duration_sec/60:.1f} mins) | Resolution: {meta['width']}x{meta['height']}")
 
-        transcode_hls(local_master, output_hls)
-        generate_sprites(local_master, output_hls, meta["duration"])
+        transcode_hls(input_source, output_hls)
+        generate_sprites(input_source, output_hls, meta["duration"])
         upload_to_r2_parallel(output_hls, target_prefix)
         validate_r2(target_prefix)
-        await sync_database(content_id, slug, target_prefix, duration_sec, job_id)
+        await sync_database(content_id, slug, source_key, target_prefix, duration_sec, job_id)
         log(f"🎉 Successfully transcoded and published {slug or source_key}!")
     except Exception as e:
         log(f"❌ Processing failed for {slug or source_key}: {e}")
@@ -360,6 +377,11 @@ async def process_one(content_id: str, slug: str, source_key: str, job_id: str =
             await conn.execute(
                 "UPDATE content SET status = 'FAILED', updated_at = NOW() WHERE slug = $1 AND (status != 'PUBLISHED' OR hls_manifest_key IS NULL)",
                 slug
+            )
+        elif source_key:
+            await conn.execute(
+                "UPDATE content SET status = 'FAILED', updated_at = NOW() WHERE master_storage_key = $1 AND (status != 'PUBLISHED' OR hls_manifest_key IS NULL)",
+                source_key
             )
         await conn.close()
         log(f"Recorded failure in database. Content remains unpublished for safe retry.")
@@ -382,27 +404,37 @@ async def main():
         row = await conn.fetchrow("SELECT id, slug, master_storage_key FROM content WHERE slug = $1", args.slug)
         if not row or not row["master_storage_key"]:
             log(f"No content with master_storage_key found for slug: {args.slug}")
+            await conn.close()
             return
+        j_row = await conn.fetchrow("SELECT id FROM video_jobs WHERE source_file_key = $1 ORDER BY created_at DESC LIMIT 1", row["master_storage_key"])
+        job_id = str(j_row["id"]) if j_row else None
         await conn.close()
-        await process_one(str(row["id"]), row["slug"], row["master_storage_key"])
+        await process_one(str(row["id"]), row["slug"], row["master_storage_key"], job_id)
         return
 
     if args.key:
         row = await conn.fetchrow("SELECT id, slug, master_storage_key FROM content WHERE master_storage_key = $1", args.key)
+        j_row = await conn.fetchrow("SELECT id FROM video_jobs WHERE source_file_key = $1 ORDER BY created_at DESC LIMIT 1", args.key)
         await conn.close()
         content_id = str(row["id"]) if row else None
         slug = row["slug"] if row else None
-        await process_one(content_id, slug, args.key)
+        job_id = str(j_row["id"]) if j_row else None
+        await process_one(content_id, slug, args.key, job_id)
         return
 
     # Process all PENDING or QUEUED jobs in video_jobs
     jobs = await conn.fetch("SELECT id, source_file_key, content_id FROM video_jobs WHERE status IN ('PENDING', 'QUEUED') ORDER BY created_at ASC")
     log(f"Found {len(jobs)} pending/queued video jobs in PostgreSQL.")
     for j in jobs:
-        c_row = await conn.fetchrow("SELECT slug FROM content WHERE id = $1", j["content_id"]) if j["content_id"] else None
+        c_row = None
+        if j["content_id"]:
+            c_row = await conn.fetchrow("SELECT id, slug FROM content WHERE id = $1", j["content_id"])
+        if not c_row and j["source_file_key"]:
+            c_row = await conn.fetchrow("SELECT id, slug FROM content WHERE master_storage_key = $1", j["source_file_key"])
+        content_id = str(c_row["id"]) if c_row else (str(j["content_id"]) if j["content_id"] else None)
         slug = c_row["slug"] if c_row else None
         try:
-            await process_one(str(j["content_id"]) if j["content_id"] else None, slug, j["source_file_key"], str(j["id"]))
+            await process_one(content_id, slug, j["source_file_key"], str(j["id"]))
         except Exception:
             log(f"Skipping to next job after failure on job {j['id']}...")
 

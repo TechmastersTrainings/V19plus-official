@@ -57,11 +57,11 @@ services:
       - key: R2_SECRET_ACCESS_KEY
         sync: false
       - key: R2_MASTERS_BUCKET
-        value: v19plus-masters
+        value: v19plus-r2-backend
       - key: R2_STREAMING_BUCKET
-        value: v19plus-streaming
+        value: v19plus-r2-backend
       - key: CDN_STREAMING_BASE_URL
-        value: https://stream.v19plus.com
+        value: https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev
       - key: PLAYBACK_TOKEN_SECRET
         generateValue: true
       # Razorpay Payment Gateway (Server-Side Verified)
@@ -94,9 +94,7 @@ services:
       - key: ENVIRONMENT
         value: production
       - key: DATABASE_URL
-        fromDatabase:
-          name: v19plus-postgres
-          property: connectionString
+        sync: false
       - key: REDIS_URL
         sync: false
       - key: R2_ACCOUNT_ID
@@ -106,9 +104,11 @@ services:
       - key: R2_SECRET_ACCESS_KEY
         sync: false
       - key: R2_MASTERS_BUCKET
-        value: v19plus-masters
+        value: v19plus-r2-backend
       - key: R2_STREAMING_BUCKET
-        value: v19plus-streaming
+        value: v19plus-r2-backend
+      - key: CDN_STREAMING_BASE_URL
+        value: https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev
       - key: SENTRY_DSN
         sync: false
       - key: WORKER_CONCURRENCY
