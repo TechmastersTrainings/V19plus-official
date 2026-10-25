@@ -98,7 +98,9 @@ class ContentCreate(BaseModel):
 
 class ContentUpdate(BaseModel):
     title: Optional[str] = None
+    slug: Optional[str] = None
     description: Optional[str] = None
+    content_type: Optional[ContentType] = None
     release_year: Optional[int] = None
     rating: Optional[str] = None
     duration_seconds: Optional[Union[int, float]] = None

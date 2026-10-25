@@ -217,9 +217,19 @@ class ContentService:
     async def update_content(self, content_id: uuid.UUID, req: ContentUpdate) -> Content:
         content = await self.get_by_id(content_id)
 
-        update_data = req.model_dump(exclude_unset=True, exclude={"genre_ids"})
+        update_data = req.model_dump(exclude_unset=True, exclude={"genre_ids", "slug"})
         for field, value in update_data.items():
             setattr(content, field, value)
+
+        if req.slug:
+            clean_slug = slugify(req.slug)
+            if clean_slug and clean_slug != content.slug:
+                existing = await self.db.execute(
+                    select(Content).where(Content.slug == clean_slug, Content.id != content.id)
+                )
+                if existing.scalar_one_or_none():
+                    raise ConflictException(f"Content with slug '{clean_slug}' already exists.")
+                content.slug = clean_slug
 
         if content.master_storage_key and not content.hls_manifest_key:
             from src.modules.video_jobs.models import VideoJob, JobStatus

@@ -55,10 +55,12 @@ import {
   CheckCircle,
   Wifi,
   FolderArchive,
+  Copy,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { contentApi, Content, Genre } from '../../../api/content';
 import { mediaApi } from '../../../api/media';
+import { ImageUploadDropzone } from '../../../components/admin/ImageUploadDropzone';
 import {
   adminApi,
   DashboardStats,
@@ -124,11 +126,14 @@ export default function AdminStudioDesk() {
   const [loadingCatalog, setLoadingCatalog] = useState(false);
   const [catalogSearch, setCatalogSearch] = useState('');
   const [catalogTypeFilter, setCatalogTypeFilter] = useState('ALL');
+  const [catalogStatusFilter, setCatalogStatusFilter] = useState<'ALL' | 'PUBLISHED' | 'DRAFT'>('ALL');
+  const [catalogSort, setCatalogSort] = useState<'newest' | 'oldest' | 'title_asc' | 'runtime_desc'>('newest');
   const [catalogViewMode, setCatalogViewMode] = useState<'grid' | 'table'>('grid');
 
   // Edit Content Modal State
   const [editingContent, setEditingContent] = useState<Content | null>(null);
   const [editTitle, setEditTitle] = useState('');
+  const [editSlug, setEditSlug] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editType, setEditType] = useState('MOVIE');
   const [editYear, setEditYear] = useState(2026);
@@ -137,11 +142,18 @@ export default function AdminStudioDesk() {
   const [editThumbnailUrl, setEditThumbnailUrl] = useState('');
   const [editBackdropUrl, setEditBackdropUrl] = useState('');
   const [editTrailerUrl, setEditTrailerUrl] = useState('');
+  const [editMasterStorageKey, setEditMasterStorageKey] = useState('');
+  const [editHlsManifestKey, setEditHlsManifestKey] = useState('');
   const [editIsFeatured, setEditIsFeatured] = useState(false);
   const [editIsOriginal, setEditIsOriginal] = useState(false);
   const [editIsPublished, setEditIsPublished] = useState(true);
   const [editGenreIds, setEditGenreIds] = useState<string[]>([]);
   const [editSubmitting, setEditSubmitting] = useState(false);
+
+  // Video Inspection & Safe Deletion State
+  const [inspectingContent, setInspectingContent] = useState<Content | null>(null);
+  const [deletingContent, setDeletingContent] = useState<Content | null>(null);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
 
   // 2. Upload Video Form State (WORKING ENGINE)
   const [title, setTitle] = useState('');
@@ -413,16 +425,39 @@ export default function AdminStudioDesk() {
   }, [catalogItems]);
 
   const filteredCatalog = useMemo(() => {
-    return catalogItems.filter((item) => {
+    const list = catalogItems.filter((item) => {
       const matchType =
         catalogTypeFilter === 'ALL' ||
         (item.content_type || item.type || '').toUpperCase() === catalogTypeFilter;
+      const isPub = item.status === 'PUBLISHED' || item.is_published;
+      const matchStatus =
+        catalogStatusFilter === 'ALL' ||
+        (catalogStatusFilter === 'PUBLISHED' && isPub) ||
+        (catalogStatusFilter === 'DRAFT' && !isPub);
+      const query = catalogSearch.toLowerCase().trim();
       const matchSearch =
-        !catalogSearch.trim() ||
-        item.title.toLowerCase().includes(catalogSearch.toLowerCase().trim());
-      return matchType && matchSearch;
+        !query ||
+        item.title.toLowerCase().includes(query) ||
+        (item.description && item.description.toLowerCase().includes(query)) ||
+        (item.slug && item.slug.toLowerCase().includes(query));
+      return matchType && matchStatus && matchSearch;
     });
-  }, [catalogItems, catalogTypeFilter, catalogSearch]);
+
+    return [...list].sort((a, b) => {
+      if (catalogSort === 'oldest') {
+        return (a.release_year || a.releaseYear || 0) - (b.release_year || b.releaseYear || 0);
+      }
+      if (catalogSort === 'title_asc') {
+        return a.title.localeCompare(b.title);
+      }
+      if (catalogSort === 'runtime_desc') {
+        const durA = a.duration_seconds || (a.duration || 0) * 60;
+        const durB = b.duration_seconds || (b.duration || 0) * 60;
+        return durB - durA;
+      }
+      return (b.release_year || b.releaseYear || 0) - (a.release_year || a.releaseYear || 0);
+    });
+  }, [catalogItems, catalogTypeFilter, catalogStatusFilter, catalogSearch, catalogSort]);
 
   // ─── Handlers: Video & Content CRUD ────────────────────────────────────────
 
@@ -614,6 +649,7 @@ export default function AdminStudioDesk() {
   const handleOpenEditModal = (item: Content) => {
     setEditingContent(item);
     setEditTitle(item.title || '');
+    setEditSlug(item.slug || '');
     setEditDescription(item.description || '');
     setEditType((item.content_type || item.type || 'MOVIE').toUpperCase());
     setEditYear(item.release_year || item.releaseYear || 2026);
@@ -624,6 +660,8 @@ export default function AdminStudioDesk() {
     setEditThumbnailUrl(item.thumbnail_url || item.thumbnailUrl || '');
     setEditBackdropUrl(item.backdrop_url || item.backdropUrl || '');
     setEditTrailerUrl(item.trailer_url || item.trailerUrl || '');
+    setEditMasterStorageKey(item.master_storage_key || '');
+    setEditHlsManifestKey(item.hls_manifest_key || item.hlsUrl || '');
     setEditIsFeatured(!!(item.is_featured || item.isFeatured));
     setEditIsOriginal(!!(item.is_original || item.isOriginal));
     setEditIsPublished(item.status === 'PUBLISHED' || !!item.is_published);
@@ -638,6 +676,7 @@ export default function AdminStudioDesk() {
     try {
       await contentApi.update(editingContent.id, {
         title: editTitle.trim(),
+        slug: editSlug.trim() || undefined,
         description: editDescription.trim(),
         content_type: editType,
         release_year: Math.round(Number(editYear) || 2026),
@@ -646,6 +685,8 @@ export default function AdminStudioDesk() {
         thumbnail_url: editThumbnailUrl.trim() || undefined,
         backdrop_url: editBackdropUrl.trim() || undefined,
         trailer_url: editTrailerUrl.trim() || undefined,
+        master_storage_key: editMasterStorageKey.trim() || undefined,
+        hls_manifest_key: editHlsManifestKey.trim() || undefined,
         is_featured: editIsFeatured,
         is_original: editIsOriginal,
         is_published: editIsPublished,
@@ -663,16 +704,22 @@ export default function AdminStudioDesk() {
     }
   };
 
-  const handleDeleteContent = async (item: Content) => {
-    if (!window.confirm(`Are you sure you want to permanently delete "${item.title}"?`)) {
-      return;
-    }
+  const handleDeleteContent = (item: Content) => {
+    setDeletingContent(item);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingContent) return;
+    setDeleteSubmitting(true);
     try {
-      await contentApi.delete(item.id);
-      toast.success(`Deleted "${item.title}" from catalog.`);
-      setCatalogItems((prev) => prev.filter((c) => c.id !== item.id));
+      await contentApi.delete(deletingContent.id);
+      toast.success(`Deleted "${deletingContent.title}" from catalog.`);
+      setCatalogItems((prev) => prev.filter((c) => c.id !== deletingContent.id));
+      setDeletingContent(null);
     } catch (err: any) {
-      toast.error('Failed to delete content.');
+      toast.error(err.response?.data?.detail || 'Failed to delete content.');
+    } finally {
+      setDeleteSubmitting(false);
     }
   };
 
@@ -2017,6 +2064,27 @@ export default function AdminStudioDesk() {
                     <option value="EVENT">Live Events</option>
                   </select>
 
+                  <select
+                    value={catalogStatusFilter}
+                    onChange={(e) => setCatalogStatusFilter(e.target.value as any)}
+                    className="bg-[#1A1613] border border-white/10 rounded-2xl px-4 py-3 text-sm text-white font-semibold outline-none cursor-pointer"
+                  >
+                    <option value="ALL">All Status</option>
+                    <option value="PUBLISHED">Published</option>
+                    <option value="DRAFT">Drafts</option>
+                  </select>
+
+                  <select
+                    value={catalogSort}
+                    onChange={(e) => setCatalogSort(e.target.value as any)}
+                    className="bg-[#1A1613] border border-white/10 rounded-2xl px-4 py-3 text-sm text-white font-semibold outline-none cursor-pointer"
+                  >
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="title_asc">Title (A-Z)</option>
+                    <option value="runtime_desc">Runtime</option>
+                  </select>
+
                   {/* Grid vs Table View Mode Switcher */}
                   <div className="flex items-center p-1 rounded-2xl bg-[#1A1613] border border-white/10">
                     <button
@@ -2136,18 +2204,26 @@ export default function AdminStudioDesk() {
                                   <span>Watch Stream</span>
                                 </Link>
 
-                                <div className="flex items-center gap-2 w-full">
+                                <div className="grid grid-cols-3 gap-2 w-full">
+                                  <button
+                                    onClick={() => setInspectingContent(item)}
+                                    className="flex items-center justify-center py-2 rounded-xl bg-white/10 hover:bg-white/20 text-cyan-400 hover:text-cyan-300 text-xs font-bold border border-white/20 transition-colors cursor-pointer"
+                                    title="Inspect Details & Stream Keys"
+                                  >
+                                    <Eye className="w-4 h-4" />
+                                  </button>
+
                                   <button
                                     onClick={() => handleOpenEditModal(item)}
-                                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold border border-white/20 transition-colors cursor-pointer"
+                                    className="flex items-center justify-center py-2 rounded-xl bg-white/10 hover:bg-white/20 text-[#FF8A00] hover:text-orange-300 text-xs font-bold border border-white/20 transition-colors cursor-pointer"
+                                    title="Edit Metadata & Artwork"
                                   >
-                                    <Edit3 className="w-3.5 h-3.5 text-[#FF8A00]" />
-                                    <span>Edit</span>
+                                    <Edit3 className="w-4 h-4" />
                                   </button>
 
                                   <button
                                     onClick={() => handleDeleteContent(item)}
-                                    className="p-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 transition-colors cursor-pointer"
+                                    className="flex items-center justify-center py-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 transition-colors cursor-pointer"
                                     title="Delete from Database"
                                   >
                                     <Trash2 className="w-4 h-4" />
@@ -2249,6 +2325,14 @@ export default function AdminStudioDesk() {
 
                                 <td className="py-4 px-5 text-right">
                                   <div className="flex items-center justify-end gap-2">
+                                    <button
+                                      onClick={() => setInspectingContent(item)}
+                                      title="Inspect Details & Stream Keys"
+                                      className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer"
+                                    >
+                                      <Eye className="w-4 h-4" />
+                                    </button>
+
                                     <Link
                                       href={`/watch/${item.slug}`}
                                       target="_blank"
@@ -2569,69 +2653,26 @@ export default function AdminStudioDesk() {
                       </div>
                     </div>
 
-                    {/* Artwork URLs with Direct Cloudflare R2 Image Upload */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <label className="block text-sm font-bold uppercase tracking-wider text-white/95">
-                            Poster Thumbnail (Portrait 2:3)
-                          </label>
-                          <label className="text-sm font-bold text-[#FF8A00] hover:text-[#FFA033] cursor-pointer flex items-center gap-1.5 transition-colors">
-                            <UploadCloud className="w-4 h-4" />
-                            <span>{uploadingPoster ? 'Uploading to R2...' : 'Upload Image'}</span>
-                            <input
-                              type="file"
-                              accept="image/jpeg,image/png,image/webp,image/*"
-                              disabled={uploadingPoster}
-                              onChange={handleUploadPosterImage}
-                              className="hidden"
-                            />
-                          </label>
-                        </div>
-                        <div className="flex gap-2 items-center">
-                          <input
-                            type="url"
-                            value={thumbnailUrl}
-                            onChange={(e) => setThumbnailUrl(e.target.value)}
-                            placeholder="https://... or click 'Upload Image'"
-                            className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] rounded-xl px-4 py-3.5 text-base sm:text-sm text-white placeholder-[#8E8679] outline-none"
-                          />
-                        </div>
-                        <span className="text-xs sm:text-sm text-[#B0A79B] mt-2 block leading-normal">
-                          Vertical poster for cards & mobile (auto-uploaded to Cloudflare R2 or paste URL).
-                        </span>
-                      </div>
-
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <label className="block text-sm font-bold uppercase tracking-wider text-white/95">
-                            Backdrop Landscape (16:9 Hero)
-                          </label>
-                          <label className="text-sm font-bold text-[#FF8A00] hover:text-[#FFA033] cursor-pointer flex items-center gap-1.5 transition-colors">
-                            <UploadCloud className="w-4 h-4" />
-                            <span>{uploadingBackdrop ? 'Uploading to R2...' : 'Upload Image'}</span>
-                            <input
-                              type="file"
-                              accept="image/jpeg,image/png,image/webp,image/*"
-                              disabled={uploadingBackdrop}
-                              onChange={handleUploadBackdropImage}
-                              className="hidden"
-                            />
-                          </label>
-                        </div>
-                        <div className="flex gap-2 items-center">
-                          <input
-                            type="url"
-                            value={backdropUrl}
-                            onChange={(e) => setBackdropUrl(e.target.value)}
-                            placeholder="https://... or click 'Upload Image'"
-                            className="w-full bg-[#1A1613] border border-white/15 focus:border-[#FF5C00] rounded-xl px-4 py-3.5 text-base sm:text-sm text-white placeholder-[#8E8679] outline-none"
-                          />
-                        </div>
-                        <span className="text-xs sm:text-sm text-[#B0A79B] mt-2 block leading-normal">
-                          Wide banner shown on the homepage hero carousel & title details.
-                        </span>
-                      </div>
+                    {/* Direct Image File Uploaders (Cloudflare R2) */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 bg-white/[0.02] border border-white/10 rounded-2xl p-5">
+                      <ImageUploadDropzone
+                        label="Poster Thumbnail (Portrait 2:3)"
+                        sublabel="Vertical artwork for catalog posters, mobile display, and content cards"
+                        aspect="poster"
+                        imageUrl={thumbnailUrl}
+                        onImageUploaded={(url) => setThumbnailUrl(url)}
+                        onImageRemoved={() => setThumbnailUrl('')}
+                        inputId="new-upload-poster-input"
+                      />
+                      <ImageUploadDropzone
+                        label="Backdrop Artwork (Landscape 16:9)"
+                        sublabel="Wide widescreen banner for homepage hero carousel and title header"
+                        aspect="backdrop"
+                        imageUrl={backdropUrl}
+                        onImageUploaded={(url) => setBackdropUrl(url)}
+                        onImageRemoved={() => setBackdropUrl('')}
+                        inputId="new-upload-backdrop-input"
+                      />
                     </div>
 
                     {/* Direct Stream Manifest Option */}
@@ -3347,18 +3388,32 @@ export default function AdminStudioDesk() {
               </button>
             </div>
 
-            <form onSubmit={handleSaveEditContent} className="space-y-4">
-              <div>
-                <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
-                  Title
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={editTitle}
-                  onChange={(e) => setEditTitle(e.target.value)}
-                  className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3 text-base sm:text-sm text-white outline-none focus:border-[#FF5C00]"
-                />
+            <form onSubmit={handleSaveEditContent} className="space-y-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
+                    Title *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3 text-base sm:text-sm text-white outline-none focus:border-[#FF5C00]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
+                    Slug (URL Identifier)
+                  </label>
+                  <input
+                    type="text"
+                    value={editSlug}
+                    onChange={(e) => setEditSlug(e.target.value)}
+                    placeholder="e.g. sixth-task"
+                    className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3 text-base sm:text-sm text-white font-mono outline-none focus:border-[#FF5C00]"
+                  />
+                </div>
               </div>
 
               <div>
@@ -3373,71 +3428,150 @@ export default function AdminStudioDesk() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Direct Image File Uploaders for Edit Modal */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 bg-white/[0.02] border border-white/10 rounded-2xl p-4 sm:p-5">
+                <ImageUploadDropzone
+                  label="Thumbnail Poster (Portrait 2:3)"
+                  sublabel="Update or upload new vertical card poster"
+                  aspect="poster"
+                  imageUrl={editThumbnailUrl}
+                  onImageUploaded={(url) => setEditThumbnailUrl(url)}
+                  onImageRemoved={() => setEditThumbnailUrl('')}
+                  inputId="edit-modal-poster-input"
+                />
+                <ImageUploadDropzone
+                  label="Backdrop Artwork (Landscape 16:9)"
+                  sublabel="Update or upload new widescreen hero banner"
+                  aspect="backdrop"
+                  imageUrl={editBackdropUrl}
+                  onImageUploaded={(url) => setEditBackdropUrl(url)}
+                  onImageRemoved={() => setEditBackdropUrl('')}
+                  inputId="edit-modal-backdrop-input"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
-                  <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
-                    Type
+                  <label className="block text-xs font-bold uppercase tracking-wider text-white/95 mb-1.5">
+                    Format
                   </label>
                   <select
                     value={editType}
                     onChange={(e) => setEditType(e.target.value)}
-                    className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-3.5 py-3 text-base sm:text-sm text-white outline-none cursor-pointer"
+                    className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white outline-none cursor-pointer"
                   >
                     <option value="MOVIE">Movie</option>
                     <option value="SERIES">Series</option>
                     <option value="DOCUMENTARY">Documentary</option>
+                    <option value="EVENT">Live Event</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
-                    Year
+                  <label className="block text-xs font-bold uppercase tracking-wider text-white/95 mb-1.5">
+                    Release Year
                   </label>
                   <input
                     type="number"
                     value={editYear}
                     onChange={(e) => setEditYear(Number(e.target.value))}
-                    className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-3.5 py-3 text-base sm:text-sm text-white outline-none"
+                    className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-white/95 mb-1.5">
                     Runtime (Mins)
                   </label>
                   <input
                     type="number"
                     value={editDurationMinutes}
                     onChange={(e) => setEditDurationMinutes(Number(e.target.value))}
-                    className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-3.5 py-3 text-base sm:text-sm text-white outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
-                    Thumbnail URL
-                  </label>
-                  <input
-                    type="url"
-                    value={editThumbnailUrl}
-                    onChange={(e) => setEditThumbnailUrl(e.target.value)}
-                    className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3 text-base sm:text-sm text-white outline-none"
+                    className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold uppercase tracking-wider text-white/95 mb-2">
-                    Backdrop URL
+                  <label className="block text-xs font-bold uppercase tracking-wider text-white/95 mb-1.5">
+                    Maturity Rating
                   </label>
-                  <input
-                    type="url"
-                    value={editBackdropUrl}
-                    onChange={(e) => setEditBackdropUrl(e.target.value)}
-                    className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-4 py-3 text-base sm:text-sm text-white outline-none"
-                  />
+                  <select
+                    value={editRating}
+                    onChange={(e) => setEditRating(e.target.value)}
+                    className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-3 py-2.5 text-xs text-white outline-none cursor-pointer"
+                  >
+                    <option value="U">U (Universal)</option>
+                    <option value="U/A 7+">U/A 7+</option>
+                    <option value="U/A 13+">U/A 13+</option>
+                    <option value="U/A 16+">U/A 16+</option>
+                    <option value="A 18+">A 18+</option>
+                  </select>
                 </div>
               </div>
 
-              <div className="flex items-center gap-6 pt-2">
+              {/* Assign Genres / Tags */}
+              {genres.length > 0 && (
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-white/95 mb-2">
+                    Assign Genres / Categories
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {genres.map((g) => {
+                      const isSelected = editGenreIds.includes(g.id);
+                      return (
+                        <button
+                          key={g.id}
+                          type="button"
+                          onClick={() => {
+                            setEditGenreIds((prev) =>
+                              prev.includes(g.id) ? prev.filter((id) => id !== g.id) : [...prev, g.id]
+                            );
+                          }}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#FF5C00] text-white shadow-[0_0_12px_rgba(255,92,0,0.4)]'
+                              : 'bg-white/5 text-[#A8A095] hover:text-white border border-white/10'
+                          }`}
+                        >
+                          {g.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Advanced Video Storage Keys & Stream Manifest */}
+              <div className="bg-white/[0.02] border border-white/10 rounded-2xl p-4 sm:p-5 space-y-3">
+                <div className="text-xs font-bold uppercase tracking-wider text-[#A8A095]">
+                  Cloudflare R2 Video Assets & Stream Manifest
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-white/80 mb-1.5">
+                      Master Video Storage Key
+                    </label>
+                    <input
+                      type="text"
+                      value={editMasterStorageKey}
+                      onChange={(e) => setEditMasterStorageKey(e.target.value)}
+                      placeholder="e.g. 84260a4f_video.mp4"
+                      className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono outline-none focus:border-[#FF5C00]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-white/80 mb-1.5">
+                      HLS Manifest Key / CDN URL
+                    </label>
+                    <input
+                      type="text"
+                      value={editHlsManifestKey}
+                      onChange={(e) => setEditHlsManifestKey(e.target.value)}
+                      placeholder="e.g. https://.../master.m3u8"
+                      className="w-full bg-[#1A1613] border border-white/15 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono outline-none focus:border-[#FF5C00]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-6 pt-1">
                 <label className="flex items-center gap-2.5 cursor-pointer text-sm font-bold text-white">
                   <input
                     type="checkbox"
@@ -3445,7 +3579,7 @@ export default function AdminStudioDesk() {
                     onChange={(e) => setEditIsPublished(e.target.checked)}
                     className="w-4 h-4 rounded border-white/20 text-[#FF5C00]"
                   />
-                  <span>Published</span>
+                  <span>Published to Catalog</span>
                 </label>
 
                 <label className="flex items-center gap-2.5 cursor-pointer text-sm font-bold text-white">
@@ -3455,7 +3589,7 @@ export default function AdminStudioDesk() {
                     onChange={(e) => setEditIsFeatured(e.target.checked)}
                     className="w-4 h-4 rounded border-white/20 text-[#FF5C00]"
                   />
-                  <span>Featured Hero</span>
+                  <span>Featured Hero Carousel</span>
                 </label>
 
                 <label className="flex items-center gap-2.5 cursor-pointer text-sm font-bold text-white">
@@ -3486,6 +3620,236 @@ export default function AdminStudioDesk() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 1.1 DELETE VIDEO CONFIRMATION MODAL */}
+      {deletingContent && (
+        <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4 backdrop-blur-md">
+          <div className="w-full max-w-md bg-[#120F0D] border border-red-500/30 rounded-3xl p-6 sm:p-7 space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center gap-2 text-red-400">
+                <Trash2 className="w-5 h-5" />
+                <h3 className="text-lg font-black text-white">Delete Video</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDeletingContent(null)}
+                className="text-[#8C8478] hover:text-white p-1 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex items-start gap-4 p-3 bg-red-500/10 border border-red-500/20 rounded-2xl">
+              <img
+                src={deletingContent.thumbnail_url || deletingContent.thumbnailUrl || '/placeholder.png'}
+                alt={deletingContent.title}
+                className="w-16 h-24 object-cover rounded-xl bg-black/50 border border-white/10 shrink-0"
+              />
+              <div className="space-y-1 text-sm">
+                <h4 className="font-bold text-white line-clamp-1">{deletingContent.title}</h4>
+                <p className="text-xs text-[#A8A095]">
+                  {deletingContent.content_type || deletingContent.type || 'MOVIE'} •{' '}
+                  {deletingContent.release_year || 2026}
+                </p>
+                <p className="text-xs text-red-300/90 font-medium pt-1">
+                  This action is permanent and will remove the title, stream associations, and database records.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeletingContent(null)}
+                disabled={deleteSubmitting}
+                className="px-5 py-2.5 rounded-xl text-sm font-semibold text-[#A8A095] hover:text-white bg-white/5 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={deleteSubmitting}
+                className="px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-500 transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-2"
+              >
+                {deleteSubmitting ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    <span>Permanently Delete</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 1.2 VIDEO DETAILS & STREAM INSPECTOR MODAL */}
+      {inspectingContent && (
+        <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4 backdrop-blur-md">
+          <div className="w-full max-w-2xl bg-[#120F0D] border border-white/15 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3.5 border-b border-white/10">
+              <div className="flex items-center gap-2.5">
+                <Eye className="w-5 h-5 text-[#FF5C00]" />
+                <h3 className="text-lg sm:text-xl font-black text-white">Video Details & Stream Inspector</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setInspectingContent(null)}
+                className="text-[#8C8478] hover:text-white p-1 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Backdrop / Poster Banner Preview */}
+            <div className="relative rounded-2xl overflow-hidden bg-[#1A1613] border border-white/10 aspect-[16/9] max-h-56 w-full">
+              <img
+                src={inspectingContent.backdrop_url || inspectingContent.thumbnail_url || '/placeholder.png'}
+                alt={inspectingContent.title}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#120F0D] via-black/40 to-transparent" />
+              <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
+                <div>
+                  <h4 className="text-xl font-black text-white drop-shadow-md">{inspectingContent.title}</h4>
+                  <div className="flex items-center gap-2 text-xs text-[#D4CDC5] mt-1 font-semibold">
+                    <span className="px-2 py-0.5 rounded bg-white/20 backdrop-blur-md">
+                      {inspectingContent.content_type || inspectingContent.type || 'MOVIE'}
+                    </span>
+                    <span>{inspectingContent.release_year || 2026}</span>
+                    <span>•</span>
+                    <span>{inspectingContent.rating || 'U/A 13+'}</span>
+                    {inspectingContent.duration_seconds && (
+                      <>
+                        <span>•</span>
+                        <span>
+                          {Math.floor(inspectingContent.duration_seconds / 60)}m{' '}
+                          {inspectingContent.duration_seconds % 60}s
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <Link
+                  href={`/watch/${inspectingContent.slug}`}
+                  target="_blank"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#FF5C00] hover:bg-[#FF6B1A] text-white text-xs font-bold transition-all shadow-lg cursor-pointer"
+                >
+                  <Play className="w-3.5 h-3.5 fill-current" />
+                  <span>Play Stream</span>
+                </Link>
+              </div>
+            </div>
+
+            {/* Description */}
+            {inspectingContent.description && (
+              <p className="text-sm text-[#C8C2B8] leading-relaxed">
+                {inspectingContent.description}
+              </p>
+            )}
+
+            {/* Detailed Properties Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div className="bg-white/[0.03] border border-white/10 rounded-xl p-3 space-y-1">
+                <span className="text-[#8C8478] font-bold uppercase tracking-wider block">Content ID</span>
+                <span className="font-mono text-white select-all break-all">{inspectingContent.id}</span>
+              </div>
+              <div className="bg-white/[0.03] border border-white/10 rounded-xl p-3 space-y-1">
+                <span className="text-[#8C8478] font-bold uppercase tracking-wider block">Slug</span>
+                <span className="font-mono text-white select-all">{inspectingContent.slug}</span>
+              </div>
+              <div className="bg-white/[0.03] border border-white/10 rounded-xl p-3 space-y-1 sm:col-span-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[#8C8478] font-bold uppercase tracking-wider">HLS Manifest URL</span>
+                  {inspectingContent.hls_manifest_key && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(inspectingContent.hls_manifest_key || '');
+                        toast.success('HLS Stream URL copied to clipboard!');
+                      }}
+                      className="text-[#FF8A00] hover:text-[#FFA033] flex items-center gap-1 text-[11px] font-bold cursor-pointer"
+                    >
+                      <Copy className="w-3 h-3" />
+                      <span>Copy URL</span>
+                    </button>
+                  )}
+                </div>
+                <span className="font-mono text-white select-all break-all block">
+                  {inspectingContent.hls_manifest_key || 'No HLS manifest key set'}
+                </span>
+              </div>
+              <div className="bg-white/[0.03] border border-white/10 rounded-xl p-3 space-y-1 sm:col-span-2">
+                <span className="text-[#8C8478] font-bold uppercase tracking-wider block">Master Storage Key</span>
+                <span className="font-mono text-white select-all break-all block">
+                  {inspectingContent.master_storage_key || 'None (Direct manifest mode)'}
+                </span>
+              </div>
+            </div>
+
+            {/* Genres */}
+            {inspectingContent.genres && inspectingContent.genres.length > 0 && (
+              <div className="space-y-1.5">
+                <span className="text-xs font-bold text-[#8C8478] uppercase tracking-wider">Genres</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {inspectingContent.genres.map((g) => (
+                    <span
+                      key={g.id}
+                      className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-xs font-bold text-white"
+                    >
+                      {g.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Bottom Actions */}
+            <div className="flex items-center justify-between pt-4 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => {
+                  const target = inspectingContent;
+                  setInspectingContent(null);
+                  handleDeleteContent(target);
+                }}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-bold transition-colors cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete Video</span>
+              </button>
+
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const target = inspectingContent;
+                    setInspectingContent(null);
+                    handleOpenEditModal(target);
+                  }}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#FF5C00] hover:bg-[#FF6B1A] text-white text-xs font-bold transition-colors cursor-pointer"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>Edit Metadata</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInspectingContent(null)}
+                  className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -57,6 +57,7 @@ export interface Content {
   videoUrl?: string;
   hlsUrl?: string;
   hls_manifest_key?: string;
+  master_storage_key?: string;
   status?: string;
   trailerUrl?: string;
   trailer_url?: string;
