@@ -94,6 +94,16 @@ class Settings(BaseSettings):
                 v = re.sub(r"([?&])sslmode=([^&]+)", r"\1ssl=\2", v)
         return v
 
+    @field_validator("DATABASE_SYNC_URL", mode="before")
+    @classmethod
+    def assemble_db_sync_url(cls, v: str) -> str:
+        if isinstance(v, str):
+            if v.startswith("postgres://"):
+                v = v.replace("postgres://", "postgresql://", 1)
+            elif v.startswith("postgresql+asyncpg://"):
+                v = v.replace("postgresql+asyncpg://", "postgresql://", 1)
+        return v
+
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
