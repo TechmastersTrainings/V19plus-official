@@ -54,14 +54,15 @@ const nextConfig = {
         source: '/api/:path*',
         destination: `${backendUrl}/api/:path*`,
       },
-      {
-        source: '/media/:path*',
-        destination: `${backendUrl}/api/media/:path*`,
-      },
     ];
   },
   async redirects() {
     return [
+      {
+        source: '/media/:path*',
+        destination: 'https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev/:path*',
+        permanent: false,
+      },
       {
         source: '/deletion',
         destination: '/delete-account',
