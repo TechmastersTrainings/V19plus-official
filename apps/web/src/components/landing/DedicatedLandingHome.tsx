@@ -22,6 +22,9 @@ import {
   Volume2,
 } from 'lucide-react';
 import { Card } from '../ui/Card';
+import { useTrending } from '../../hooks/useContent';
+import { ContentCard } from '../content/ContentCard';
+import { FALLBACK_CATALOG, type Content } from '../../api/content';
 
 interface FaqItem {
   q: string;
@@ -55,6 +58,12 @@ export function DedicatedLandingHome() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+
+  const { data: trendingData } = useTrending();
+  const trending: Content[] =
+    Array.isArray(trendingData) && trendingData.length > 0
+      ? (trendingData as Content[])
+      : FALLBACK_CATALOG;
 
   const handleGetStarted = (e: React.FormEvent) => {
     e.preventDefault();
@@ -197,6 +206,39 @@ export function DedicatedLandingHome() {
 
       {/* Radiant Horizontal Border Divider */}
       <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-[#FF5C00]/40 to-transparent" />
+
+      {/* Trending Premieres Showcase Shelf (Real database titles including NINTH TASK) */}
+      {trending.length > 0 && (
+        <section className="relative z-20 py-12 px-4 sm:px-6 lg:px-8 border-b border-white/10 bg-[#0A0A0A]">
+          <div className="max-w-7xl mx-auto space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-6 rounded-full bg-gradient-to-b from-[#E50914] to-[#FF5C00]" />
+                  <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                    Trending Now on V19Plus
+                  </h2>
+                </div>
+                <p className="text-xs text-[#A0A0A0] mt-1 ml-3.5">
+                  Top-rated feature releases, original series, and survival challenges
+                </p>
+              </div>
+              <Link
+                href="/browse"
+                className="text-xs font-bold text-[#FF5C00] hover:text-white transition-colors"
+              >
+                Explore All &rarr;
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+              {trending.slice(0, 10).map((item) => (
+                <ContentCard key={item.id} content={item} size="md" />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* 2. Feature Section: Enjoy on Your TV */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 border-b border-white/10 bg-[#0C0C0C]">

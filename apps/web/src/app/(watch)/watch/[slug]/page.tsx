@@ -114,12 +114,19 @@ export default function WatchPage({ params }: { params: { slug: string } }) {
     if (activeEpisode) {
       const epHls = (activeEpisode as any).hls_manifest_key;
       if (epHls && (epHls.includes('.m3u8') || epHls.includes('/hls/'))) return epHls;
-      if (activeEpisode.videoUrl && (activeEpisode.videoUrl.includes('.m3u8') || activeEpisode.videoUrl.includes('/hls/'))) return activeEpisode.videoUrl;
+      if (activeEpisode.videoUrl) return activeEpisode.videoUrl;
+      if ((activeEpisode as any).master_storage_key) {
+        return `https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev/${(activeEpisode as any).master_storage_key.replace(/^\/+/, '')}`;
+      }
       return '';
     }
     const contentHls = (content as any)?.hls_manifest_key;
     if (contentHls && (contentHls.includes('.m3u8') || contentHls.includes('/hls/'))) return contentHls;
-    if (content.videoUrl && (content.videoUrl.includes('.m3u8') || content.videoUrl.includes('/hls/'))) return content.videoUrl;
+    if (content.videoUrl) return content.videoUrl;
+    if ((content as any)?.video_url) return (content as any).video_url;
+    if ((content as any)?.master_storage_key) {
+      return `https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev/${(content as any).master_storage_key.replace(/^\/+/, '')}`;
+    }
     return '';
   })();
 

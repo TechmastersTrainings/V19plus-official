@@ -34,7 +34,7 @@ export default function SportsPage() {
     selectedCategory === 'All Sports' ? undefined : selectedCategory
   );
 
-  const rawItems = ((data?.items || []) as Content[]);
+  const rawItems = ((Array.isArray(data) ? data : data?.items || []) as Content[]);
 
   const filteredAndSortedItems = useMemo(() => {
     let items = [...rawItems];

@@ -131,7 +131,7 @@ async def create_standard_order(req: StandardOrderCreateRequest):
         )
     except razorpay.errors.BadRequestError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    except (razorpay.errors.ServerNotFoundError, razorpay.errors.GatewayError) as e:
+    except (razorpay.errors.ServerError, razorpay.errors.GatewayError) as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Razorpay gateway communication error: {str(e)}",

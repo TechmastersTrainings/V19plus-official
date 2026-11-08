@@ -1,4 +1,7 @@
 import uuid
+import threading
+from pathlib import Path
+import httpx
 from datetime import datetime, timezone
 from typing import List, Optional
 from sqlalchemy import delete, desc, select
@@ -12,9 +15,27 @@ from src.modules.content.models import Content, ContentStatus, Episode, Season
 from src.modules.streaming.models import WatchHistory, Watchlist
 from src.modules.streaming.schemas import PlaybackAuthResponse, UpsertProgressRequest
 from src.modules.subscriptions.models import UserSubscription
-
-
 from src.modules.users.models import User
+
+_transcode_lock = threading.Lock()
+_active_transcode_locks = set()
+
+def try_acquire_transcode_lock(key: str) -> bool:
+    """Thread-safe acquisition of a background transcode task lock for a storage key."""
+    if not key:
+        return False
+    with _transcode_lock:
+        if key in _active_transcode_locks:
+            return False
+        _active_transcode_locks.add(key)
+        return True
+
+def release_transcode_lock(key: str) -> None:
+    """Release a transcode task lock for a storage key."""
+    if not key:
+        return
+    with _transcode_lock:
+        _active_transcode_locks.discard(key)
 
 
 class StreamingService:
@@ -88,18 +109,18 @@ class StreamingService:
             is_processing = False
             stream_url = f"/api/media/stream/{local_filename}"
         elif content.master_storage_key:
-            # Check if an HLS manifest already exists in Cloudflare R2 matching the master storage key or slug
-            stem = os.path.splitext(content.master_storage_key)[0]
+            # Check if an HLS manifest already exists in Cloudflare R2 matching the master storage key stem or slug
+            stem = Path(content.master_storage_key).stem
             candidates = [
                 f"{cdn_base}/hls/{stem}/master.m3u8",
                 f"{cdn_base}/hls/{content.slug}/master.m3u8",
+                f"{cdn_base}/hls/{content.id}/master.m3u8",
             ]
             discovered_hls = None
             try:
-                import httpx
-                with httpx.Client(headers={"User-Agent": "Mozilla/5.0"}, timeout=2.0) as client:
+                async with httpx.AsyncClient(headers={"User-Agent": "Mozilla/5.0"}, timeout=1.5) as client:
                     for cand in candidates:
-                        resp = client.head(cand)
+                        resp = await client.head(cand)
                         if resp.status_code == 200:
                             discovered_hls = cand
                             break
@@ -109,15 +130,38 @@ class StreamingService:
             if discovered_hls:
                 content.hls_manifest_key = discovered_hls
                 content.status = ContentStatus.PUBLISHED
+                if not content.sprite_vtt_key:
+                    content.sprite_vtt_key = f"hls/{stem}/thumbnails.vtt"
                 await self.db.commit()
                 is_hls = True
                 is_processing = False
                 stream_url = discovered_hls
             else:
-                # Valid master storage key present in Cloudflare R2: HLS transcoding is in progress / pending
+                # Valid master storage key present in Cloudflare R2: HLS transcoding is in progress / pending.
+                # Auto-trigger local ffmpeg background transcoding pipeline only if not already running (deduplicated)
+                if try_acquire_transcode_lock(content.master_storage_key):
+                    try:
+                        import subprocess, sys, shutil
+                        if shutil.which("ffmpeg"):
+                            script_path = Path(__file__).resolve().parent.parent.parent.parent.parent / "scripts" / "process_all_pending_videos.py"
+                            if script_path.exists():
+                                subprocess.Popen(
+                                    [sys.executable, str(script_path), "--key", content.master_storage_key],
+                                    stdout=subprocess.DEVNULL,
+                                    stderr=subprocess.DEVNULL,
+                                    start_new_session=True,
+                                )
+                            else:
+                                release_transcode_lock(content.master_storage_key)
+                        else:
+                            release_transcode_lock(content.master_storage_key)
+                    except Exception:
+                        release_transcode_lock(content.master_storage_key)
+
+                # Instant Direct Streaming: Return master MP4 URL for zero-wait immediate streaming
                 is_hls = False
-                is_processing = True
-                stream_url = f"{cdn_base}/{content.master_storage_key}"
+                is_processing = False
+                stream_url = getattr(content, "video_url", None) or f"{cdn_base}/{content.master_storage_key.lstrip('/')}"
         else:
             is_hls = True
             is_processing = False

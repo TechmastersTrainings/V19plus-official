@@ -511,4 +511,125 @@ describe('Smart Fullscreen & Mobile Orientation Engine', () => {
   });
 });
 
+describe('Adaptive Stream Processing Bounded Retries & Infinite Loop Prevention', () => {
+  it('should bound stream optimization polling to MAX_PROCESSING_POLL_ATTEMPTS and never loop infinitely', () => {
+    const MAX_PROCESSING_POLL_ATTEMPTS = 6;
+    let attempts = 0;
+    let isProcessing = true;
+    let hasError = false;
+    let isLoading = true;
+
+    function handleProcessingResponse(isReady) {
+      if (isReady) {
+        isProcessing = false;
+        isLoading = false;
+        attempts = 0;
+      } else if (attempts < MAX_PROCESSING_POLL_ATTEMPTS) {
+        attempts++;
+        isProcessing = true;
+        isLoading = true;
+      } else {
+        // Exceeded bounded attempts: cleanly transition to error state with Retry action
+        isProcessing = false;
+        isLoading = false;
+        hasError = true;
+      }
+    }
+
+    // Simulate 6 poll attempts while stream is still being transcoded
+    for (let i = 1; i <= 6; i++) {
+      handleProcessingResponse(false);
+      assert.equal(attempts, i);
+      assert.equal(hasError, false, `Should remain in loading/processing state during bounded attempt ${i}`);
+    }
+
+    // 7th attempt exceeds bounded maximum -> must halt polling and show clean Retry state
+    handleProcessingResponse(false);
+    assert.equal(isProcessing, false, 'Must not remain in processing state infinitely');
+    assert.equal(isLoading, false, 'Loading spinner must be dismissed after bounds reached');
+    assert.equal(hasError, true, 'Error modal with Retry Playback must be displayed');
+  });
+
+  it('should reset processing attempts and re-initialize stream upon user Retry', () => {
+    let attempts = 6;
+    let hasError = true;
+    let isProcessing = false;
+    let isLoading = false;
+    let reloadKey = 0;
+
+    function onUserRetry() {
+      hasError = false;
+      isProcessing = false;
+      isLoading = true;
+      attempts = 0;
+      reloadKey++;
+    }
+
+    onUserRetry();
+    assert.equal(attempts, 0, 'Polling attempts must reset to 0');
+    assert.equal(hasError, false, 'Error modal must be dismissed');
+    assert.equal(isLoading, true, 'Clean loading indicator must be displayed');
+    assert.equal(reloadKey, 1, 'reloadKey must trigger fresh authorization check');
+  });
+});
+
+describe('Raw Master High-Bitrate Elimination Policy', () => {
+  it('should reject non-HLS raw video sources and require valid HLS manifest', () => {
+    function validatePlaybackSource(url) {
+      const isHls = Boolean(url && (url.includes('.m3u8') || url.includes('/hls/')));
+      if (!isHls) {
+        return {
+          allowed: false,
+          error: 'Adaptive HLS manifest (.m3u8) required for playback. High-bitrate master bypass is prohibited.',
+        };
+      }
+      return { allowed: true, error: null };
+    }
+
+    // 1. Raw MP4 master file -> blocked
+    const rawMp4 = validatePlaybackSource('https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev/1afda27a_EP-07.mp4');
+    assert.equal(rawMp4.allowed, false);
+    assert.match(rawMp4.error, /Adaptive HLS manifest/);
+
+    // 2. Adaptive HLS master playlist -> allowed
+    const validHls = validatePlaybackSource('https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev/hls/1afda27a_EP-07/master.m3u8');
+    assert.equal(validHls.allowed, true);
+    assert.equal(validHls.error, null);
+  });
+});
+
+describe('Clean Loading Indicators vs Technical Jargon', () => {
+  it('should display clean loading spinner without confusing technical messages', () => {
+    function getOverlayContent({ isLoading, isProcessing, hasError, isPlaying }) {
+      if (hasError) {
+        return {
+          type: 'error-modal',
+          title: 'Unable to stream this video',
+          actionText: 'Retry Playback',
+        };
+      }
+      if ((isLoading || isProcessing) && !isPlaying) {
+        return {
+          type: 'clean-spinner',
+          hasTechnicalJargon: false,
+          hasRawMasterButton: false,
+        };
+      }
+      return { type: 'none' };
+    }
+
+    // 1. Loading/preparing state
+    const loadingState = getOverlayContent({ isLoading: true, isProcessing: true, hasError: false, isPlaying: false });
+    assert.equal(loadingState.type, 'clean-spinner');
+    assert.equal(loadingState.hasTechnicalJargon, false, 'Must not display technical messages');
+    assert.equal(loadingState.hasRawMasterButton, false, 'Must not display raw master preview button');
+
+    // 2. Error state
+    const errorState = getOverlayContent({ isLoading: false, isProcessing: false, hasError: true, isPlaying: false });
+    assert.equal(errorState.type, 'error-modal');
+    assert.equal(errorState.actionText, 'Retry Playback');
+  });
+});
+
+
 

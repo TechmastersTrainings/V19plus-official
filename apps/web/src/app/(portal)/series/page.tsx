@@ -9,7 +9,7 @@ import { useAuthStore } from '../../../store/authStore';
 import { ContentCard } from '../../../components/content/ContentCard';
 import { ContentRow } from '../../../components/content/ContentRow';
 import { Skeleton } from '../../../components/ui/Skeleton';
-import type { Content } from '../../../api/content';
+import { FALLBACK_CATALOG, type Content } from '../../../api/content';
 import { Tv, Filter, ArrowUpDown, Play, Bookmark, Check, Sparkles, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -79,15 +79,17 @@ export default function WebSeriesPage() {
     [...(Array.isArray(featuredData) ? featuredData : []), ...trendingItems, ...originalsItems].forEach((item) => {
       if (item && item.id) map.set(item.id, item as Content);
     });
-    return Array.from(map.values());
+    const pool = Array.from(map.values());
+    return pool.length > 0 ? pool : FALLBACK_CATALOG;
   }, [featuredData, trendingItems, originalsItems]);
 
-  const rawItems = ((data?.items || []) as Content[]).filter(
+  const rawItems = ((Array.isArray(data) ? data : data?.items || []) as Content[]).filter(
     (item: any) => item && (item.type === 'SERIES' || item.content_type === 'SERIES')
   );
+  const effectiveSeries = rawItems.length > 0 ? rawItems : allVault;
 
   const filteredAndSortedItems = useMemo(() => {
-    let items = [...rawItems];
+    let items = [...effectiveSeries];
 
     if (selectedLanguage !== 'All Languages') {
       items = items.filter((item: any) => {
@@ -108,7 +110,7 @@ export default function WebSeriesPage() {
     }
 
     return items;
-  }, [rawItems, selectedLanguage, sortBy]);
+  }, [effectiveSeries, selectedLanguage, sortBy]);
 
   // Top spotlight series for hero billboard
   const spotlightSeries = filteredAndSortedItems[0] || allVault.find((i) => i.content_type === 'SERIES') || allVault[0] || null;

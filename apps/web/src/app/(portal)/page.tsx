@@ -17,7 +17,7 @@ import {
 import { useWatchlist } from '../../hooks/useWatchlist';
 import { useAuthStore } from '../../store/authStore';
 import { useUiStore } from '../../store/uiStore';
-import type { Content } from '../../api/content';
+import { FALLBACK_CATALOG, type Content } from '../../api/content';
 import {
   UploadCloud,
   Film,
@@ -65,13 +65,14 @@ export default function HomePage() {
     [originalsData]
   );
 
-  // Pool of all uniquely published items in the database
+  // Pool of all uniquely published items in the database (with resilient fallback)
   const allPool: Content[] = useMemo(() => {
     const map = new Map<string, Content>();
     [...featured, ...trending, ...originals].forEach((item) => {
       if (item && item.id) map.set(item.id, item);
     });
-    return Array.from(map.values());
+    const pool = Array.from(map.values());
+    return pool.length > 0 ? pool : FALLBACK_CATALOG;
   }, [featured, trending, originals]);
 
   // Masterclasses & Educational
@@ -141,8 +142,9 @@ export default function HomePage() {
   // Filtered genre items when user selects a category pill
   const filteredGenreItems: Content[] = useMemo(() => {
     if (!activeGenre) return [];
-    if (genreContent?.items && Array.isArray(genreContent.items) && genreContent.items.length > 0) {
-      return genreContent.items as Content[];
+    const genreList = Array.isArray(genreContent) ? genreContent : genreContent?.items;
+    if (Array.isArray(genreList) && genreList.length > 0) {
+      return genreList as Content[];
     }
     const target = activeGenre.toLowerCase();
     return allPool.filter((item: any) => {

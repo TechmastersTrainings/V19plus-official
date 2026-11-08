@@ -128,6 +128,22 @@ class ContentService:
         res = await self.db.execute(stmt)
         content = res.scalar_one_or_none()
         if not content:
+            # Fallback lookup: case-insensitive, or matching ep-XX / master key
+            fb_stmt = (
+                select(Content)
+                .options(
+                    selectinload(Content.genres),
+                    selectinload(Content.seasons).selectinload(Season.episodes),
+                )
+                .where(
+                    (Content.slug.ilike(slug))
+                    | (Content.master_storage_key.ilike(f"%{slug}%"))
+                )
+            )
+            fb_res = await self.db.execute(fb_stmt)
+            content = fb_res.scalars().first()
+
+        if not content:
             raise NotFoundException("Content", slug)
         return content
 
@@ -189,7 +205,7 @@ class ContentService:
 
         if content.master_storage_key:
             from src.modules.video_jobs.models import VideoJob, JobStatus
-            from src.core.config import settings
+            from src.config import settings
 
             j_stmt = (
                 select(VideoJob)
@@ -233,7 +249,7 @@ class ContentService:
 
         if content.master_storage_key and not content.hls_manifest_key:
             from src.modules.video_jobs.models import VideoJob, JobStatus
-            from src.core.config import settings
+            from src.config import settings
 
             j_stmt = (
                 select(VideoJob)

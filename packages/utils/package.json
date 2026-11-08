@@ -5,7 +5,8 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "npx tsc",
-    "dev": "npx tsc --watch"
+    "dev": "npx tsc --watch",
+    "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
     "@v19plus/types": "*"

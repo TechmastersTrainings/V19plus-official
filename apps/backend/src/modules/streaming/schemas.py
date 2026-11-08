@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 class PlaybackAuthResponse(BaseModel):
     content_id: uuid.UUID
     episode_id: Optional[uuid.UUID] = None
-    stream_url: str
+    stream_url: Optional[str] = None
     token: str
     expires_in_seconds: int
     title: str

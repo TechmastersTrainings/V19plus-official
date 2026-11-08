@@ -6,7 +6,7 @@ import { useBrowse, useTrending, useOriginals, useFeatured } from '../../../hook
 import { ContentCard } from '../../../components/content/ContentCard';
 import { ContentRow } from '../../../components/content/ContentRow';
 import { Skeleton } from '../../../components/ui/Skeleton';
-import type { Content } from '../../../api/content';
+import { FALLBACK_CATALOG, type Content } from '../../../api/content';
 import { Search, Filter, Layers, Film } from 'lucide-react';
 
 const FORMATS = [
@@ -64,10 +64,12 @@ function BrowseContent() {
     [...(Array.isArray(featuredData) ? featuredData : []), ...trendingItems, ...originalsItems].forEach((item) => {
       if (item && item.id) map.set(item.id, item as Content);
     });
-    return Array.from(map.values());
+    const pool = Array.from(map.values());
+    return pool.length > 0 ? pool : FALLBACK_CATALOG;
   }, [featuredData, trendingItems, originalsItems]);
 
-  const items: Content[] = (data?.items || []) as Content[];
+  const rawItems: Content[] = (Array.isArray(data) ? data : data?.items || []) as Content[];
+  const items: Content[] = rawItems.length > 0 ? rawItems : (allVault.length > 0 ? allVault : FALLBACK_CATALOG);
 
   // Find active category label
   const activeFormatLabel = FORMATS.find((f) => f.value === type)?.label || (genre ? `${genre.charAt(0).toUpperCase() + genre.slice(1)}` : 'All Catalog');

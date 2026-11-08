@@ -5,6 +5,7 @@ import os
 import re
 import shutil
 import uuid
+from datetime import datetime, timezone
 from typing import Any, List, Optional
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends, Query, status, File, UploadFile, Request, HTTPException, Form, Body
@@ -239,6 +240,24 @@ async def complete_chunked_upload(
             progress_percent=0,
         )
         db.add(job)
+
+        # Associate uploaded master key directly with Content or Episode for Instant Direct Streaming
+        if content_uuid:
+            target_content = await db.get(Content, content_uuid)
+            if target_content:
+                target_content.master_storage_key = req.key
+                target_content.video_url = stream_url
+                target_content.status = ContentStatus.PUBLISHED
+                target_content.is_published = True
+                if not target_content.published_at:
+                    target_content.published_at = datetime.now(timezone.utc)
+        elif episode_uuid:
+            target_episode = await db.get(Episode, episode_uuid)
+            if target_episode:
+                target_episode.master_storage_key = req.key
+                target_episode.video_url = stream_url
+                target_episode.status = ContentStatus.PUBLISHED
+
         await db.commit()
         await db.refresh(job)
         job_id = str(job.id)
@@ -463,17 +482,22 @@ async def complete_upload(
     )
     db.add(job)
 
-    # 4. Update Content / Episode status
+    # 4. Update Content / Episode status for Instant Direct Streaming
     if req.content_id:
         content = await db.get(Content, req.content_id)
         if content:
             content.master_storage_key = req.key
-            content.status = ContentStatus.PROCESSING
+            content.video_url = stream_url
+            content.status = ContentStatus.PUBLISHED
+            content.is_published = True
+            if not content.published_at:
+                content.published_at = datetime.now(timezone.utc)
     elif req.episode_id:
         episode = await db.get(Episode, req.episode_id)
         if episode:
             episode.master_storage_key = req.key
-            episode.status = ContentStatus.PROCESSING
+            episode.video_url = stream_url
+            episode.status = ContentStatus.PUBLISHED
 
     await db.commit()
     await db.refresh(job)
@@ -488,6 +512,30 @@ async def complete_upload(
                 await queue_task
         except Exception:
             pass
+
+    # If local host has ffmpeg available, auto-trigger background pipeline immediately if not already running
+    try:
+        from src.modules.streaming.service import try_acquire_transcode_lock, release_transcode_lock
+        if try_acquire_transcode_lock(req.key):
+            import subprocess
+            import sys
+            from pathlib import Path
+            if shutil.which("ffmpeg"):
+                script_path = Path(__file__).resolve().parent.parent.parent.parent.parent / "scripts" / "process_all_pending_videos.py"
+                if script_path.exists():
+                    logger.info(f"Auto-triggering background transcoding pipeline for key '{req.key}'...")
+                    subprocess.Popen(
+                        [sys.executable, str(script_path), "--key", req.key],
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                        start_new_session=True,
+                    )
+                else:
+                    release_transcode_lock(req.key)
+            else:
+                release_transcode_lock(req.key)
+    except Exception as te:
+        logger.warning(f"Notice during background transcode spawn: {te}")
 
     return CompleteMultipartUploadResponse(
         message="Master video uploaded and transcoding job queued successfully.",

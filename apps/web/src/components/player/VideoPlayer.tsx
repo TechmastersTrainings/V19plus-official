@@ -42,8 +42,7 @@ const lockMobileToLandscape = async () => {
 
   // 1. Try Capacitor Native ScreenOrientation if running in hybrid app
   try {
-    const { Capacitor } = await import("@capacitor/core");
-    if (Capacitor.isNativePlatform()) {
+    if (typeof window !== "undefined" && (window as any).Capacitor?.isNativePlatform?.()) {
       const { ScreenOrientation } = await import("@capacitor/screen-orientation");
       await ScreenOrientation.lock({ orientation: "landscape" });
       return;
@@ -65,8 +64,7 @@ const restoreMobileOrientation = async () => {
 
   // 1. Try Capacitor Native ScreenOrientation unlock
   try {
-    const { Capacitor } = await import("@capacitor/core");
-    if (Capacitor.isNativePlatform()) {
+    if (typeof window !== "undefined" && (window as any).Capacitor?.isNativePlatform?.()) {
       const { ScreenOrientation } = await import("@capacitor/screen-orientation");
       await ScreenOrientation.unlock();
       return;
@@ -125,13 +123,16 @@ export function VideoPlayer({
 
     if (hls) return formatStreamUrl(hls);
 
-    // For catalog titles, wait for authorized HLS stream and never fall back to raw master MP4
-    if (content?.id || (content as any)?.master_storage_key) {
-      return "";
-    }
+    // Instant direct streaming: fall back to videoUrl or raw master MP4 on Cloudflare R2
+    const directUrl =
+      propSrc ||
+      content?.videoUrl ||
+      (content as any)?.video_url ||
+      ((content as any)?.master_storage_key
+        ? `https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev/${(content as any).master_storage_key.replace(/^\/+/, '')}`
+        : "");
 
-    const raw = (propSrc && (propSrc.includes(".m3u8") || propSrc.includes("/hls/"))) ? propSrc : "";
-    return formatStreamUrl(raw);
+    return formatStreamUrl(directUrl);
   });
 
   const [isPlaying, setIsPlaying] = useState(false);
@@ -146,7 +147,8 @@ export function VideoPlayer({
   const [isBuffering, setIsBuffering] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [rawPreviewUrl, setRawPreviewUrl] = useState<string>("");
+  const processingPollAttempts = useRef(0);
+  const MAX_PROCESSING_POLL_ATTEMPTS = 120; // 120 attempts * 5s = 10 minutes max window while chunk transcoding completes
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
   const [hoverX, setHoverX] = useState<number>(0);
@@ -243,6 +245,12 @@ export function VideoPlayer({
 
         if (isHls && streamUrl) {
           setIsProcessing(false);
+          processingPollAttempts.current = 0;
+          setActiveSrc(formatStreamUrl(streamUrl));
+        } else if (streamUrl) {
+          // Instant direct video stream (MP4, MOV, etc.)
+          setIsProcessing(false);
+          processingPollAttempts.current = 0;
           setActiveSrc(formatStreamUrl(streamUrl));
         } else if (
           res.data?.is_processing ||
@@ -250,28 +258,72 @@ export function VideoPlayer({
           (content as any)?.status === "PROCESSING" ||
           ((content as any)?.master_storage_key && !(content as any)?.hls_manifest_key)
         ) {
-          setIsProcessing(true);
-          setRawPreviewUrl(streamUrl || "");
-          setIsLoading(false);
-          setHasError(false);
-          if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
-          pollTimeoutRef.current = setTimeout(() => {
-            if (isMounted) setReloadKey((prev) => prev + 1);
-          }, 6000);
+          // Fall back to direct master MP4 if available for zero-wait playback
+          const direct =
+            (content as any)?.videoUrl ||
+            (content as any)?.video_url ||
+            ((content as any)?.master_storage_key
+              ? `https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev/${(content as any).master_storage_key.replace(/^\/+/, '')}`
+              : "");
+          if (direct) {
+            setIsProcessing(false);
+            setIsLoading(false);
+            setHasError(false);
+            setActiveSrc(formatStreamUrl(direct));
+          } else if (processingPollAttempts.current < MAX_PROCESSING_POLL_ATTEMPTS) {
+            processingPollAttempts.current += 1;
+            setIsProcessing(true);
+            setIsLoading(true);
+            setHasError(false);
+            if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
+            pollTimeoutRef.current = setTimeout(() => {
+              if (isMounted) setReloadKey((prev) => prev + 1);
+            }, 5000);
+          } else {
+            console.warn("Adaptive stream preparation timed out after maximum polling attempts.");
+            setIsProcessing(false);
+            setIsLoading(false);
+            setHasError(true);
+          }
         } else {
-          console.error("No adaptive HLS stream available for this title.");
-          setHasError(true);
-          setIsLoading(false);
+          // Check for direct MP4 before throwing error
+          const direct =
+            (content as any)?.videoUrl ||
+            (content as any)?.video_url ||
+            ((content as any)?.master_storage_key
+              ? `https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev/${(content as any).master_storage_key.replace(/^\/+/, '')}`
+              : "");
+          if (direct) {
+            setIsProcessing(false);
+            setActiveSrc(formatStreamUrl(direct));
+          } else {
+            console.error("No stream available for this title.");
+            setIsProcessing(false);
+            setHasError(true);
+            setIsLoading(false);
+          }
         }
       })
       .catch((err) => {
         if (!isMounted) return;
         console.error("Playback authorization failed:", err);
         const hlsFallback = (content as any)?.hls_manifest_key;
+        const directFallback =
+          (content as any)?.videoUrl ||
+          (content as any)?.video_url ||
+          ((content as any)?.master_storage_key
+            ? `https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev/${(content as any).master_storage_key.replace(/^\/+/, '')}`
+            : "");
         if (hlsFallback && (hlsFallback.includes(".m3u8") || hlsFallback.includes("/hls/"))) {
           setIsProcessing(false);
+          processingPollAttempts.current = 0;
           setActiveSrc(formatStreamUrl(hlsFallback));
+        } else if (directFallback) {
+          setIsProcessing(false);
+          processingPollAttempts.current = 0;
+          setActiveSrc(formatStreamUrl(directFallback));
         } else {
+          setIsProcessing(false);
           setHasError(true);
           setIsLoading(false);
         }
@@ -390,6 +442,8 @@ export function VideoPlayer({
         // 2. Native HLS for iOS Safari and iOS WebViews (where MSE is unsupported)
         video.src = activeSrc;
         video.load();
+        setQualities([{ id: -1, label: "Auto (ABR)", height: 0, bitrate: 0 }]);
+        setCurrentQuality(-1);
       } else {
         // 3. Graceful handling of unsupported browser environments
         console.error("Adaptive HLS streaming is not supported on this browser.");
@@ -397,9 +451,13 @@ export function VideoPlayer({
         setIsLoading(false);
       }
     } else {
-      // Standard Progressive MP4 video
+      // Direct progressive MP4 / media playback from Cloudflare R2 Anycast CDN
       video.src = activeSrc;
       video.load();
+      setIsLoading(false);
+      setHasError(false);
+      setQualities([{ id: -1, label: "Original (Direct HD)", height: 1080, bitrate: 0 }]);
+      setCurrentQuality(-1);
     }
 
     return () => {
@@ -1132,29 +1190,13 @@ export function VideoPlayer({
         </div>
       )}
 
-      {/* STREAM PROCESSING / OPTIMIZATION OVERLAY */}
-      {isProcessing && !hasError && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 text-center z-30 p-6 backdrop-blur-md">
-          <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full border-[3px] sm:border-4 border-white/20 border-t-[#FF5C00] animate-spin drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)] mb-4" />
-          <div className="mb-2 text-lg font-bold text-white tracking-wide">
-            Optimizing Video Stream
-          </div>
-          <p className="text-sm text-white/70 max-w-sm mb-5 leading-relaxed">
-            This title is currently being prepared for high-speed adaptive streaming. Playback will begin automatically once ready.
-          </p>
-          {rawPreviewUrl && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsProcessing(false);
-                setActiveSrc(formatStreamUrl(rawPreviewUrl));
-              }}
-              className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition border border-white/10 active:scale-95 cursor-pointer"
-            >
-              Watch Raw Master Preview
-            </button>
-          )}
+      {/* INITIAL / ADAPTIVE STREAM PREPARATION LOADING SPINNER */}
+      {(isLoading || isProcessing) && !hasError && !isPlaying && (
+        <div
+          data-testid="loading-indicator"
+          className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 text-center z-25 backdrop-blur-sm pointer-events-none transition-opacity duration-200"
+        >
+          <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full border-[3px] sm:border-4 border-white/20 border-t-[#FF5C00] animate-spin drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)]" />
         </div>
       )}
 
@@ -1174,6 +1216,8 @@ export function VideoPlayer({
             onClick={(event) => {
               event.stopPropagation();
               setHasError(false);
+              setIsProcessing(false);
+              processingPollAttempts.current = 0;
               isAttemptingPlay.current = true;
               setIsBuffering(true);
               retryCount.current = 0;
@@ -1188,7 +1232,7 @@ export function VideoPlayer({
 
       {/* PROMINENT PURE-WHITE CENTER PLAY BUTTON WHEN PAUSED */}
 
-      {!isPlaying && !isBuffering && !hasError && !isProcessing && (
+      {!isPlaying && !isBuffering && !hasError && !isProcessing && !isLoading && (
         <button
           type="button"
           aria-label="Play video"

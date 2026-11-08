@@ -180,7 +180,18 @@ export async function GET() {
       (a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()
     );
 
-    const recentUploads = allContents.slice(0, 10).map((item) => ({
+    // Prioritize meaningful video ingestion assets (masters, ABR manifests, covers) over 27,000+ raw .ts slice chunks
+    const videoUploads = allContents.filter((item) => {
+      const ext = item.key.split('.').pop()?.toLowerCase() || '';
+      // Exclude raw .ts slices and test speed files
+      if (ext === 'ts' || item.key.startsWith('test_speed/') || ext === 'bin') return false;
+      // Exclude sub-resolution playlists like 1080p/playlist.m3u8, 720p/playlist.m3u8
+      if (item.key.endsWith('/playlist.m3u8')) return false;
+      // Include master video files, master m3u8 manifests, or video artwork
+      return ['mp4', 'mov', 'mkv', 'webm', 'avi', 'm3u8', 'jpg', 'jpeg', 'png', 'webp'].includes(ext);
+    });
+
+    const recentUploads = (videoUploads.length > 0 ? videoUploads : allContents).slice(0, 10).map((item) => ({
       key: item.key,
       size_mb: Number((item.size / (1024 * 1024)).toFixed(2)),
       size_bytes: item.size,

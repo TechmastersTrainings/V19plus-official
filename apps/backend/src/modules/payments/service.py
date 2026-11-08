@@ -121,6 +121,14 @@ class PaymentService:
         if not payment:
             raise NotFoundException("Payment order", req.razorpay_order_id)
 
+        # Idempotency / Replay protection: if already captured, return existing subscription
+        if payment.status == PaymentStatus.CAPTURED:
+            return VerifyPaymentResponse(
+                message="Payment already verified and subscription is active.",
+                subscription_id=payment.subscription_id or uuid.uuid4(),
+                status="ACTIVE",
+            )
+
         plan = await self.db.get(SubscriptionPlan, req.plan_id)
         if not plan:
             raise NotFoundException("SubscriptionPlan", req.plan_id)

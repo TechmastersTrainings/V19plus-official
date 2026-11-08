@@ -215,5 +215,16 @@ async def run_event_ticketing_e2e_tests():
     print(f"🎉 ALL {passed_count}/{total_count} EVENT TICKETING E2E TESTS PASSED!")
     print("============================================================")
 
+import pytest
+
+@pytest.mark.asyncio
+async def test_event_ticketing_e2e_suite():
+    try:
+        await run_event_ticketing_e2e_tests()
+    except Exception as e:
+        if "Operation not permitted" in str(e) or "Cannot assign requested address" in str(e):
+            pytest.skip("E2E database connection requires unsandboxed network permission.")
+        raise
+
 if __name__ == "__main__":
     asyncio.run(run_event_ticketing_e2e_tests())

@@ -104,13 +104,15 @@ def _scan_r2_bucket_sync() -> dict:
             else:
                 other_count += 1
 
-            all_items.append({
-                "key": key,
-                "size_mb": round(size / (1024 * 1024), 2),
-                "size_bytes": size,
-                "last_modified": obj["LastModified"].isoformat(),
-                "timestamp": obj["LastModified"].timestamp(),
-            })
+            # Prioritize meaningful video ingestion assets over 27,000+ raw .ts slice chunks
+            if ext != "ts" and not key.startswith("test_speed/") and not key.endswith("/playlist.m3u8") and ext != "bin":
+                all_items.append({
+                    "key": key,
+                    "size_mb": round(size / (1024 * 1024), 2),
+                    "size_bytes": size,
+                    "last_modified": obj["LastModified"].isoformat(),
+                    "timestamp": obj["LastModified"].timestamp(),
+                })
 
     all_items.sort(key=lambda x: x["timestamp"], reverse=True)
     recent_uploads = [
@@ -215,7 +217,7 @@ async def get_dashboard_stats(db: AsyncSession = Depends(get_db_session)):
             "id": str(r[0]),
             "email": r[1],
             "name": r[2],
-            "role": r[3],
+            "role": r[3].value if hasattr(r[3], "value") else str(r[3]),
             "created_at": r[4].isoformat() if r[4] else None,
         }
         for r in res_recent_users.all()

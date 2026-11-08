@@ -23,9 +23,13 @@ import subprocess
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import boto3
+from botocore.config import Config
 import httpx
 import asyncpg
 import asyncio
+import http.server
+import socketserver
+import threading
 from dotenv import load_dotenv
 
 # Load backend environment variables
@@ -44,6 +48,20 @@ CDN_BASE = os.getenv("CDN_STREAMING_BASE_URL", "https://pub-2b3faff7804a4ba8b008
 DB_URL = os.getenv("DATABASE_SYNC_URL") or os.getenv("DATABASE_URL", "")
 if "+asyncpg" in DB_URL:
     DB_URL = DB_URL.replace("+asyncpg", "")
+if "sslmode=" in DB_URL:
+    import re
+    DB_URL = re.sub(r"[?&]sslmode=[^&]+", "", DB_URL)
+
+import ssl
+
+def get_db_ssl_context():
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    return ctx
+
+async def get_db_conn():
+    return await asyncpg.connect(DB_URL, ssl=get_db_ssl_context())
 
 
 def log(msg: str):
@@ -57,7 +75,92 @@ def get_s3():
         aws_access_key_id=R2_KEY_ID,
         aws_secret_access_key=R2_SECRET,
         region_name="auto",
+        config=Config(max_pool_connections=50, retries={"max_attempts": 5, "mode": "standard"}),
     )
+
+
+class S3RangeBridge:
+    def __init__(self, key: str, port: int = 8899):
+        self.key = key
+        self.port = port
+        self.server = None
+        self.thread = None
+        self.s3 = get_s3()
+        head = self.s3.head_object(Bucket=R2_BUCKET, Key=self.key)
+        self.file_size = head["ContentLength"]
+
+    def start(self):
+        parent = self
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def do_HEAD(self):
+                self.send_response(200)
+                self.send_header("Content-Type", "video/mp4")
+                self.send_header("Content-Length", str(parent.file_size))
+                self.send_header("Accept-Ranges", "bytes")
+                self.end_headers()
+
+            def do_GET(self):
+                range_header = self.headers.get("Range")
+                if not range_header:
+                    start = 0
+                    end = parent.file_size - 1
+                    status = 200
+                else:
+                    parts = range_header.replace("bytes=", "").split("-")
+                    start = int(parts[0]) if parts[0] else 0
+                    end = int(parts[1]) if len(parts) > 1 and parts[1] else parent.file_size - 1
+                    if end >= parent.file_size:
+                        end = parent.file_size - 1
+                    status = 206
+
+                length = end - start + 1
+                self.send_response(status)
+                self.send_header("Content-Type", "video/mp4")
+                self.send_header("Accept-Ranges", "bytes")
+                self.send_header("Content-Length", str(length))
+                if status == 206:
+                    self.send_header("Content-Range", f"bytes {start}-{end}/{parent.file_size}")
+                self.end_headers()
+
+                chunk_size = 4 * 1024 * 1024
+                cur = start
+                tls_s3 = get_s3()
+                while cur <= end:
+                    next_cur = min(end, cur + chunk_size - 1)
+                    for attempt in range(1, 5):
+                        try:
+                            resp = tls_s3.get_object(Bucket=R2_BUCKET, Key=parent.key, Range=f"bytes={cur}-{next_cur}")
+                            data = resp["Body"].read()
+                            break
+                        except Exception:
+                            if attempt == 4:
+                                return
+                            time.sleep(0.5)
+                    try:
+                        self.wfile.write(data)
+                    except (BrokenPipeError, ConnectionResetError):
+                        break
+                    cur = next_cur + 1
+
+            def log_message(self, format, *args):
+                pass
+
+        class ThreadedServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
+            daemon_threads = True
+            allow_reuse_address = True
+
+        self.server = ThreadedServer(("127.0.0.1", self.port), Handler)
+        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.thread.start()
+        log(f"  ✓ S3 Range Bridge active on http://127.0.0.1:{self.port} (Zero local master disk space)")
+
+    def stop(self):
+        if self.server:
+            try:
+                self.server.shutdown()
+                self.server.server_close()
+            except Exception:
+                pass
 
 
 def download_master_parallel(source_key: str, dest_path: str):
@@ -68,33 +171,90 @@ def download_master_parallel(source_key: str, dest_path: str):
 
     chunk_size = 32 * 1024 * 1024  # 32MB chunks
     total_chunks = math.ceil(file_size / chunk_size)
-    log(f"  Size: {file_size / (1024**3):.2f} GB in {total_chunks} chunks via 20 parallel workers...")
+    scratch_dir = os.path.dirname(dest_path)
+    os.makedirs(scratch_dir, exist_ok=True)
+    done_file = os.path.join(scratch_dir, ".completed_chunks")
 
-    with open(dest_path, "wb") as f:
-        f.truncate(file_size)
+    done_chunks = set()
+    if os.path.exists(done_file) and os.path.exists(dest_path) and os.path.getsize(dest_path) == file_size:
+        try:
+            with open(done_file, "r") as f:
+                done_chunks = set(int(line.strip()) for line in f if line.strip().isdigit())
+        except Exception:
+            done_chunks = set()
+    else:
+        with open(dest_path, "wb") as f:
+            f.truncate(file_size)
+        if os.path.exists(done_file):
+            try:
+                os.remove(done_file)
+            except Exception:
+                pass
+        done_chunks.clear()
+
+    remaining_chunks = [i for i in range(total_chunks) if i not in done_chunks]
+    log(f"  Size: {file_size / (1024**3):.2f} GB in {total_chunks} chunks ({len(done_chunks)} cached, {len(remaining_chunks)} remaining)...")
+
+    if not remaining_chunks:
+        log("  ✓ All chunks already downloaded and verified on disk!")
+        return
+
+    import threading
+    lock = threading.Lock()
+    tls = threading.local()
+
+    def get_worker_s3():
+        if not hasattr(tls, "s3"):
+            tls.s3 = get_s3()
+        return tls.s3
 
     def download_chunk(idx):
         start = idx * chunk_size
         end = min(file_size - 1, (idx + 1) * chunk_size - 1)
-        resp = s3.get_object(Bucket=R2_BUCKET, Key=source_key, Range=f"bytes={start}-{end}")
-        data = resp["Body"].read()
-        with open(dest_path, "r+b") as f:
-            f.seek(start)
-            f.write(data)
-        return idx
+        expected_len = end - start + 1
+        for attempt in range(1, 9):
+            try:
+                client = get_worker_s3()
+                resp = client.get_object(Bucket=R2_BUCKET, Key=source_key, Range=f"bytes={start}-{end}")
+                data = resp["Body"].read()
+                if len(data) != expected_len:
+                    raise IOError(f"Truncated chunk {idx}: expected {expected_len}, got {len(data)}")
+                with open(dest_path, "r+b") as f:
+                    f.seek(start)
+                    f.write(data)
+                with lock:
+                    with open(done_file, "a") as df:
+                        df.write(f"{idx}\n")
+                return idx
+            except Exception as e:
+                # Refresh worker S3 client on network drop
+                try:
+                    tls.s3 = get_s3()
+                except Exception:
+                    pass
+                if attempt == 8:
+                    log(f"❌ Chunk {idx} permanently failed after 8 retries: {e}")
+                    raise
+                wait_s = min(10.0, 1.2 * attempt)
+                time.sleep(wait_s)
 
     t0 = time.time()
-    completed = 0
-    with ThreadPoolExecutor(max_workers=20) as executor:
-        futures = [executor.submit(download_chunk, i) for i in range(total_chunks)]
+    completed = len(done_chunks)
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = {executor.submit(download_chunk, i): i for i in remaining_chunks}
         for fut in as_completed(futures):
             fut.result()
             completed += 1
-            if completed % 20 == 0 or completed == total_chunks:
+            if completed % 15 == 0 or completed == total_chunks:
                 pct = (completed / total_chunks) * 100
-                speed = (completed * chunk_size / (1024 * 1024)) / max(1, time.time() - t0)
+                speed = ((completed - len(done_chunks)) * chunk_size / (1024 * 1024)) / max(1, time.time() - t0)
                 log(f"  Downloaded {completed}/{total_chunks} chunks ({pct:.1f}%) at {speed:.1f} MB/s...")
 
+    if os.path.exists(done_file):
+        try:
+            os.remove(done_file)
+        except Exception:
+            pass
     log(f"  ✓ Master download completed in {(time.time()-t0):.1f}s!")
 
 
@@ -119,8 +279,8 @@ def probe_video(video_path: str):
     return {"duration": duration, "width": width, "height": height}
 
 
-def transcode_hls(local_master: str, output_dir: str):
-    log("🎬 Transcoding to 4-Tier Adaptive HLS (1080p, 720p, 480p, 360p)...")
+def transcode_hls(input_source: str, output_dir: str, duration: float = 0):
+    log("🎬 Transcoding to 4-Tier Adaptive HLS (1080p, 720p, 480p, 360p) with optimized memory pipeline...")
     if os.path.exists(output_dir):
         shutil.rmtree(output_dir, ignore_errors=True)
     os.makedirs(output_dir, exist_ok=True)
@@ -128,10 +288,11 @@ def transcode_hls(local_master: str, output_dir: str):
         os.makedirs(os.path.join(output_dir, tier), exist_ok=True)
 
     filter_complex = (
-        "[0:v]scale=w=1920:h=1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2[v1080];"
-        "[0:v]scale=w=1280:h=720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2[v720];"
-        "[0:v]scale=w=854:h=480:force_original_aspect_ratio=decrease,pad=854:480:(ow-iw)/2:(oh-ih)/2[v480];"
-        "[0:v]scale=w=640:h=360:force_original_aspect_ratio=decrease,pad=640:360:(ow-iw)/2:(oh-ih)/2[v360]"
+        "[0:v]scale=w=1920:h=1080:force_original_aspect_ratio=decrease:flags=fast_bilinear,pad=1920:1080:(ow-iw)/2:(oh-ih)/2[v1080_base];"
+        "[v1080_base]split=4[v1080][v720_in][v480_in][v360_in];"
+        "[v720_in]scale=w=1280:h=720:force_original_aspect_ratio=decrease:flags=fast_bilinear,pad=1280:720:(ow-iw)/2:(oh-ih)/2[v720];"
+        "[v480_in]scale=w=854:h=480:force_original_aspect_ratio=decrease:flags=fast_bilinear,pad=854:480:(ow-iw)/2:(oh-ih)/2[v480];"
+        "[v360_in]scale=w=640:h=360:force_original_aspect_ratio=decrease:flags=fast_bilinear,pad=640:360:(ow-iw)/2:(oh-ih)/2[v360]"
     )
 
     is_macos = sys.platform == "darwin"
@@ -148,19 +309,19 @@ def transcode_hls(local_master: str, output_dir: str):
         cmd.extend(["-hwaccel", "videotoolbox"])
 
     cmd.extend([
-        "-i", local_master,
+        "-i", input_source,
         "-filter_complex", filter_complex,
         "-map", "[v1080]", "-map", "0:a:0?",
-        "-c:v:0", codec, "-b:v:0", "3800k", "-maxrate:v:0", "4200k", "-bufsize:v:0", "7600k",
+        "-c:v:0", codec, "-b:v:0", "2800k", "-maxrate:v:0", "3200k", "-bufsize:v:0", "5600k",
         "-c:a:0", "aac", "-b:a:0", "192k", "-ac:a:0", "2",
         "-map", "[v720]", "-map", "0:a:0?",
-        "-c:v:1", codec, "-b:v:1", "1800k", "-maxrate:v:1", "2200k", "-bufsize:v:1", "3600k",
+        "-c:v:1", codec, "-b:v:1", "1400k", "-maxrate:v:1", "1700k", "-bufsize:v:1", "2800k",
         "-c:a:1", "aac", "-b:a:1", "128k", "-ac:a:1", "2",
         "-map", "[v480]", "-map", "0:a:0?",
-        "-c:v:2", codec, "-b:v:2", "850k", "-maxrate:v:2", "1050k", "-bufsize:v:2", "1700k",
+        "-c:v:2", codec, "-b:v:2", "700k", "-maxrate:v:2", "850k", "-bufsize:v:2", "1400k",
         "-c:a:2", "aac", "-b:a:2", "96k", "-ac:a:2", "2",
         "-map", "[v360]", "-map", "0:a:0?",
-        "-c:v:3", codec, "-b:v:3", "400k", "-maxrate:v:3", "500k", "-bufsize:v:3", "800k",
+        "-c:v:3", codec, "-b:v:3", "350k", "-maxrate:v:3", "450k", "-bufsize:v:3", "700k",
         "-c:a:3", "aac", "-b:a:3", "64k", "-ac:a:3", "2",
         "-g", "48",
         "-keyint_min", "48",
@@ -188,20 +349,23 @@ def generate_sprites(local_master: str, output_dir: str, duration: float):
     vtt_path = os.path.join(output_dir, "thumbnails.vtt")
 
     interval = 15
-    total_thumbs = math.ceil(duration / interval)
+    total_thumbs = max(1, math.ceil(duration / interval)) if duration > 0 else 1
     cols = 15
-    rows = math.ceil(total_thumbs / cols)
+    rows = max(1, math.ceil(total_thumbs / cols))
 
-    cmd = [
-        "ffmpeg", "-y",
-        "-i", local_master,
-        "-vf", f"fps=1/{interval},scale=160:90,tile={cols}x{rows}",
-        "-q:v", "5",
-        sprite_path,
-    ]
-    subprocess.run(cmd)
+    if not os.path.exists(sprite_path) or os.path.getsize(sprite_path) == 0:
+        log("  Generating sprite sheet fallback...")
+        cmd = [
+            "ffmpeg", "-y",
+            "-i", local_master,
+            "-vf", f"fps=1/{interval},scale=160:90,tile={cols}x{rows}",
+            "-q:v", "5",
+            sprite_path,
+        ]
+        subprocess.run(cmd)
 
     def fmt_time(seconds: float) -> str:
+        seconds = max(0.0, float(seconds))
         hrs = int(seconds // 3600)
         mins = int((seconds % 3600) // 60)
         secs = seconds % 60
@@ -248,12 +412,19 @@ def upload_to_r2_parallel(output_dir: str, target_prefix: str):
 
     def do_upload(task):
         fp, key, ct, cc = task
-        s3.upload_file(fp, R2_BUCKET, key, ExtraArgs={"ContentType": ct, "CacheControl": cc})
+        for attempt in range(5):
+            try:
+                s3.upload_file(fp, R2_BUCKET, key, ExtraArgs={"ContentType": ct, "CacheControl": cc})
+                return key
+            except Exception as e:
+                if attempt == 4:
+                    raise
+                time.sleep(1 + attempt)
         return key
 
     t0 = time.time()
     count = 0
-    with ThreadPoolExecutor(max_workers=35) as executor:
+    with ThreadPoolExecutor(max_workers=30) as executor:
         futures = [executor.submit(do_upload, t) for t in upload_tasks]
         for fut in as_completed(futures):
             fut.result()
@@ -286,46 +457,48 @@ async def sync_database(content_id: str, slug: str, source_key: str, target_pref
     master_url = f"{CDN_BASE}/{target_prefix}/master.m3u8"
     sprite_key = f"{target_prefix}/thumbnails.vtt"
 
-    conn = await asyncpg.connect(DB_URL)
-    if slug:
-        await conn.execute(
-            """
-            UPDATE content
-            SET hls_manifest_key = $1, sprite_vtt_key = $2, duration_seconds = $3, status = 'PUBLISHED', updated_at = NOW()
-            WHERE slug = $4
-            """,
-            master_url, sprite_key, duration, slug
-        )
-    elif content_id:
-        await conn.execute(
-            """
-            UPDATE content
-            SET hls_manifest_key = $1, sprite_vtt_key = $2, duration_seconds = $3, status = 'PUBLISHED', updated_at = NOW()
-            WHERE id = $4::uuid
-            """,
-            master_url, sprite_key, duration, content_id
-        )
+    conn = await get_db_conn()
+    try:
+        if slug:
+            await conn.execute(
+                """
+                UPDATE content
+                SET hls_manifest_key = $1, sprite_vtt_key = $2, duration_seconds = $3, status = 'PUBLISHED', updated_at = NOW()
+                WHERE slug = $4
+                """,
+                master_url, sprite_key, duration, slug
+            )
+        elif content_id:
+            await conn.execute(
+                """
+                UPDATE content
+                SET hls_manifest_key = $1, sprite_vtt_key = $2, duration_seconds = $3, status = 'PUBLISHED', updated_at = NOW()
+                WHERE id = $4::uuid
+                """,
+                master_url, sprite_key, duration, content_id
+            )
 
-    if source_key:
-        await conn.execute(
-            """
-            UPDATE content
-            SET hls_manifest_key = $1, sprite_vtt_key = $2, duration_seconds = $3, status = 'PUBLISHED', updated_at = NOW()
-            WHERE master_storage_key = $4
-            """,
-            master_url, sprite_key, duration, source_key
-        )
+        if source_key:
+            await conn.execute(
+                """
+                UPDATE content
+                SET hls_manifest_key = $1, sprite_vtt_key = $2, duration_seconds = $3, status = 'PUBLISHED', updated_at = NOW()
+                WHERE master_storage_key = $4
+                """,
+                master_url, sprite_key, duration, source_key
+            )
 
-    if job_id:
-        await conn.execute(
-            """
-            UPDATE video_jobs
-            SET status = 'READY', progress_percent = 100, target_hls_prefix = $1, duration_seconds = $2, updated_at = NOW()
-            WHERE id = $3::uuid
-            """,
-            target_prefix, duration, job_id
-        )
-    await conn.close()
+        if job_id:
+            await conn.execute(
+                """
+                UPDATE video_jobs
+                SET status = 'READY', progress_percent = 100, target_hls_prefix = $1, duration_seconds = $2, updated_at = NOW()
+                WHERE id = $3::uuid
+                """,
+                target_prefix, duration, job_id
+            )
+    finally:
+        await conn.close()
     log("  ✓ Database updated to PUBLISHED / READY!")
 
 
@@ -342,54 +515,73 @@ async def process_one(content_id: str, slug: str, source_key: str, job_id: str =
 
     os.makedirs(scratch_dir, exist_ok=True)
     try:
-        # If local master already exists on disk, use it; otherwise stream directly from R2 CDN to save disk space
         if os.path.exists(local_master) and os.path.getsize(local_master) > 1024 * 1024:
             input_source = local_master
             log(f"Using existing local master on disk: {local_master}")
         else:
-            input_source = f"{CDN_BASE}/{source_key.lstrip('/')}"
-            log(f"Streaming master input directly from Cloudflare R2 CDN: {input_source}")
+            download_master_parallel(source_key, local_master)
+            input_source = local_master
 
         meta = probe_video(input_source)
         duration_sec = int(meta["duration"])
         log(f"Probed duration: {duration_sec}s ({duration_sec/60:.1f} mins) | Resolution: {meta['width']}x{meta['height']}")
 
-        transcode_hls(input_source, output_hls)
+        transcode_hls(input_source, output_hls, meta["duration"])
         generate_sprites(input_source, output_hls, meta["duration"])
+
+        # Immediately free local master disk space before upload to ensure plenty of disk margin
+        if os.path.exists(local_master):
+            try:
+                os.remove(local_master)
+                log("  ✓ Reclaimed local master disk space (7.03 GB freed).")
+            except Exception as e:
+                log(f"  Notice: could not delete local master: {e}")
+
         upload_to_r2_parallel(output_hls, target_prefix)
         validate_r2(target_prefix)
+
         await sync_database(content_id, slug, source_key, target_prefix, duration_sec, job_id)
-        log(f"🎉 Successfully transcoded and published {slug or source_key}!")
-    except Exception as e:
-        log(f"❌ Processing failed for {slug or source_key}: {e}")
-        conn = await asyncpg.connect(DB_URL)
-        if job_id:
-            await conn.execute(
-                "UPDATE video_jobs SET status = 'FAILED', error_message = $1, updated_at = NOW() WHERE id = $2::uuid",
-                str(e), job_id
-            )
-        if content_id:
-            await conn.execute(
-                "UPDATE content SET status = 'FAILED', updated_at = NOW() WHERE id = $1::uuid AND (status != 'PUBLISHED' OR hls_manifest_key IS NULL)",
-                content_id
-            )
-        elif slug:
-            await conn.execute(
-                "UPDATE content SET status = 'FAILED', updated_at = NOW() WHERE slug = $1 AND (status != 'PUBLISHED' OR hls_manifest_key IS NULL)",
-                slug
-            )
-        elif source_key:
-            await conn.execute(
-                "UPDATE content SET status = 'FAILED', updated_at = NOW() WHERE master_storage_key = $1 AND (status != 'PUBLISHED' OR hls_manifest_key IS NULL)",
-                source_key
-            )
-        await conn.close()
-        log(f"Recorded failure in database. Content remains unpublished for safe retry.")
-        raise
-    finally:
         if os.path.exists(scratch_dir):
             shutil.rmtree(scratch_dir, ignore_errors=True)
             log("  ✓ Cleaned up scratch files.")
+        log(f"🎉 Successfully transcoded and published {slug or source_key}!")
+    except Exception as e:
+        log(f"❌ Processing failed for {slug or source_key}: {e}")
+        try:
+            conn = await get_db_conn()
+            try:
+                if job_id:
+                    await conn.execute(
+                        "UPDATE video_jobs SET status = 'FAILED', error_message = $1, updated_at = NOW() WHERE id = $2::uuid",
+                        str(e), job_id
+                    )
+                if content_id:
+                    await conn.execute(
+                        "UPDATE content SET status = 'FAILED', updated_at = NOW() WHERE id = $1::uuid AND (status != 'PUBLISHED' OR hls_manifest_key IS NULL)",
+                        content_id
+                    )
+                elif slug:
+                    await conn.execute(
+                        "UPDATE content SET status = 'FAILED', updated_at = NOW() WHERE slug = $1 AND (status != 'PUBLISHED' OR hls_manifest_key IS NULL)",
+                        slug
+                    )
+                elif source_key:
+                    await conn.execute(
+                        "UPDATE content SET status = 'FAILED', updated_at = NOW() WHERE master_storage_key = $1 AND (status != 'PUBLISHED' OR hls_manifest_key IS NULL)",
+                        source_key
+                    )
+            finally:
+                await conn.close()
+        except Exception as db_err:
+            log(f"Notice: Failed to update failure status in DB: {db_err}")
+        log(f"Recorded failure in database. Content remains unpublished for safe retry.")
+        raise
+    finally:
+        try:
+            from src.modules.streaming.service import release_transcode_lock
+            release_transcode_lock(source_key)
+        except Exception:
+            pass
 
 
 async def main():
@@ -398,7 +590,7 @@ async def main():
     parser.add_argument("--key", help="Process a specific source key")
     args = parser.parse_args()
 
-    conn = await asyncpg.connect(DB_URL)
+    conn = await get_db_conn()
 
     if args.slug:
         row = await conn.fetchrow("SELECT id, slug, master_storage_key FROM content WHERE slug = $1", args.slug)
@@ -423,22 +615,32 @@ async def main():
         return
 
     # Process all PENDING or QUEUED jobs in video_jobs
-    jobs = await conn.fetch("SELECT id, source_file_key, content_id FROM video_jobs WHERE status IN ('PENDING', 'QUEUED') ORDER BY created_at ASC")
-    log(f"Found {len(jobs)} pending/queued video jobs in PostgreSQL.")
-    for j in jobs:
-        c_row = None
-        if j["content_id"]:
-            c_row = await conn.fetchrow("SELECT id, slug FROM content WHERE id = $1", j["content_id"])
-        if not c_row and j["source_file_key"]:
-            c_row = await conn.fetchrow("SELECT id, slug FROM content WHERE master_storage_key = $1", j["source_file_key"])
-        content_id = str(c_row["id"]) if c_row else (str(j["content_id"]) if j["content_id"] else None)
-        slug = c_row["slug"] if c_row else None
-        try:
-            await process_one(content_id, slug, j["source_file_key"], str(j["id"]))
-        except Exception:
-            log(f"Skipping to next job after failure on job {j['id']}...")
-
+    job_rows = await conn.fetch(
+        """
+        SELECT 
+            j.id as job_id, 
+            j.source_file_key, 
+            j.content_id as job_content_id, 
+            COALESCE(c1.id, c2.id) as content_id,
+            COALESCE(c1.slug, c2.slug) as slug
+        FROM video_jobs j
+        LEFT JOIN content c1 ON j.content_id = c1.id
+        LEFT JOIN content c2 ON j.source_file_key = c2.master_storage_key
+        WHERE j.status IN ('PENDING', 'QUEUED')
+        ORDER BY j.created_at ASC
+        """
+    )
     await conn.close()
+    log(f"Found {len(job_rows)} pending/queued video jobs in PostgreSQL.")
+
+    for j in job_rows:
+        cid = str(j["content_id"]) if j["content_id"] else (str(j["job_content_id"]) if j["job_content_id"] else None)
+        slug = j["slug"]
+        try:
+            await process_one(cid, slug, j["source_file_key"], str(j["job_id"]))
+        except Exception:
+            log(f"Skipping to next job after failure on job {j['job_id']}...")
+
     log("All tasks completed.")
 
 

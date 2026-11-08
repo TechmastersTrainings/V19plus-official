@@ -1,7 +1,7 @@
 import hashlib
 import uuid
 from datetime import datetime, timedelta, timezone
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from src.config import settings
@@ -160,6 +160,12 @@ class AuthService:
         return user
 
     async def create_profile(self, user_id: uuid.UUID, req: ProfileCreate) -> Profile:
+        # Enforce max 5 profiles limit per account
+        count_stmt = select(func.count()).select_from(Profile).where(Profile.user_id == user_id)
+        count_res = await self.db.execute(count_stmt)
+        if (count_res.scalar() or 0) >= 5:
+            raise ConflictException("Maximum 5 profiles allowed per account.")
+
         profile = Profile(
             user_id=user_id,
             name=req.name.strip(),

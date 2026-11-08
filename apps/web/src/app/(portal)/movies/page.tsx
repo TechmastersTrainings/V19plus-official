@@ -9,7 +9,7 @@ import { useAuthStore } from '../../../store/authStore';
 import { ContentCard } from '../../../components/content/ContentCard';
 import { ContentRow } from '../../../components/content/ContentRow';
 import { Skeleton } from '../../../components/ui/Skeleton';
-import type { Content } from '../../../api/content';
+import { FALLBACK_CATALOG, type Content } from '../../../api/content';
 import { Film, Filter, ArrowUpDown, Play, Bookmark, Check, Sparkles, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -80,15 +80,21 @@ export default function MoviesPage() {
     [...(Array.isArray(featuredData) ? featuredData : []), ...trendingItems, ...originalsItems].forEach((item) => {
       if (item && item.id) map.set(item.id, item as Content);
     });
-    return Array.from(map.values());
+    const pool = Array.from(map.values());
+    return pool.length > 0 ? pool : FALLBACK_CATALOG;
   }, [featuredData, trendingItems, originalsItems]);
 
-  const rawItems = ((data?.items || []) as Content[]).filter(
-    (item: any) => item && (item.content_type === 'MOVIE' || item.type === 'MOVIE' || !item.type)
+  const rawItems = ((Array.isArray(data) ? data : data?.items || []) as Content[]).filter(
+    (item: any) =>
+      item &&
+      (item.content_type === 'MOVIE' ||
+        item.type === 'MOVIE' ||
+        (!item.content_type && !item.type))
   );
+  const effectiveMovies = rawItems.length > 0 ? rawItems : allVault;
 
   const filteredAndSortedItems = useMemo(() => {
-    let items = [...rawItems];
+    let items = [...effectiveMovies];
 
     if (selectedLanguage !== 'All Languages') {
       items = items.filter((item: any) => {
@@ -109,7 +115,7 @@ export default function MoviesPage() {
     }
 
     return items;
-  }, [rawItems, selectedLanguage, sortBy]);
+  }, [effectiveMovies, selectedLanguage, sortBy]);
 
   // Top spotlight movie for cinema billboard
   const spotlightMovie = filteredAndSortedItems[0] || allVault[0] || null;

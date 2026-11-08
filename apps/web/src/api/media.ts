@@ -56,7 +56,7 @@ export const mediaApi = {
       !window.location.hostname.includes('localhost') &&
       !window.location.hostname.includes('127.0.0.1')
         ? 'https://v19plus-official.onrender.com/api/media/upload/chunked/abort'
-        : '/media/upload/chunked/abort';
+        : '/api/media/upload/chunked/abort';
     return api.post<AbortUploadResponse>(uploadUrl, data);
   },
 
@@ -70,7 +70,7 @@ export const mediaApi = {
       !window.location.hostname.includes('localhost') &&
       !window.location.hostname.includes('127.0.0.1')
         ? 'https://v19plus-official.onrender.com/api/media/upload/file'
-        : '/media/upload/file';
+        : '/api/media/upload/file';
 
     return api.post<{
       storage_key: string;
@@ -109,8 +109,7 @@ export const mediaApi = {
       ) {
         return `https://v19plus-official.onrender.com/api/media/upload/chunked/${endpoint}`;
       }
-      // On localhost, proxy cleanly via Next.js /api rewrite (avoiding double /api/api)
-      return `/media/upload/chunked/${endpoint}`;
+      return `/api/media/upload/chunked/${endpoint}`;
     };
 
     const CHUNK_SIZE = 20 * 1024 * 1024; // 20 MB chunks
@@ -240,7 +239,7 @@ export const mediaApi = {
         }
       }
 
-      // 3. Complete chunked upload
+      // 3. Complete chunked upload (allow generous 10min timeout for multi-GB assembly)
       const completeRes = await api.post<{
         storage_key: string;
         stream_url: string;
@@ -255,7 +254,7 @@ export const mediaApi = {
           parts,
           file_size_bytes: file.size,
         },
-        { timeout: 60000, signal: options?.signal }
+        { timeout: 600000, signal: options?.signal }
       );
 
       // Permanently mark as completed so cleanup never touches completed video
@@ -281,9 +280,11 @@ export const mediaApi = {
           content_type: file.type || 'video/mp4',
         },
       };
-    } catch (uploadErr) {
+    } catch (uploadErr: any) {
       // If upload failed before completion, abort the multipart upload in R2 immediately
-      if (!isCompleted && upload_id && key) {
+      // Do NOT abort if the error was a completion timeout, since R2 may still be assembling parts
+      const isTimeout = uploadErr?.code === 'ECONNABORTED' || uploadErr?.message?.toLowerCase().includes('timeout');
+      if (!isCompleted && upload_id && key && !isTimeout) {
         try {
           console.warn(`[R2 CLEANUP] Aborting incomplete multipart upload '${upload_id}' on error:`, uploadErr);
           await mediaApi.abortChunkedUpload({

@@ -15,6 +15,30 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   transpilePackages: ['@v19plus/types', '@v19plus/utils'],
+  experimental: {
+    serverComponentsExternalPackages: [
+      '@capacitor/core',
+      '@capacitor/app',
+      '@capacitor/filesystem',
+      '@capacitor/push-notifications',
+      '@capacitor/screen-orientation',
+      '@capgo/capacitor-native-biometric',
+    ],
+  },
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals = config.externals || [];
+      config.externals.push(
+        '@capacitor/core',
+        '@capacitor/app',
+        '@capacitor/filesystem',
+        '@capacitor/push-notifications',
+        '@capacitor/screen-orientation',
+        '@capgo/capacitor-native-biometric'
+      );
+    }
+    return config;
+  },
   images: {
     unoptimized: true,
     remotePatterns: [
@@ -29,6 +53,10 @@ const nextConfig = {
       {
         source: '/api/:path*',
         destination: `${backendUrl}/api/:path*`,
+      },
+      {
+        source: '/media/:path*',
+        destination: `${backendUrl}/api/media/:path*`,
       },
     ];
   },

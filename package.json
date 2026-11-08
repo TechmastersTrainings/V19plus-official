@@ -20,7 +20,11 @@
     "mobile:init": "npm run mobile:init --workspace=apps/web",
     "mobile:sync": "npm run mobile:sync --workspace=apps/web",
     "mobile:android": "npm run cap:android --workspace=apps/web",
-    "build:all": "npm run build && npm run mobile:sync"
+    "build:all": "npm run build && npm run mobile:sync",
+    "test": "npm run test:backend && npm run test:web && npm run test:utils",
+    "test:backend": "PYTHONPATH=apps/backend apps/backend/.venv/bin/pytest apps/backend/tests",
+    "test:web": "npm --prefix apps/web test",
+    "test:utils": "npm --prefix packages/utils test"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
