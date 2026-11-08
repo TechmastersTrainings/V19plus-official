@@ -336,14 +336,15 @@ async def stream_video_file(filename: str, request: Request):
     for smooth scrubbing, seeking, and instant playback in HTML5 video & HLS players.
     """
     clean_filename = os.path.basename(filename)
-    file_path = os.path.join(MEDIA_DIR, clean_filename)
+    # Zero Egress Policy: Always offload media streaming to Cloudflare R2 ($0.00 egress)
+    # Never consume Render outbound bandwidth ($0.15/GB) for large video/audio/image payload delivery
+    if settings.CDN_STREAMING_BASE_URL:
+        r2_cdn_url = f"{settings.CDN_STREAMING_BASE_URL.rstrip('/')}/{clean_filename}"
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(r2_cdn_url, status_code=307)
 
+    file_path = os.path.join(MEDIA_DIR, clean_filename)
     if not os.path.exists(file_path):
-        # Graceful fallback: Redirect to Cloudflare R2 CDN if local file is missing on container
-        if settings.CDN_STREAMING_BASE_URL:
-            r2_cdn_url = f"{settings.CDN_STREAMING_BASE_URL.rstrip('/')}/{clean_filename}"
-            from fastapi.responses import RedirectResponse
-            return RedirectResponse(r2_cdn_url, status_code=307)
         raise HTTPException(status_code=404, detail="Media file not found on disk.")
 
     file_size = os.path.getsize(file_path)

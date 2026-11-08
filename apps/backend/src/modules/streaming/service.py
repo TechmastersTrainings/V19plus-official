@@ -107,7 +107,8 @@ class StreamingService:
         elif local_path and os.path.exists(local_path):
             is_hls = False
             is_processing = False
-            stream_url = f"/api/media/stream/{local_filename}"
+            # Offload to Cloudflare R2 ($0.00 egress) rather than Render backend proxy
+            stream_url = f"{cdn_base}/{local_filename}" if cdn_base else f"/api/media/stream/{local_filename}"
         elif content.master_storage_key:
             # Check if an HLS manifest already exists in Cloudflare R2 matching the master storage key stem or slug
             stem = Path(content.master_storage_key).stem
