@@ -77,7 +77,10 @@ class StreamingService:
             expire_minutes=settings.PLAYBACK_TOKEN_EXPIRE_MINUTES,
         )
 
-        cdn_base = settings.CDN_STREAMING_BASE_URL.rstrip("/")
+        R2_PUBLIC_BASE = "https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev"
+        cdn_base = (settings.CDN_STREAMING_BASE_URL or R2_PUBLIC_BASE).rstrip("/")
+        if "localhost" in cdn_base or "127.0.0.1" in cdn_base or "stream.v19plus.com" in cdn_base or not cdn_base.startswith("http"):
+            cdn_base = R2_PUBLIC_BASE
 
         # Check for locally uploaded video file or explicit stream key
         import os

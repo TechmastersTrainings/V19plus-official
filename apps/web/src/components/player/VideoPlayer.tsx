@@ -23,11 +23,56 @@ export interface VideoPlayerProps {
   onNextEpisode?: () => void;
 }
 
+const R2_PUBLIC_BASE = "https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev";
+
 function formatStreamUrl(url: string): string {
   if (!url) return "";
-  // Direct Cloudflare R2 Delivery:
-  // With CORS active on bucket v19plus-r2-backend, Hls.js and native players
-  // download manifests and .ts segments directly from Cloudflare R2 Anycast CDN.
+
+  // Direct Cloudflare R2 Delivery
+  if (url.includes("pub-2b3faff7804a4ba8b00830cca1749352.r2.dev")) {
+    return url;
+  }
+
+  // Rewrite legacy local/proxy endpoints directly to Cloudflare R2
+  if (url.startsWith("/api/media/stream/")) {
+    const key = url.replace("/api/media/stream/", "").replace(/^\/+/, "");
+    return `${R2_PUBLIC_BASE}/${key}`;
+  }
+  if (url.startsWith("/streaming/cdn/")) {
+    const key = url.replace("/streaming/cdn/", "").replace(/^\/+/, "");
+    return `${R2_PUBLIC_BASE}/${key}`;
+  }
+  if (url.startsWith("/media/")) {
+    const key = url.replace("/media/", "").replace(/^\/+/, "");
+    return `${R2_PUBLIC_BASE}/${key}`;
+  }
+
+  // Rewrite localhost or internal origin URLs to Cloudflare R2
+  if (
+    url.includes("localhost") ||
+    url.includes("127.0.0.1") ||
+    url.includes("stream.v19plus.com") ||
+    url.includes("onrender.com")
+  ) {
+    const hlsMatch = url.match(/(hls\/[^\?#]+)/);
+    if (hlsMatch) {
+      return `${R2_PUBLIC_BASE}/${hlsMatch[1]}`;
+    }
+    const cdnMatch = url.match(/(?:streaming\/cdn\/|api\/media\/stream\/)(.+)$/);
+    if (cdnMatch) {
+      return `${R2_PUBLIC_BASE}/${cdnMatch[1].replace(/^\/+/, "")}`;
+    }
+    const fileMatch = url.match(/([^\/\?#]+\.(?:mp4|mov|m3u8|ts))(?:\?.*)?$/i);
+    if (fileMatch) {
+      return `${R2_PUBLIC_BASE}/${fileMatch[1]}`;
+    }
+  }
+
+  // If passed just a storage key (e.g. "b66577be_EP-11.mp4" or "hls/...")
+  if (!url.startsWith("http://") && !url.startsWith("https://")) {
+    return `${R2_PUBLIC_BASE}/${url.replace(/^\/+/, "")}`;
+  }
+
   return url;
 }
 
@@ -311,6 +356,7 @@ export function VideoPlayer({
         const directFallback =
           (content as any)?.videoUrl ||
           (content as any)?.video_url ||
+          propSrc ||
           ((content as any)?.master_storage_key
             ? `https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev/${(content as any).master_storage_key.replace(/^\/+/, '')}`
             : "");
@@ -960,6 +1006,21 @@ export function VideoPlayer({
     if (video.error.code === 1) return;
 
     console.warn("V19Plus media playback warning (code):", video.error.code);
+
+    // If stream fails and we haven't tried the direct master storage key yet, fallback seamlessly
+    const directMasterR2 = (content as any)?.master_storage_key
+      ? formatStreamUrl((content as any).master_storage_key)
+      : "";
+    if (directMasterR2 && activeSrc !== directMasterR2 && !activeSrc.includes((content as any).master_storage_key)) {
+      console.warn("Primary stream failed; seamlessly falling back to Cloudflare R2 master MP4:", directMasterR2);
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+      retryCount.current = 0;
+      setActiveSrc(directMasterR2);
+      return;
+    }
 
     // Resilient auto-recovery on network stall or dropped connection
     if (retryCount.current < MAX_AUTO_RETRIES) {

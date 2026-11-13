@@ -39,6 +39,36 @@ export const FALLBACK_GENRES = [
 
 export const FALLBACK_CATALOG: FallbackContent[] = [
   {
+    id: '8e5023ed-8cf0-4b98-997f-7c176c420699',
+    title: 'ELEVANTH TASK',
+    slug: 'elevanth-task',
+    description:
+      'Eleventh task episode featuring high-stakes challenges and survival action with instant progressive and adaptive streaming.',
+    contentType: 'MOVIE',
+    content_type: 'MOVIE',
+    type: 'MOVIE',
+    releaseYear: 2026,
+    release_year: 2026,
+    rating: 'U/A 18+',
+    duration: 3660,
+    duration_seconds: 3660,
+    thumbnailUrl: 'https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev/ep10_thumbnail.jpg',
+    thumbnail_url: 'https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev/ep10_thumbnail.jpg',
+    backdropUrl: 'https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev/ep10_backdrop.jpg',
+    backdrop_url: 'https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev/ep10_backdrop.jpg',
+    master_storage_key: 'b66577be_EP-11.mp4',
+    videoUrl: 'https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev/b66577be_EP-11.mp4',
+    hlsUrl: 'https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev/b66577be_EP-11.mp4',
+    hls_manifest_key: 'https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev/b66577be_EP-11.mp4',
+    isOriginal: true,
+    is_original: true,
+    isFeatured: true,
+    is_featured: true,
+    isPublished: true,
+    is_published: true,
+    status: 'PUBLISHED',
+  },
+  {
     id: 'tenth-task-id',
     title: 'TENTH TASK - GRAND FINALE | CHAMPIONSHIP ARENA',
     slug: 'tenth-task',
@@ -339,3 +369,4 @@ export const FALLBACK_CATALOG: FallbackContent[] = [
     status: 'PUBLISHED',
   },
 ];
+

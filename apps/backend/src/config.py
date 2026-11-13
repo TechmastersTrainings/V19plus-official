@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     # Playback Security (HMAC Tokens)
     PLAYBACK_TOKEN_SECRET: str = "dev_playback_token_secret_min_32_characters"
     PLAYBACK_TOKEN_EXPIRE_MINUTES: int = 30
-    CDN_STREAMING_BASE_URL: str = "https://stream.v19plus.com"
+    CDN_STREAMING_BASE_URL: str = "https://pub-2b3faff7804a4ba8b00830cca1749352.r2.dev"
 
     # Cloudflare R2 Object Storage
     R2_ACCOUNT_ID: str = ""

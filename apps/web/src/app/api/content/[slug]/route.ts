@@ -17,7 +17,7 @@ export async function GET(
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2000);
+    const timeoutId = setTimeout(() => controller.abort(), 4500);
     const backendRes = await fetch(`${BACKEND_URL}/api/content/${slug}`, {
       headers: { Accept: 'application/json' },
       signal: controller.signal,
@@ -47,3 +47,4 @@ export async function GET(
 
   return NextResponse.json(found);
 }
+
