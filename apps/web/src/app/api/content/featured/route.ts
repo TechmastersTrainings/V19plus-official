@@ -34,3 +34,4 @@ export async function GET() {
   const featured = FALLBACK_CATALOG.filter((c) => c.is_featured);
   return NextResponse.json(featured);
 }
+

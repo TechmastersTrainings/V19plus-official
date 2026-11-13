@@ -240,7 +240,7 @@ def download_master_parallel(source_key: str, dest_path: str):
 
     t0 = time.time()
     completed = len(done_chunks)
-    with ThreadPoolExecutor(max_workers=10) as executor:
+    with ThreadPoolExecutor(max_workers=25) as executor:
         futures = {executor.submit(download_chunk, i): i for i in remaining_chunks}
         for fut in as_completed(futures):
             fut.result()
@@ -288,11 +288,11 @@ def transcode_hls(input_source: str, output_dir: str, duration: float = 0):
         os.makedirs(os.path.join(output_dir, tier), exist_ok=True)
 
     filter_complex = (
-        "[0:v]scale=w=1920:h=1080:force_original_aspect_ratio=decrease:flags=fast_bilinear,pad=1920:1080:(ow-iw)/2:(oh-ih)/2[v1080_base];"
+        "[0:v]scale=w=1920:h=1080:force_original_aspect_ratio=decrease:flags=fast_bilinear,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,format=nv12[v1080_base];"
         "[v1080_base]split=4[v1080][v720_in][v480_in][v360_in];"
-        "[v720_in]scale=w=1280:h=720:force_original_aspect_ratio=decrease:flags=fast_bilinear,pad=1280:720:(ow-iw)/2:(oh-ih)/2[v720];"
-        "[v480_in]scale=w=854:h=480:force_original_aspect_ratio=decrease:flags=fast_bilinear,pad=854:480:(ow-iw)/2:(oh-ih)/2[v480];"
-        "[v360_in]scale=w=640:h=360:force_original_aspect_ratio=decrease:flags=fast_bilinear,pad=640:360:(ow-iw)/2:(oh-ih)/2[v360]"
+        "[v720_in]scale=w=1280:h=720:force_original_aspect_ratio=decrease:flags=fast_bilinear,pad=1280:720:(ow-iw)/2:(oh-ih)/2,format=nv12[v720];"
+        "[v480_in]scale=w=854:h=480:force_original_aspect_ratio=decrease:flags=fast_bilinear,pad=854:480:(ow-iw)/2:(oh-ih)/2,format=nv12[v480];"
+        "[v360_in]scale=w=640:h=360:force_original_aspect_ratio=decrease:flags=fast_bilinear,pad=640:360:(ow-iw)/2:(oh-ih)/2,format=nv12[v360]"
     )
 
     is_macos = sys.platform == "darwin"
@@ -357,6 +357,7 @@ def generate_sprites(local_master: str, output_dir: str, duration: float):
         log("  Generating sprite sheet fallback...")
         cmd = [
             "ffmpeg", "-y",
+            "-hwaccel", "videotoolbox",
             "-i", local_master,
             "-vf", f"fps=1/{interval},scale=160:90,tile={cols}x{rows}",
             "-q:v", "5",
@@ -515,12 +516,8 @@ async def process_one(content_id: str, slug: str, source_key: str, job_id: str =
 
     os.makedirs(scratch_dir, exist_ok=True)
     try:
-        if os.path.exists(local_master) and os.path.getsize(local_master) > 1024 * 1024:
-            input_source = local_master
-            log(f"Using existing local master on disk: {local_master}")
-        else:
-            download_master_parallel(source_key, local_master)
-            input_source = local_master
+        download_master_parallel(source_key, local_master)
+        input_source = local_master
 
         meta = probe_video(input_source)
         duration_sec = int(meta["duration"])
@@ -533,7 +530,7 @@ async def process_one(content_id: str, slug: str, source_key: str, job_id: str =
         if os.path.exists(local_master):
             try:
                 os.remove(local_master)
-                log("  ✓ Reclaimed local master disk space (7.03 GB freed).")
+                log("  ✓ Reclaimed local master disk space.")
             except Exception as e:
                 log(f"  Notice: could not delete local master: {e}")
 
