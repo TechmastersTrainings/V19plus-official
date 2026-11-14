@@ -357,13 +357,33 @@ def generate_sprites(local_master: str, output_dir: str, duration: float):
         log("  Generating sprite sheet fallback...")
         cmd = [
             "ffmpeg", "-y",
-            "-hwaccel", "videotoolbox",
+            "-skip_frame", "nokey",
             "-i", local_master,
             "-vf", f"fps=1/{interval},scale=160:90,tile={cols}x{rows}",
+            "-frames:v", "1",
             "-q:v", "5",
             sprite_path,
         ]
-        subprocess.run(cmd)
+        try:
+            subprocess.run(cmd, timeout=30)
+        except Exception as e:
+            log(f"  Notice: fast sprite generation timed out: {e}")
+
+        if not os.path.exists(sprite_path) or os.path.getsize(sprite_path) == 0:
+            log("  Generating single frame fallback for sprite...")
+            fallback_cmd = [
+                "ffmpeg", "-y",
+                "-ss", "5",
+                "-i", local_master,
+                "-vframes", "1",
+                "-vf", f"scale=160:90",
+                "-q:v", "5",
+                sprite_path,
+            ]
+            try:
+                subprocess.run(fallback_cmd, timeout=15)
+            except Exception:
+                pass
 
     def fmt_time(seconds: float) -> str:
         seconds = max(0.0, float(seconds))
