@@ -536,8 +536,20 @@ async def process_one(content_id: str, slug: str, source_key: str, job_id: str =
 
     os.makedirs(scratch_dir, exist_ok=True)
     try:
-        download_master_parallel(source_key, local_master)
-        input_source = local_master
+        # Check free disk space before deciding whether to download locally or stream from R2 CDN
+        stat = os.statvfs(scratch_dir)
+        free_bytes = stat.f_bavail * stat.f_frsize
+        s3 = get_s3()
+        head = s3.head_object(Bucket=R2_BUCKET, Key=source_key)
+        file_size = head["ContentLength"]
+
+        if free_bytes > (file_size * 2):
+            download_master_parallel(source_key, local_master)
+            input_source = local_master
+        else:
+            log(f"  ⚡ Disk space tight ({free_bytes / (1024**3):.2f} GB available vs {file_size / (1024**3):.2f} GB master).")
+            log(f"  ⚡ Streaming master directly from Cloudflare R2 Edge URL (Zero local master disk space required)!")
+            input_source = f"{CDN_BASE}/{source_key}"
 
         meta = probe_video(input_source)
         duration_sec = int(meta["duration"])
