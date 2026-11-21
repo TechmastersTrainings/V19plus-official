@@ -308,6 +308,14 @@ def transcode_hls(input_source: str, output_dir: str, duration: float = 0):
     if is_macos:
         cmd.extend(["-hwaccel", "videotoolbox"])
 
+    if input_source.startswith("http"):
+        cmd.extend([
+            "-reconnect", "1",
+            "-reconnect_at_eof", "1",
+            "-reconnect_streamed", "1",
+            "-reconnect_delay_max", "5"
+        ])
+
     cmd.extend([
         "-i", input_source,
         "-filter_complex", filter_complex,
@@ -355,9 +363,17 @@ def generate_sprites(local_master: str, output_dir: str, duration: float):
 
     if not os.path.exists(sprite_path) or os.path.getsize(sprite_path) == 0:
         log("  Generating sprite sheet fallback...")
+        reconnect_args = [
+            "-reconnect", "1",
+            "-reconnect_at_eof", "1",
+            "-reconnect_streamed", "1",
+            "-reconnect_delay_max", "5",
+        ] if local_master.startswith("http") else []
+
         cmd = [
             "ffmpeg", "-y",
             "-skip_frame", "nokey",
+            *reconnect_args,
             "-i", local_master,
             "-vf", f"fps=1/{interval},scale=160:90,tile={cols}x{rows}",
             "-frames:v", "1",
@@ -373,6 +389,7 @@ def generate_sprites(local_master: str, output_dir: str, duration: float):
             log("  Generating single frame fallback for sprite...")
             fallback_cmd = [
                 "ffmpeg", "-y",
+                *reconnect_args,
                 "-ss", "5",
                 "-i", local_master,
                 "-vframes", "1",
@@ -543,7 +560,7 @@ async def process_one(content_id: str, slug: str, source_key: str, job_id: str =
         head = s3.head_object(Bucket=R2_BUCKET, Key=source_key)
         file_size = head["ContentLength"]
 
-        if free_bytes > (file_size * 2):
+        if free_bytes > (file_size + 1.2 * 1024 * 1024 * 1024):
             download_master_parallel(source_key, local_master)
             input_source = local_master
         else:
