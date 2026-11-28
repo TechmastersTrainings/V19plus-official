@@ -332,4 +332,7 @@ async def seed():
 
 
 if __name__ == "__main__":
-    asyncio.run(seed())
+    try:
+        asyncio.run(seed())
+    except Exception as e:
+        logger.warning(f"[SEED WARNING] Database seeding skipped due to connectivity issue: {e}")

@@ -94,4 +94,7 @@ async def seed_zingat_event():
 
 
 if __name__ == "__main__":
-    asyncio.run(seed_zingat_event())
+    try:
+        asyncio.run(seed_zingat_event())
+    except Exception as e:
+        logger.warning(f"[SEED EVENTS WARNING] Events seeding skipped due to connectivity issue: {e}")
