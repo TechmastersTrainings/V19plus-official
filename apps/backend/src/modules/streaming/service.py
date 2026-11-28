@@ -53,6 +53,10 @@ class StreamingService:
         episode_id: Optional[uuid.UUID] = None,
         client_ip: Optional[str] = None,
     ) -> PlaybackAuthResponse:
+        if not user_id or str(user_id) == "00000000-0000-0000-0000-000000000000":
+            from src.core.exceptions import UnauthorizedException
+            raise UnauthorizedException("Authentication is required to stream video content.")
+
         content = await self.db.get(Content, content_id)
         if not content:
             raise NotFoundException("Content", content_id)

@@ -45,8 +45,6 @@ export function HeroBanner({ content, contents, isLoading, hideContent = false }
   const videoSrc =
     current?.trailer_url ||
     current?.trailerUrl ||
-    (current as any)?.video_url ||
-    current?.videoUrl ||
     '';
 
   useEffect(() => {
@@ -224,7 +222,11 @@ export function HeroBanner({ content, contents, isLoading, hideContent = false }
                 <div className="flex flex-wrap items-center gap-3">
                   {/* Primary Play Button */}
                   <Link
-                    href={`/watch/${current.slug}`}
+                    href={
+                      isAuthenticated
+                        ? `/watch/${current.slug}`
+                        : `/login?returnUrl=${encodeURIComponent(`/watch/${current.slug}`)}`
+                    }
                     className="flex items-center justify-center gap-2.5 px-6 sm:px-7 py-2.5 sm:py-3 bg-white hover:bg-[#FF5C00] active:scale-95 text-[#080808] hover:text-white font-black rounded-xl text-sm sm:text-base transition-all duration-200 shadow-[0_4px_20px_rgba(255,255,255,0.25)] hover:shadow-[0_0_25px_rgba(255,92,0,0.5)] cursor-pointer"
                   >
                     <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />

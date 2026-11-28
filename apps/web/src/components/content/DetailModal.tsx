@@ -117,6 +117,10 @@ export function DetailModal() {
                     <button
                       onClick={() => {
                         closeDetail();
+                        if (!isAuthenticated) {
+                          router.push(`/login?returnUrl=${encodeURIComponent(`/watch/${content.slug}`)}`);
+                          return;
+                        }
                         router.push(`/watch/${content.slug}`);
                       }}
                       className="flex items-center gap-2.5 px-6 py-3 bg-gradient-to-r from-[#E50914] via-[#FF5C00] to-[#E50914] hover:from-[#FF2236] hover:to-[#FF7A00] text-white font-bold rounded-xl text-sm transition-all shadow-[0_0_24px_rgba(229,9,20,0.5)] active:scale-95"
@@ -189,6 +193,10 @@ export function DetailModal() {
                     <button
                       onClick={() => {
                         closeDetail();
+                        if (!isAuthenticated) {
+                          router.push(`/login?returnUrl=${encodeURIComponent(`/watch/${content.slug}`)}`);
+                          return;
+                        }
                         router.push(`/watch/${content.slug}`);
                       }}
                       className="flex-1 py-3 bg-gradient-to-r from-[#E50914] to-[#FF2236] hover:from-[#FF2236] hover:to-[#E50914] text-white font-bold rounded-xl text-sm transition-all shadow-[0_0_20px_rgba(229,9,20,0.4)] flex items-center justify-center gap-2"

@@ -63,6 +63,10 @@ export function ContentCard({
   const isOriginal = content.is_original ?? content.isOriginal ?? true;
 
   const handleCardClick = () => {
+    if (!isAuthenticated) {
+      router.push(`/login?returnUrl=${encodeURIComponent(`/watch/${content.slug}`)}`);
+      return;
+    }
     router.push(`/watch/${content.slug}`);
   };
 

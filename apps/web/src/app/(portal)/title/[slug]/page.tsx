@@ -130,7 +130,11 @@ export default function TitleDetailPage() {
 
         {/* Central orange play button */}
         <Link
-          href={`/watch/${content.slug}`}
+          href={
+            isAuthenticated
+              ? `/watch/${content.slug}`
+              : `/login?returnUrl=${encodeURIComponent(`/watch/${content.slug}`)}`
+          }
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full bg-gradient-to-br from-[#FF5C00] to-[#D44900] text-white flex items-center justify-center shadow-[0_0_30px_rgba(255,92,0,0.4)] hover:scale-105 transition-transform duration-300 z-20 group"
         >
           <svg className="w-8 h-8 fill-current translate-x-0.5 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
@@ -162,14 +166,25 @@ export default function TitleDetailPage() {
         {/* Action Buttons (Orange Play, Dark Download) */}
         <div className="flex flex-wrap gap-4 mb-8">
           <Link
-            href={`/watch/${content.slug}${currentSeason ? `?episode=${currentSeason.episodes[0]?.id}` : ''}`}
+            href={
+              isAuthenticated
+                ? `/watch/${content.slug}${currentSeason ? `?episode=${currentSeason.episodes[0]?.id}` : ''}`
+                : `/login?returnUrl=${encodeURIComponent(`/watch/${content.slug}${currentSeason ? `?episode=${currentSeason.episodes[0]?.id}` : ''}`)}`
+            }
             className="flex items-center justify-center gap-2 px-10 py-3.5 bg-[#FF5C00] hover:bg-[#FF5C00]/90 text-[#0A0806] font-extrabold rounded-xl text-base transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-[#FF5C00]/10 flex-1 md:flex-none"
           >
             <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
             Play {currentSeason ? `S1:E1` : ''}
           </Link>
           <button
-            onClick={() => toast.success('Download started')}
+            onClick={() => {
+              if (!isAuthenticated) {
+                toast.error('Sign in to download titles');
+                router.push(`/login?returnUrl=${encodeURIComponent(`/watch/${content.slug}`)}`);
+                return;
+              }
+              toast.success('Download started');
+            }}
             className="flex items-center justify-center gap-2 px-10 py-3.5 bg-[#181410] hover:bg-[#221c16] text-[#FAF6EF] font-bold rounded-xl border border-white/5 text-base transition-all flex-1 md:flex-none"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -251,7 +266,11 @@ export default function TitleDetailPage() {
                 {currentSeason.episodes.map((ep: any, epIdx: number) => (
                   <Link
                     key={ep.id || epIdx}
-                    href={`/watch/${content.slug}?episode=${ep.id}`}
+                    href={
+                      isAuthenticated
+                        ? `/watch/${content.slug}?episode=${ep.id}`
+                        : `/login?returnUrl=${encodeURIComponent(`/watch/${content.slug}?episode=${ep.id}`)}`
+                    }
                     className="group bg-[#14110D] border border-white/5 hover:border-[#FF5C00]/40 rounded-2xl p-3 flex gap-4 transition-all hover:bg-white/[0.03]"
                   >
                     <div className="relative w-36 sm:w-44 aspect-video rounded-xl overflow-hidden bg-[#1E1914] flex-shrink-0">

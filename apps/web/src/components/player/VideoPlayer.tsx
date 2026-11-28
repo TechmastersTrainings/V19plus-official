@@ -7,9 +7,11 @@ import React, {
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
+import { Lock } from "lucide-react";
 import { streamingApi } from "../../api/streaming";
 import { historyApi } from "../../api/history";
 import { Content } from "../../api/content";
+import { useAuthStore } from "../../store/authStore";
 import Hls from "hls.js";
 
 export interface VideoPlayerProps {
@@ -137,6 +139,7 @@ export function VideoPlayer({
   onNextEpisode,
 }: VideoPlayerProps) {
   const router = useRouter();
+  const { isAuthenticated, isLoading: authLoading, _initialized } = useAuthStore();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const hideControlsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -253,6 +256,13 @@ export function VideoPlayer({
 
   // Fetch authorized streaming URL from backend if not provided directly as valid HLS
   useEffect(() => {
+    // Strictly gate stream initialization behind authentication
+    if (_initialized && !isAuthenticated) {
+      setIsLoading(false);
+      setActiveSrc("");
+      return;
+    }
+
     // If a valid published HLS manifest is explicitly passed, use it directly
     if (propSrc && (propSrc.includes(".m3u8") || propSrc.includes("/hls/"))) {
       setActiveSrc(formatStreamUrl(propSrc));
@@ -352,6 +362,15 @@ export function VideoPlayer({
       .catch((err) => {
         if (!isMounted) return;
         console.error("Playback authorization failed:", err);
+        if (err?.response?.status === 401 || err?.status === 401) {
+          setIsProcessing(false);
+          setIsLoading(false);
+          setHasError(true);
+          const currentUrl = typeof window !== "undefined" ? window.location.pathname + window.location.search : "/";
+          router.push(`/login?returnUrl=${encodeURIComponent(currentUrl)}`);
+          return;
+        }
+
         const hlsFallback = (content as any)?.hls_manifest_key;
         const directFallback =
           (content as any)?.videoUrl ||
@@ -1194,6 +1213,29 @@ export function VideoPlayer({
    * RENDER
    * ---------------------------------------------------------
    */
+
+  if (_initialized && !authLoading && !isAuthenticated) {
+    return (
+      <div className={`relative w-full h-full min-h-[360px] bg-[#080808] flex flex-col items-center justify-center p-6 text-center select-none ${className}`}>
+        <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-4 text-[#FF5C00] shadow-[0_0_24px_rgba(255,92,0,0.2)]">
+          <Lock className="w-8 h-8" />
+        </div>
+        <h3 className="text-white font-extrabold text-xl mb-2">Sign In Required</h3>
+        <p className="text-neutral-400 text-sm max-w-sm mb-6 leading-relaxed">
+          Streaming on V19Plus is protected. Please log in to your account to stream this video.
+        </p>
+        <button
+          onClick={() => {
+            const currentUrl = typeof window !== "undefined" ? window.location.pathname + window.location.search : "/";
+            router.push(`/login?returnUrl=${encodeURIComponent(currentUrl)}`);
+          }}
+          className="px-6 py-3 bg-gradient-to-r from-[#FF5C00] to-[#E50914] hover:opacity-95 text-white font-bold rounded-xl text-sm transition-all shadow-lg active:scale-95"
+        >
+          Sign In to Watch
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div

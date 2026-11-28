@@ -195,7 +195,11 @@ export default function WebSeriesPage() {
               {/* Billboard CTAs */}
               <div className="flex items-center gap-3 pt-2">
                 <Link
-                  href={`/watch/${spotlightSeries.slug}`}
+                  href={
+                    isAuthenticated
+                      ? `/watch/${spotlightSeries.slug}`
+                      : `/login?returnUrl=${encodeURIComponent(`/watch/${spotlightSeries.slug}`)}`
+                  }
                   className="inline-flex items-center gap-2 px-6 py-2.5 sm:py-3 rounded-xl bg-white hover:bg-neutral-200 text-black font-bold text-xs sm:text-sm shadow-xl transition-all active:scale-95"
                 >
                   <Play className="w-4 h-4 fill-black text-black" />

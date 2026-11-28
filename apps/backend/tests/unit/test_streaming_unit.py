@@ -83,3 +83,30 @@ def test_transcode_concurrency_lock_prevents_fork_bombs():
     assert try_acquire_transcode_lock(key) is True
     release_transcode_lock(key)
 
+@pytest.mark.asyncio
+async def test_playback_auth_strictly_rejects_unauthenticated_or_nil_user():
+    """
+    Security Regression Test: Streaming videos without logging in must be strictly blocked.
+    Nil user_id or empty user_id must raise UnauthorizedException.
+    """
+    from unittest.mock import AsyncMock
+    from src.core.exceptions import UnauthorizedException
+    
+    mock_db = AsyncMock()
+    service = StreamingService(mock_db)
+
+    # 1. Test nil UUID user
+    with pytest.raises(UnauthorizedException):
+        await service.authorize_playback(
+            user_id=uuid.UUID("00000000-0000-0000-0000-000000000000"),
+            content_id=uuid.uuid4(),
+        )
+
+    # 2. Test None user_id
+    with pytest.raises(UnauthorizedException):
+        await service.authorize_playback(
+            user_id=None,
+            content_id=uuid.uuid4(),
+        )
+
+

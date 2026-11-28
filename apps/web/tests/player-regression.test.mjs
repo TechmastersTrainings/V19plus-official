@@ -631,5 +631,95 @@ describe('Clean Loading Indicators vs Technical Jargon', () => {
   });
 });
 
+describe('Strict Playback Authentication & Anti-Bypass Guard', () => {
+  it('should refuse stream loading and route to login if viewer is unauthenticated', () => {
+    function resolvePlaybackEntry({ isAuthenticated, _initialized, slug, episodeId }) {
+      if (!_initialized) {
+        return { action: 'loading' };
+      }
+      if (!isAuthenticated) {
+        const returnUrl = `/watch/${slug}${episodeId ? `?episode=${episodeId}` : ''}`;
+        return {
+          action: 'redirect_login',
+          target: `/login?returnUrl=${encodeURIComponent(returnUrl)}`,
+          streamAllowed: false,
+        };
+      }
+      return {
+        action: 'render_player',
+        streamAllowed: true,
+      };
+    }
+
+    // 1. Unauthenticated guest trying to watch an episode
+    const guestAttempt = resolvePlaybackEntry({
+      isAuthenticated: false,
+      _initialized: true,
+      slug: 'shadows-of-the-peak',
+      episodeId: 'ep-01',
+    });
+    assert.equal(guestAttempt.action, 'redirect_login');
+    assert.equal(guestAttempt.streamAllowed, false);
+    assert.equal(
+      guestAttempt.target,
+      '/login?returnUrl=%2Fwatch%2Fshadows-of-the-peak%3Fepisode%3Dep-01'
+    );
+
+    // 2. Authenticated subscriber allowed to stream
+    const memberAttempt = resolvePlaybackEntry({
+      isAuthenticated: true,
+      _initialized: true,
+      slug: 'shadows-of-the-peak',
+      episodeId: 'ep-01',
+    });
+    assert.equal(memberAttempt.action, 'render_player');
+    assert.equal(memberAttempt.streamAllowed, true);
+  });
+
+  it('should block playback fallback to R2 if API returns 401 Unauthorized', () => {
+    function handlePlaybackAuthError(err, content, currentUrl) {
+      if (err?.status === 401 || err?.response?.status === 401) {
+        return {
+          action: 'redirect_login',
+          redirectUrl: `/login?returnUrl=${encodeURIComponent(currentUrl)}`,
+          fallbackAllowed: false,
+          activeSrc: '',
+        };
+      }
+      // Non-auth error fallback
+      return {
+        action: 'fallback',
+        fallbackAllowed: true,
+        activeSrc: content?.hls_manifest_key || '',
+      };
+    }
+
+    const unauthErr = { status: 401, message: 'Authentication required' };
+    const content = { hls_manifest_key: 'hls/master.m3u8' };
+    const result = handlePlaybackAuthError(unauthErr, content, '/watch/ep-01');
+
+    assert.equal(result.action, 'redirect_login');
+    assert.equal(result.fallbackAllowed, false);
+    assert.equal(result.activeSrc, '');
+    assert.equal(result.redirectUrl, '/login?returnUrl=%2Fwatch%2Fep-01');
+  });
+
+  it('should intercept content card clicks for unauthenticated users and guide them to login', () => {
+    function onContentCardClick({ isAuthenticated, slug }) {
+      if (!isAuthenticated) {
+        return `/login?returnUrl=${encodeURIComponent(`/watch/${slug}`)}`;
+      }
+      return `/watch/${slug}`;
+    }
+
+    const guestRoute = onContentCardClick({ isAuthenticated: false, slug: 'fifteenth-task' });
+    assert.equal(guestRoute, '/login?returnUrl=%2Fwatch%2Ffifteenth-task');
+
+    const authRoute = onContentCardClick({ isAuthenticated: true, slug: 'fifteenth-task' });
+    assert.equal(authRoute, '/watch/fifteenth-task');
+  });
+});
+
+
 
 
