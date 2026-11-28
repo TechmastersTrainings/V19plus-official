@@ -4,8 +4,9 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Content } from '../../api/content';
 import { useAuthStore } from '../../store/authStore';
+import { useUiStore } from '../../store/uiStore';
 import { useWatchlist, useAddToWatchlist, useRemoveFromWatchlist } from '../../hooks/useWatchlist';
-import { Film, Bookmark, Check, Play, Sparkles } from 'lucide-react';
+import { Film, Bookmark, Check, Play, Sparkles, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export interface ContentCardProps {
@@ -27,6 +28,7 @@ export function ContentCard({
 }: ContentCardProps) {
   const [imgError, setImgError] = useState(false);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const openDetail = useUiStore((s) => s.openDetail);
   const router = useRouter();
 
   const { data: watchlist } = useWatchlist();
@@ -62,7 +64,15 @@ export function ContentCard({
   const primaryGenre = genres[0] || (content.content_type === 'SERIES' ? 'Series' : 'Feature Film');
   const isOriginal = content.is_original ?? content.isOriginal ?? true;
 
+  // Clicking the card opens details overview (Netflix style: view whats there in without forced login)
   const handleCardClick = () => {
+    openDetail(content.slug);
+  };
+
+  // Playing the video strictly requires an active login session
+  const handlePlayClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (!isAuthenticated) {
       router.push(`/login?returnUrl=${encodeURIComponent(`/watch/${content.slug}`)}`);
       return;
@@ -128,11 +138,28 @@ export function ContentCard({
           </div>
         )}
 
-        {/* Hover Ambient Overlay with Center Play Circle */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-          <div className="w-11 h-11 rounded-full bg-white group-hover/card:bg-[#E50914] text-white flex items-center justify-center shadow-[0_4px_24px_rgba(0,0,0,0.9)] transform scale-75 group-hover/card:scale-100 transition-all duration-200">
+        {/* Hover Ambient Overlay with Center Play Circle and Quick Info */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-3">
+          <button
+            onClick={handlePlayClick}
+            className="w-11 h-11 rounded-full bg-white group-hover/card:bg-[#E50914] text-white flex items-center justify-center shadow-[0_4px_24px_rgba(0,0,0,0.9)] transform scale-75 group-hover/card:scale-100 hover:scale-110 transition-all duration-200 cursor-pointer"
+            title={isAuthenticated ? 'Play Now' : 'Sign in to Watch'}
+            aria-label="Play Video"
+          >
             <Play className="w-4 h-4 fill-white text-white ml-0.5" />
-          </div>
+          </button>
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              openDetail(content.slug);
+            }}
+            className="w-9 h-9 rounded-full bg-black/60 hover:bg-black/90 text-white/90 hover:text-white border border-white/20 hover:border-white/50 flex items-center justify-center shadow-lg transform scale-75 group-hover/card:scale-100 hover:scale-105 transition-all duration-200 cursor-pointer"
+            title="View Details"
+            aria-label="View Details"
+          >
+            <Info className="w-4 h-4" />
+          </button>
         </div>
 
         {/* Top-Left Badge: Rank or Original Tag */}
