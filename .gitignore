@@ -72,3 +72,4 @@ media_storage/
 apps/web/public/sw.js.map
 apps/web/public/workbox-*.js
 apps/web/public/workbox-*.js.map
+.neon

@@ -78,7 +78,7 @@ services:
         sync: false
       # Allowed Origins (CORS)
       - key: ALLOWED_ORIGINS
-        value: "https://v19plus.com,https://admin.v19plus.com,https://v19plus-web.vercel.app,http://localhost:3000,http://localhost:3001,capacitor://localhost"
+        value: "https://v19plus.com,https://www.v19plus.com,https://admin.v19plus.com,https://v19plus-web.vercel.app,http://localhost:3000,http://localhost:3001,capacitor://localhost"
 
   # ------------------------------------------------------------
   # 2. Render Video Transcoding Worker (FFmpeg + ARQ in Singapore)

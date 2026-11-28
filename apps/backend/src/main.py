@@ -1,6 +1,7 @@
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from src.config import settings
 from src.database import async_engine
@@ -79,6 +80,15 @@ app.add_middleware(
 
 # Register Exception Handlers
 app.add_exception_handler(V19plusException, v19plus_exception_handler)
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled exception on {request.method} {request.url.path}: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "An internal server error occurred. Please try again later."},
+    )
 
 # Mount Routes under /api prefix
 app.include_router(health_router, prefix="/api")

@@ -89,9 +89,13 @@ class Settings(BaseSettings):
                 v = v.replace("postgres://", "postgresql+asyncpg://", 1)
             elif v.startswith("postgresql://") and not v.startswith("postgresql+asyncpg://"):
                 v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
+            import re
+            # asyncpg dialect does not accept channel_binding
+            v = re.sub(r"[?&]channel_binding=[^&]+", "", v)
             if "sslmode=" in v:
-                import re
                 v = re.sub(r"([?&])sslmode=([^&]+)", r"\1ssl=\2", v)
+            if "?" not in v and "&" in v:
+                v = v.replace("&", "?", 1)
         return v
 
     @field_validator("DATABASE_SYNC_URL", mode="before")
